@@ -1,0 +1,7 @@
+domain: k6.io
+repo: github.com/k6io/operator
+resources:
+- group: test
+  kind: K6
+  version: v1alpha1
+version: "2"
