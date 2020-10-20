@@ -1,4 +1,4 @@
-![data flow](assets/data-flow.png)
+ ![data flow](assets/data-flow.png)
 
 # k6 Operator
 
@@ -6,6 +6,8 @@
 >
 > This project is **experimental** and changes a lot between commits.
 > Use at your own risk. 
+
+`k6io/operator` is a kubernetes operator for running distributed k6 tests in your cluster.
 
 ## Setup
 
