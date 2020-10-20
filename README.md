@@ -39,6 +39,32 @@ The operator utilises `ConfigMap`s to serve test scripts to the jobs. To upload 
 $ kubectl create configmap my-test --from-file /path/to/my/test.js
 ``` 
 
+For the execution segmentation to work, you'll need to adapt your k6 test slightly. First, import `getExecutionSegments` from the `k8s-distributed-execution` library available on https://jslib.k6.io.
+
+ ```js
+ import { getExecutionSegments } from 'https://jslib.k6.io/k8s-distributed-execution/0.0.1/index.js';
+ ```
+ 
+ Then modify your `options` constant to merge your configuration with the execution segment configuration:
+ 
+```js
+const myOptions = {
+    stages: [
+      { target: 200, duration: '30s' },
+      { target: 0, duration: '30s' },
+    ],
+    threshold: {
+      failed_requests: ['rate<=0'],
+      http_req_duration: ['p(95)<500'],
+    },
+}
+
+export const options = Object.assign(
+  myOptions, 
+  getExecutionSegments()
+);
+```
+
 ### Executing tests
 Tests are executed by applying the custom resource `K6` to a cluster where the operator is running. The properties
 of a test run are few, but allow you to control some key aspects of a distributed execution.
