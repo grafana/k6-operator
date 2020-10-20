@@ -70,6 +70,8 @@ Tests are executed by applying the custom resource `K6` to a cluster where the o
 of a test run are few, but allow you to control some key aspects of a distributed execution.
 
 ```yaml
+# k6-resource.yml
+
 apiVersion: k6.io/v1alpha1
 kind: K6
 metadata:
