@@ -1,7 +1,0 @@
-apiVersion: test.k6.io/v1alpha1
-kind: K6
-metadata:
-  name: k6-sample
-spec:
-  parallelism: 1
-  script: k6-test

@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: k6
+  name: k6-test
+data:
+  test.js: |
+    import http from 'k6/http';
+    import { Rate } from 'k6/metrics';
+    import { check, sleep } from 'k6';
+
+    import {
+      getExecutionSegments,
+      logSegment,
+    } from 'https://jslib.k6.io/k8s-distributed-execution/0.0.1/index.js';
+
+    const failRate = new Rate('failed_requests');
+
+    export function setup() {
+      logSegment();
+    }
+
+    export let options = Object.assign({
+      stages: [
+        { target: 200, duration: '30s' },
+        { target: 0, duration: '30s' },
+      ],
+      threshold: {
+        failed_requests: ['rate<=0'],
+        http_req_duration: ['p(95)<500'],
+      },
+    }, getExecutionSegments());
+
+    export default function () {
+      const result = http.get('https://test-api.k6.io/public/crocodiles/');
+      check(result, {
+        'http response status code is 200': result.status === 200,
+      });
+      failRate.add(result.status !== 200);
+      sleep(1);
+    }
+

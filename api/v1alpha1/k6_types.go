@@ -1,3 +1,17 @@
+/*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1alpha1
 
 import (
@@ -6,29 +20,27 @@ import (
 
 // K6Spec defines the desired state of K6
 type K6Spec struct {
-	Script       string `json:"script"`
-	Options      string `json:"options,omitempty"`
-	Nodes        int32  `json:"Parallelism"`
+	Script      string `json:"script"`
+	Parallelism int32  `json:"parallelism"`
+	Separate    bool   `json:"separate,omitempty"`
 }
 
 // K6Status defines the observed state of K6
-type K6Status struct {
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+type K6Status struct{}
 
 // K6 is the Schema for the k6s API
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type K6 struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              K6Spec   `json:"spec,omitempty"`
-	Status            K6Status `json:"status,omitempty"`
+
+	Spec   K6Spec   `json:"spec,omitempty"`
+	Status K6Status `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-
 // K6List contains a list of K6
+// +kubebuilder:object:root=true
 type K6List struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

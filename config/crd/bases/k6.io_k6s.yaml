@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: k6s.test.k6.io
+  name: k6s.k6.io
 spec:
-  group: test.k6.io
+  group: k6.io
   names:
     kind: K6
     listKind: K6List
@@ -36,22 +36,15 @@ spec:
         spec:
           description: K6Spec defines the desired state of K6
           properties:
-            backoff:
+            parallelism:
               format: int32
               type: integer
-            cleanup:
-              type: boolean
-            nodes:
-              format: int32
-              type: integer
-            options:
-              type: string
             script:
               type: string
+            separate:
+              type: boolean
           required:
-          - backoff
-          - cleanup
-          - nodes
+          - parallelism
           - script
           type: object
         status:
