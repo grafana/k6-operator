@@ -40,6 +40,12 @@ type K6Reconciler struct {
 // +kubebuilder:rbac:groups=k6.io,resources=k6s,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=k6.io,resources=k6s/status,verbs=get;update;patch
 
+// +kubebuilder:rbac:groups=k6.io,resources=k6s,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=k6.io,resources=k6s/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
+
 func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("k6", req.NamespacedName)
@@ -70,6 +76,10 @@ func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	for i := 1; i <= int(k6.Spec.Parallelism); i++ {
 		log.Info(fmt.Sprintf("Launching k6 test #%d", i))
 		job := resources.NewJob(k6, i)
+		if err = ctrl.SetControllerReference(k6, job, r.Scheme); err != nil {
+			log.Error(err, "Failed to set controller reference for job")
+			return ctrl.Result{}, err
+		}
 		if err = r.Create(ctx, job); err != nil {
 			log.Error(err, "Failed to launch k6 test")
 			return ctrl.Result{}, err
