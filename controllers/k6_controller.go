@@ -17,17 +17,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/k6io/operator/pkg/resources"
-	batchv1 "k8s.io/api/batch/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/go-logr/logr"
+	"github.com/k6io/operator/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/k6io/operator/api/v1alpha1"
 )
 
 // K6Reconciler reconciles a K6 object
@@ -47,61 +42,38 @@ func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("k6", req.NamespacedName)
 
-	result := ctrl.Result{}
-
 	// Fetch the CRD
 	k6 := &v1alpha1.K6{}
 	err := r.Get(ctx, req.NamespacedName, k6)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Info("Request deleted. Skipping requeuing.")
-			return result, nil
+			log.Info("Request deleted. Nothing to reconcile.")
+			return ctrl.Result{}, nil
 		}
 		log.Error(err, "Could not fetch request")
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	// Check for previous jobs
-	found := &batchv1.Job{}
-	namespacedName := types.NamespacedName{
-		Name:      fmt.Sprintf("%s-1", k6.Name),
-		Namespace: k6.Namespace,
+	switch k6.Status.Stage {
+	case "":
+		return CreateJobs(ctx, log, k6, r)
+	case "created":
+		return StartJobs(ctx, log, k6, r)
+	case "started":
+		// wait for test to finish and then mark as finished
+		return ctrl.Result{}, nil
+	case "finished":
+		// delete if configured
+		// notify if configured
+		return ctrl.Result{}, nil
 	}
 
-	if err = r.Get(ctx, namespacedName, found); err == nil || !errors.IsNotFound(err) {
-		log.Info("Could not start a new test, Make sure you've deleted your previous run.")
-		return result, err
-	}
-
-	// Create jobs
-	for i := 1; i <= int(k6.Spec.Parallelism); i++ {
-		if err = r.LaunchTest(ctx, k6, i, log); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
-	return result, nil
+	err = fmt.Errorf("invalid status")
+	log.Error(err, "Invalid status for the k6 resource.")
+	return ctrl.Result{}, err
 }
 
-func (r *K6Reconciler) LaunchTest(ctx context.Context, k6 *v1alpha1.K6, index int, log logr.Logger) error {
-	msg := fmt.Sprintf("Launching k6 test #%d", index)
-	log.Info(msg)
-
-	job := resources.NewJob(k6, index)
-
-	if err := ctrl.SetControllerReference(k6, job, r.Scheme); err != nil {
-		log.Error(err, "Failed to set controller reference for job")
-		return err
-	}
-
-	if err := r.Create(ctx, job); err != nil {
-		log.Error(err, "Failed to launch k6 test")
-		return err
-	}
-
-	return nil
-}
-
+// SetupWithManager sets up a managed controller that will reconcile all events for the K6 CRD
 func (r *K6Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.K6{}).

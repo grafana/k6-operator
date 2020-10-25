@@ -1,16 +1,40 @@
-package resources
+package jobs
 
 import (
 	"fmt"
 	"github.com/k6io/operator/api/v1alpha1"
+	"github.com/k6io/operator/pkg/segmentation"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewJob creates a new k6 job from a CRD
-func NewJob(k *v1alpha1.K6, index int) *batchv1.Job {
+// NewRunnerJob creates a new k6 job from a CRD
+func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k.Name, index)
+	command := []string{"k6", "run"}
+
+	if k.Spec.Parallelism > 1 {
+		var args []string
+		var err error
+
+		if args, err = segmentation.NewCommandFragments(index, int(k.Spec.Parallelism)); err != nil {
+			return nil, err
+
+		}
+		command = append(command, args...)
+	}
+
+	if k.Spec.Arguments != "" {
+		command = append(command, k.Spec.Arguments)
+	}
+	command = append(
+		command,
+		"/test/test.js",
+		"--address=0.0.0.0:6565",
+		"--paused")
+
+	var zero int64 = 0
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -23,18 +47,20 @@ func NewJob(k *v1alpha1.K6, index int) *batchv1.Job {
 					Labels: newLabels(k.Name),
 				},
 				Spec: corev1.PodSpec{
+					Hostname:      name,
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{{
 						Image:   "loadimpact/k6:latest",
 						Name:    "k6",
-						Command: []string{"k6", "run", "/test/test.js"},
+						Command: command,
 						VolumeMounts: []corev1.VolumeMount{{
 							Name:      "k6-test-volume",
 							MountPath: "/test",
 						}},
-						Env: newEnvVars(k.Spec.Parallelism, index),
+						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
 					}},
-					Volumes: newVolumeSpec(k.Spec.Script),
+					TerminationGracePeriodSeconds: &zero,
+					Volumes:                       newVolumeSpec(k.Spec.Script),
 				},
 			},
 		},
@@ -43,34 +69,7 @@ func NewJob(k *v1alpha1.K6, index int) *batchv1.Job {
 	if k.Spec.Separate {
 		job.Spec.Template.Spec.Affinity = newAntiAffinity()
 	}
-
-	return job
-}
-
-func newEnvVars(parallelism int32, index int) []corev1.EnvVar {
-	return []corev1.EnvVar{
-		{
-			Name:  "K6_INSTANCES_INDEX",
-			Value: fmt.Sprintf("%d", index),
-		},
-		{
-			Name:  "K6_INSTANCES_TOTAL",
-			Value: fmt.Sprintf("%d", parallelism),
-		},
-	}
-}
-
-func newVolumeSpec(script string) []corev1.Volume {
-	return []corev1.Volume{{
-		Name: "k6-test-volume",
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: script,
-				},
-			},
-		},
-	}}
+	return job, nil
 }
 
 func newAntiAffinity() *corev1.Affinity {
@@ -94,6 +93,19 @@ func newAntiAffinity() *corev1.Affinity {
 			},
 		},
 	}
+}
+
+func newVolumeSpec(script string) []corev1.Volume {
+	return []corev1.Volume{{
+		Name: "k6-test-volume",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: script,
+				},
+			},
+		},
+	}}
 }
 
 func newLabels(name string) map[string]string {

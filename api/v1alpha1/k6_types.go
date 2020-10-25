@@ -20,13 +20,25 @@ import (
 
 // K6Spec defines the desired state of K6
 type K6Spec struct {
-	Script      string `json:"script"`
-	Parallelism int32  `json:"parallelism"`
-	Separate    bool   `json:"separate,omitempty"`
+	Script      string  `json:"script"`
+	Parallelism int32   `json:"parallelism"`
+	Separate    bool    `json:"separate,omitempty"`
+//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
+	Arguments   string  `json:"arguments,omitempty"`
 }
 
+// Cleanup allows for automatic cleanup of resources pre or post execution
+// +kubebuilder:validation:Enum=pre;post
+// type Cleanup string
+
+// Stage describes which stage of the test execution lifecycle our runners are in
+// +kubebuilder:validation:Enum=created;started
+type Stage string
+
 // K6Status defines the observed state of K6
-type K6Status struct{}
+type K6Status struct {
+	Stage Stage `json:"stage,omitempty"`
+}
 
 // K6 is the Schema for the k6s API
 // +kubebuilder:object:root=true

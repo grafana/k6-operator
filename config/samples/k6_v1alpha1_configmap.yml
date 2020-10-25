@@ -8,18 +8,9 @@ data:
     import { Rate } from 'k6/metrics';
     import { check, sleep } from 'k6';
 
-    import {
-      getExecutionSegments,
-      logSegment,
-    } from 'https://jslib.k6.io/k8s-distributed-execution/0.0.1/index.js';
-
     const failRate = new Rate('failed_requests');
 
-    export function setup() {
-      logSegment();
-    }
-
-    export let options = Object.assign({
+    export let options = {
       stages: [
         { target: 200, duration: '30s' },
         { target: 0, duration: '30s' },
@@ -28,7 +19,7 @@ data:
         failed_requests: ['rate<=0'],
         http_req_duration: ['p(95)<500'],
       },
-    }, getExecutionSegments());
+    };
 
     export default function () {
       const result = http.get('https://test-api.k6.io/public/crocodiles/');

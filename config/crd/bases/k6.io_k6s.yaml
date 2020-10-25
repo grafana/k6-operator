@@ -36,6 +36,10 @@ spec:
         spec:
           description: K6Spec defines the desired state of K6
           properties:
+            arguments:
+              description: "\tCleanup     Cleanup `json:\"cleanup,omitempty\"` //
+                TODO"
+              type: string
             parallelism:
               format: int32
               type: integer
@@ -49,6 +53,14 @@ spec:
           type: object
         status:
           description: K6Status defines the observed state of K6
+          properties:
+            stage:
+              description: Stage describes which stage of the test execution lifecycle
+                our runners are in
+              enum:
+              - created
+              - started
+              type: string
           type: object
       type: object
   version: v1alpha1

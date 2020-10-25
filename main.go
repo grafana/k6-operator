@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"github.com/k6io/operator/controllers"
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	k6v1alpha1 "github.com/k6io/operator/api/v1alpha1"
-	"github.com/k6io/operator/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
