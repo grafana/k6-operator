@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"fmt"
+
 	"github.com/k6io/operator/api/v1alpha1"
 	"github.com/k6io/operator/pkg/segmentation"
 	batchv1 "k8s.io/api/batch/v1"
@@ -12,7 +13,7 @@ import (
 // NewRunnerJob creates a new k6 job from a CRD
 func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k.Name, index)
-	command := []string{"k6", "run"}
+	command := []string{"k6", "run", "--quiet"}
 
 	if k.Spec.Parallelism > 1 {
 		var args []string
