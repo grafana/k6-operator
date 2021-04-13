@@ -9,6 +9,8 @@
 
 `k6io/operator` is a kubernetes operator for running distributed k6 tests in your cluster.
 
+Read also the [complete tutorial](https://k6.io/blog/running-distributed-tests-on-k8s/) to learn more about how to use this project.
+
 ## Setup
 
 ### Deploying the operator
@@ -86,3 +88,7 @@ Running the command below will delete all resources created by the operator.
 ```bash
 $ make delete
 ```
+
+## See also
+
+- [Running distributed k6 tests on Kubernetes](https://k6.io/blog/running-distributed-tests-on-k8s/)
