@@ -7,6 +7,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // NewRunnerJob creates a new k6 job from a CRD
@@ -26,7 +27,8 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	}
 
 	if k.Spec.Arguments != "" {
-		command = append(command, k.Spec.Arguments)
+		args := strings.Split(k.Spec.Arguments, " ")
+		command = append(command, args...)
 	}
 	command = append(
 		command,

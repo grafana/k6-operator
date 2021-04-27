@@ -1,0 +1,8 @@
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: k6-sample
+spec:
+  parallelism: 4
+  script: k6-test
+  arguments: --out kafka=brokers=kafka-host:9092,topic=test-output,format=json
