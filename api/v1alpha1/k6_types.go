@@ -27,6 +27,7 @@ type K6Spec struct {
 	Arguments   string                 `json:"arguments,omitempty"`
 	Image       string                 `json:"image,omitempty"`
 	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
+	VolumeClaim string                 `json:"volumeClaim,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
 }
 

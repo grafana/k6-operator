@@ -79,6 +79,8 @@ spec:
               type: string
             separate:
               type: boolean
+            volumeClaim:
+              type: string
           required:
           - parallelism
           - script

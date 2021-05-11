@@ -72,7 +72,7 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 						Ports: ports,
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes:                       newVolumeSpec(k.Spec.Script),
+					Volumes:                       newVolumeSpec(k.Spec.Script, k.Spec.VolumeClaim),
 				},
 			},
 		},
@@ -107,7 +107,18 @@ func newAntiAffinity() *corev1.Affinity {
 	}
 }
 
-func newVolumeSpec(script string) []corev1.Volume {
+func newVolumeSpec(script string, volumeClaim string) []corev1.Volume {
+	if volumeClaim != "" {
+		return []corev1.Volume{{
+			Name: "k6-test-volume",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: volumeClaim,
+				},
+			},
+		}}
+	}
+
 	return []corev1.Volume{{
 		Name: "k6-test-volume",
 		VolumeSource: corev1.VolumeSource{
