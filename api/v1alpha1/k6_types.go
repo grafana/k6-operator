@@ -15,15 +15,17 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // K6Spec defines the desired state of K6
 type K6Spec struct {
-	Script      string `json:"script"`
-	Parallelism int32  `json:"parallelism"`
-	Separate    bool   `json:"separate,omitempty"`
-	Arguments   string `json:"arguments,omitempty"`
+	Script      string          `json:"script"`
+	Parallelism int32           `json:"parallelism"`
+	Separate    bool            `json:"separate,omitempty"`
+	Arguments   string          `json:"arguments,omitempty"`
+	Env         []corev1.EnvVar `json:"env,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
 }
 

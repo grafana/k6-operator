@@ -3,12 +3,13 @@ package jobs
 import (
 	"fmt"
 
+	"strings"
+
 	"github.com/k6io/operator/api/v1alpha1"
 	"github.com/k6io/operator/pkg/segmentation"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
 )
 
 // NewRunnerJob creates a new k6 job from a CRD
@@ -56,6 +57,7 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 						Image:   "loadimpact/k6:latest",
 						Name:    "k6",
 						Command: command,
+						Env:     k.Spec.Env,
 						VolumeMounts: []corev1.VolumeMount{{
 							Name:      "k6-test-volume",
 							MountPath: "/test",
