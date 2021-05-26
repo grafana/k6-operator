@@ -24,6 +24,7 @@ type K6Spec struct {
 	Parallelism int32  `json:"parallelism"`
 	Separate    bool   `json:"separate,omitempty"`
 	Arguments   string `json:"arguments,omitempty"`
+	Image       string `json:"image,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
 }
 
