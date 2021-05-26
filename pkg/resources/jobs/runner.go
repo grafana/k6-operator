@@ -45,6 +45,9 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		image = k.Spec.Image
 	}
 
+	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
+	ports = append(ports, k.Spec.Ports...)
+
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -66,7 +69,7 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 							Name:      "k6-test-volume",
 							MountPath: "/test",
 						}},
-						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+						Ports: ports,
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       newVolumeSpec(k.Spec.Script),
