@@ -45,6 +45,20 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		image = k.Spec.Image
 	}
 
+	runnerAnnotations := make(map[string]string)
+	if k.Spec.Runner.Annotations != nil {
+		runnerAnnotations = k.Spec.Runner.Annotations
+	}
+
+	runnerLabels := newLabels(k.Name)
+	if k.Spec.Runner.Labels != nil {
+		for k, v := range k.Spec.Runner.Labels { // Order not specified
+			if _, ok := runnerLabels[k]; !ok {
+				runnerLabels[k] = v
+			}
+		}
+	}
+
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
 	ports = append(ports, k.Spec.Ports...)
 
@@ -56,7 +70,8 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: newLabels(k.Name),
+					Labels:      runnerLabels,
+					Annotations: runnerAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					Hostname:      name,

@@ -75,10 +75,32 @@ spec:
                 - containerPort
                 type: object
               type: array
+            runner:
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  type: object
+                labels:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
             script:
               type: string
             separate:
               type: boolean
+            starter:
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  type: object
+                labels:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
           required:
           - parallelism
           - script
