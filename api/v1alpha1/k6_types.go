@@ -19,7 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type Metadata struct {
+type PodMetadata struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 	Labels      map[string]string `json:"labels,omitempty"`
 }
@@ -32,8 +32,8 @@ type K6Spec struct {
 	Arguments   string                 `json:"arguments,omitempty"`
 	Image       string                 `json:"image,omitempty"`
 	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
-	Starter     Metadata               `json:"starter,omitempty"`
-	Runner      Metadata               `json:"runner,omitempty"`
+	Starter     PodMetadata            `json:"starter,omitempty"`
+	Runner      PodMetadata            `json:"runner,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
 }
 
