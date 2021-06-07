@@ -41,6 +41,12 @@ test-setup:
 	mv kubebuilder $(KUBEBUILDER_ASSETS_ROOT)
 	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
+test-setup-ci:
+	curl -L -O "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz"
+	tar -xvf kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz
+	mv kubebuilder $(KUBEBUILDER_ASSETS_ROOT)
+	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
 
 # Build manager binary
 manager: generate fmt vet
