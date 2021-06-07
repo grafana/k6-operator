@@ -1,0 +1,30 @@
+name: "push"
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Build:checkout"
+        uses: actions/checkout@v2
+      - name: "Build:dockerimage"
+        uses: docker/build-push-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          repository: k6io/operator
+          tags: latest
+      - name: "Build:dockerimage"
+        uses: docker/build-push-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          repository: k6io/operator
+          tags: ${{ github.event.release.tag_name }}
