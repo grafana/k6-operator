@@ -27,10 +27,20 @@ all: manager
 
 # Run tests
 ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
+ENVTEST_K8S_VERSION ?= 1.19.2
+GOOS=$(shell go env GOOS)
+GOARCH=$(shell go env GOARCH)
+KUBEBUILDER_ASSETS_ROOT=/tmp
+KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS_ROOT)/kubebuilder/bin
 test: generate fmt vet manifests
-	mkdir -p $(ENVTEST_ASSETS_DIR)
-	test -f $(ENVTEST_ASSETS_DIR)/setup-envtest.sh || curl -sSLo $(ENVTEST_ASSETS_DIR)/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.6.3/hack/setup-envtest.sh
-	source $(ENVTEST_ASSETS_DIR)/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); setup-envtest use --use-env -p env $(ENVTEST_K8S_VERSION); go test ./... -coverprofile cover.out
+
+test-setup:
+	curl -L -O "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz"
+	tar -zxvf kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz
+	mv kubebuilder $(KUBEBUILDER_ASSETS_ROOT)
+	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
 
 # Build manager binary
 manager: generate fmt vet

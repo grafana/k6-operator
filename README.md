@@ -131,6 +131,22 @@ Running the command below will delete all resources created by the operator.
 $ make delete
 ```
 
+## Developing Locally
+
+### Run Tests
+
+#### Pre-Requisites
+
+- [operator-sdk](https://sdk.operatorframework.io/docs/installation/)
+
+#### Test Setup
+
+- `make test-setup` (only need to run once)
+
+#### Run Tests
+
+- `make test`
+
 ## See also
 
 - [Running distributed k6 tests on Kubernetes](https://k6.io/blog/running-distributed-tests-on-k8s/)

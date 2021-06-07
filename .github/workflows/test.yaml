@@ -7,6 +7,7 @@ jobs:
     strategy:
       matrix:
         go-version: [1.16.x]
+        k8s_version: [1.9.2]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -17,4 +18,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Test
-        run: make test
+        run: |
+          make test-setup
+          make test
+        env:
+          ENVTEST_K8S_VERSION: ${{ matrix.k8s_version }}
