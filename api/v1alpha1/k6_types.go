@@ -21,14 +21,31 @@ import (
 
 // K6Spec defines the desired state of K6
 type K6Spec struct {
-	Script      string                 `json:"script"`
+	Script      K6Script               `json:"script"`
 	Parallelism int32                  `json:"parallelism"`
 	Separate    bool                   `json:"separate,omitempty"`
 	Arguments   string                 `json:"arguments,omitempty"`
 	Image       string                 `json:"image,omitempty"`
 	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
-	VolumeClaim string                 `json:"volumeClaim,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
+}
+
+// K6Script describes where the script to execute the tests is found
+type K6Script struct {
+	VolumeClaim K6VolumeClaim `json:"volumeClaim,omitempty"`
+	ConfigMap   K6Configmap   `json:"configMap,omitempty"`
+}
+
+// K6VolumeClaim describes the volume claim script location
+type K6VolumeClaim struct {
+	Name string `json:"name"`
+	File string `json:"file,omitempty"`
+}
+
+// K6Configmap describes the config map script location
+type K6Configmap struct {
+	Name string `json:"name"`
+	File string `json:"file,omitempty"`
 }
 
 // Cleanup allows for automatic cleanup of resources pre or post execution

@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"errors"
 	"fmt"
 
 	"strings"
@@ -11,6 +12,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// Internal script type created from Spec.script possible options
+type Script struct {
+	Name string
+	File string
+	Type string
+}
 
 // NewRunnerJob creates a new k6 job from a CRD
 func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
@@ -28,13 +36,19 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		command = append(command, args...)
 	}
 
+	script, err := newScript(k.Spec)
+
+	if err != nil {
+		return nil, err
+	}
+
 	if k.Spec.Arguments != "" {
 		args := strings.Split(k.Spec.Arguments, " ")
 		command = append(command, args...)
 	}
 	command = append(
 		command,
-		"/test/test.js",
+		"/test/"+script.File,
 		"--address=0.0.0.0:6565",
 		"--paused")
 
@@ -72,7 +86,7 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 						Ports: ports,
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes:                       newVolumeSpec(k.Spec.Script, k.Spec.VolumeClaim),
+					Volumes:                       newVolumeSpec(script),
 				},
 			},
 		},
@@ -107,13 +121,13 @@ func newAntiAffinity() *corev1.Affinity {
 	}
 }
 
-func newVolumeSpec(script string, volumeClaim string) []corev1.Volume {
-	if volumeClaim != "" {
+func newVolumeSpec(s *Script) []corev1.Volume {
+	if s.Type == "VolumeClaim" {
 		return []corev1.Volume{{
 			Name: "k6-test-volume",
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: volumeClaim,
+					ClaimName: s.Name,
 				},
 			},
 		}}
@@ -124,7 +138,7 @@ func newVolumeSpec(script string, volumeClaim string) []corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: script,
+					Name: s.Name,
 				},
 			},
 		},
@@ -136,4 +150,36 @@ func newLabels(name string) map[string]string {
 		"app":   "k6",
 		"k6_cr": name,
 	}
+}
+
+func newScript(spec v1alpha1.K6Spec) (*Script, error) {
+	if spec.Script.VolumeClaim.Name != "" {
+		s := &Script{}
+		s.Name = spec.Script.VolumeClaim.Name
+
+		// Default file name of test.js
+		s.File = "test.js"
+		if spec.Script.VolumeClaim.File != "" {
+			s.File = spec.Script.VolumeClaim.File
+		}
+
+		s.Type = "VolumeClaim"
+		return s, nil
+	}
+
+	if spec.Script.ConfigMap.Name != "" {
+		s := &Script{}
+		s.Name = spec.Script.ConfigMap.Name
+
+		// Default file name of test.js
+		s.File = "test.js"
+		if spec.Script.ConfigMap.File != "" {
+			s.File = spec.Script.ConfigMap.File
+		}
+
+		s.Type = "ConfigMap"
+		return s, nil
+	}
+
+	return nil, errors.New("ConfigMap or VolumeClaim not provided in script definition")
 }
