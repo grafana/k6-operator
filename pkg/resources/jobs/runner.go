@@ -48,7 +48,7 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	}
 	command = append(
 		command,
-		"/test/"+script.File,
+		fmt.Sprintf("/test/%s", script.File),
 		"--address=0.0.0.0:6565",
 		"--paused")
 
@@ -153,12 +153,11 @@ func newLabels(name string) map[string]string {
 }
 
 func newScript(spec v1alpha1.K6Spec) (*Script, error) {
-	if spec.Script.VolumeClaim.Name != "" {
-		s := &Script{}
-		s.Name = spec.Script.VolumeClaim.Name
+	s := &Script{}
+	s.File = "test.js"
 
-		// Default file name of test.js
-		s.File = "test.js"
+	if spec.Script.VolumeClaim.Name != "" {
+		s.Name = spec.Script.VolumeClaim.Name
 		if spec.Script.VolumeClaim.File != "" {
 			s.File = spec.Script.VolumeClaim.File
 		}
@@ -168,11 +167,8 @@ func newScript(spec v1alpha1.K6Spec) (*Script, error) {
 	}
 
 	if spec.Script.ConfigMap.Name != "" {
-		s := &Script{}
 		s.Name = spec.Script.ConfigMap.Name
 
-		// Default file name of test.js
-		s.File = "test.js"
 		if spec.Script.ConfigMap.File != "" {
 			s.File = spec.Script.ConfigMap.File
 		}
