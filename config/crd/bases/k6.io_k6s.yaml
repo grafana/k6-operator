@@ -75,6 +75,17 @@ spec:
                 - containerPort
                 type: object
               type: array
+            runner:
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  type: object
+                labels:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
             script:
               description: K6Script describes where the script to execute the tests
                 is found
@@ -102,6 +113,17 @@ spec:
               type: object
             separate:
               type: boolean
+            starter:
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  type: object
+                labels:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
           required:
           - parallelism
           - script

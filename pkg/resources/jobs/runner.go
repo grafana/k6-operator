@@ -21,31 +21,32 @@ type Script struct {
 }
 
 // NewRunnerJob creates a new k6 job from a CRD
-func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
-	name := fmt.Sprintf("%s-%d", k.Name, index)
+func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
+	name := fmt.Sprintf("%s-%d", k6.Name, index)
 	command := []string{"k6", "run", "--quiet"}
 
-	if k.Spec.Parallelism > 1 {
+	if k6.Spec.Parallelism > 1 {
 		var args []string
 		var err error
 
-		if args, err = segmentation.NewCommandFragments(index, int(k.Spec.Parallelism)); err != nil {
+		if args, err = segmentation.NewCommandFragments(index, int(k6.Spec.Parallelism)); err != nil {
 			return nil, err
 
 		}
 		command = append(command, args...)
 	}
 
-	script, err := newScript(k.Spec)
+	script, err := newScript(k6.Spec)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if k.Spec.Arguments != "" {
-		args := strings.Split(k.Spec.Arguments, " ")
+	if k6.Spec.Arguments != "" {
+		args := strings.Split(k6.Spec.Arguments, " ")
 		command = append(command, args...)
 	}
+  
 	command = append(
 		command,
 		fmt.Sprintf("/test/%s", script.File),
@@ -55,22 +56,37 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	var zero int64 = 0
 
 	image := "loadimpact/k6:latest"
-	if k.Spec.Image != "" {
-		image = k.Spec.Image
+	if k6.Spec.Image != "" {
+		image = k6.Spec.Image
+	}
+
+	runnerAnnotations := make(map[string]string)
+	if k6.Spec.Runner.Annotations != nil {
+		runnerAnnotations = k6.Spec.Runner.Annotations
+	}
+
+	runnerLabels := newLabels(k6.Name)
+	if k6.Spec.Runner.Labels != nil {
+		for k, v := range k6.Spec.Runner.Labels { // Order not specified
+			if _, ok := runnerLabels[k]; !ok {
+				runnerLabels[k] = v
+			}
+		}
 	}
 
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
-	ports = append(ports, k.Spec.Ports...)
+	ports = append(ports, k6.Spec.Ports...)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: k.Namespace,
+			Namespace: k6.Namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: newLabels(k.Name),
+					Labels:      runnerLabels,
+					Annotations: runnerAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					Hostname:      name,
@@ -92,7 +108,7 @@ func NewRunnerJob(k *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		},
 	}
 
-	if k.Spec.Separate {
+	if k6.Spec.Separate {
 		job.Spec.Template.Spec.Affinity = newAntiAffinity()
 	}
 	return job, nil
