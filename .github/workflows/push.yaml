@@ -19,12 +19,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
           repository: k6io/operator
-          tags: latest
-      - name: "Build:dockerimage"
-        uses: docker/build-push-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          repository: k6io/operator
-          tags: ${{ github.event.release.tag_name }}
+          tags: |
+            latest
+            ${{ github.event.release.tag_name }}
