@@ -46,7 +46,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		args := strings.Split(k6.Spec.Arguments, " ")
 		command = append(command, args...)
 	}
-  
+
 	command = append(
 		command,
 		fmt.Sprintf("/test/%s", script.File),
@@ -159,13 +159,6 @@ func newVolumeSpec(s *Script) []corev1.Volume {
 			},
 		},
 	}}
-}
-
-func newLabels(name string) map[string]string {
-	return map[string]string{
-		"app":   "k6",
-		"k6_cr": name,
-	}
 }
 
 func newScript(spec v1alpha1.K6Spec) (*Script, error) {
