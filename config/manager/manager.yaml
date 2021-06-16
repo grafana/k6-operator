@@ -23,18 +23,19 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      serviceAccount: k6-operator
       containers:
-      - command:
-        - /manager
-        args:
-        - --enable-leader-election
-        image: controller:latest
-        name: manager
-        resources:
-          limits:
-            cpu: 100m
-            memory: 100Mi
-          requests:
-            cpu: 100m
-            memory: 50Mi
-      terminationGracePeriodSeconds: 10
+        - command:
+            - /manager
+          args:
+            - --enable-leader-election
+          image: controller:latest
+          name: manager
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 100m
+              memory: 50Mi
+          terminationGracePeriodSeconds: 10
