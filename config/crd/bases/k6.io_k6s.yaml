@@ -87,7 +87,30 @@ spec:
                   type: object
               type: object
             script:
-              type: string
+              description: K6Script describes where the script to execute the tests
+                is found
+              properties:
+                configMap:
+                  description: K6Configmap describes the config map script location
+                  properties:
+                    file:
+                      type: string
+                    name:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                volumeClaim:
+                  description: K6VolumeClaim describes the volume claim script location
+                  properties:
+                    file:
+                      type: string
+                    name:
+                      type: string
+                  required:
+                  - name
+                  type: object
+              type: object
             separate:
               type: boolean
             starter:

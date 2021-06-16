@@ -54,7 +54,10 @@ metadata:
   name: k6-sample
 spec:
   parallelism: 4
-  script: k6-test
+  script: 
+    configMap:
+      name: k6-test
+      file: test.js
   separate: false
 ```
 
@@ -113,7 +116,10 @@ metadata:
   name: k6-sample-with-extensions
 spec:
   parallelism: 4
-  script: crocodile-stress-test
+  script: 
+    configMap: 
+      name: crocodile-stress-test
+      file: test.js
   image: k6-prometheus:latest
   arguments: --out prometheus
   ports:
