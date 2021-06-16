@@ -22,3 +22,5 @@ bin
 *~
 
 /manager
+
+kubebuilder-tools-*
