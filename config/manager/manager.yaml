@@ -38,4 +38,4 @@ spec:
             requests:
               cpu: 100m
               memory: 50Mi
-          terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 10
