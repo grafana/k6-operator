@@ -3,9 +3,13 @@ layout: go.kubebuilder.io/v2
 projectName: operator
 repo: github.com/k6io/operator
 resources:
-  - group: k6
-    kind: K6
-    version: v1alpha1
-version: 3-alpha
+-
+  controller: true
+  domain: io
+  group: k6
+  kind: K6
+  path: github.com/k6io/operator/api/v1alpha1
+  version: v1alpha1
+version: "3"
 plugins:
   go.sdk.operatorframework.io/v2-alpha: {}
