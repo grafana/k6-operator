@@ -34,6 +34,7 @@ type K6Spec struct {
 	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
 	Starter     PodMetadata            `json:"starter,omitempty"`
 	Runner      PodMetadata            `json:"runner,omitempty"`
+	Env         []corev1.EnvVar        `json:"env,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
 }
 
