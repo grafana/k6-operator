@@ -24,6 +24,13 @@ type PodMetadata struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 }
 
+type Pod struct {
+	Metadata     PodMetadata       `json:"metadata,omitempty"`
+	Affinity     *corev1.Affinity  `json:"affinity,omitempty"`
+	NodeSelector map[string]string `json:"nodeselector,omitempty"`
+	Env          []corev1.EnvVar   `json:"env,omitempty"`
+}
+
 // K6Spec defines the desired state of K6
 type K6Spec struct {
 	Script      K6Script               `json:"script"`
@@ -32,8 +39,8 @@ type K6Spec struct {
 	Arguments   string                 `json:"arguments,omitempty"`
 	Image       string                 `json:"image,omitempty"`
 	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
-	Starter     PodMetadata            `json:"starter,omitempty"`
-	Runner      PodMetadata            `json:"runner,omitempty"`
+	Starter     Pod                    `json:"starter,omitempty"`
+	Runner      Pod                    `json:"runner,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
 }
 
