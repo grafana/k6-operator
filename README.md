@@ -149,9 +149,16 @@ $ make delete
 
 - `make test-setup` (only need to run once)
 
-#### Run Tests
+#### Run Unit Tests
 
 - `make test`
+
+#### Run e2e Tests
+
+- [install kind and create a k8s cluster](https://kind.sigs.k8s.io/docs/user/quick-start/) (or create your own dev cluster) 
+- `make e2e`
+- validate tests have been run
+- `make e2e-cleanup`
 
 ## See also
 
