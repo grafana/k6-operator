@@ -6,5 +6,5 @@ spec:
   parallelism: 1
   script:
     configMap:
-      name: crocodile-stress-test
-      file: test.js
+      name: "crocodile-stress-test"
+      file: "test.js"
