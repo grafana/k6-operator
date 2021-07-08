@@ -1,7 +1,6 @@
 name: "Create cluster using KinD"
 on:
-  - push
-  - pull_request
+  workflow_dispatch: {}
 jobs:
   docker:
     runs-on: ubuntu-latest
