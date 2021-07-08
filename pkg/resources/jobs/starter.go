@@ -14,13 +14,13 @@ import (
 func NewStarterJob(k6 *v1alpha1.K6, ips []string) *batchv1.Job {
 
 	starterAnnotations := make(map[string]string)
-	if k6.Spec.Starter.Annotations != nil {
-		starterAnnotations = k6.Spec.Starter.Annotations
+	if k6.Spec.Starter.Metadata.Annotations != nil {
+		starterAnnotations = k6.Spec.Starter.Metadata.Annotations
 	}
 
 	starterLabels := newLabels(k6.Name)
-	if k6.Spec.Starter.Labels != nil {
-		for k, v := range k6.Spec.Starter.Labels { // Order not specified
+	if k6.Spec.Starter.Metadata.Labels != nil {
+		for k, v := range k6.Spec.Starter.Metadata.Labels { // Order not specified
 			if _, ok := starterLabels[k]; !ok {
 				starterLabels[k] = v
 			}
@@ -38,6 +38,8 @@ func NewStarterJob(k6 *v1alpha1.K6, ips []string) *batchv1.Job {
 					Annotations: starterAnnotations,
 				},
 				Spec: corev1.PodSpec{
+					Affinity:      k6.Spec.Starter.Affinity,
+					NodeSelector:  k6.Spec.Starter.NodeSelector,
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						containers.NewCurlContainer(ips),
