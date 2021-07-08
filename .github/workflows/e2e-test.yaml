@@ -1,42 +1,42 @@
-name: "Create cluster using KinD"
-on:
-  - push
-  - pull_request
-jobs:
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Build:checkout"
-        uses: actions/checkout@v2
-      - name: "Build:dockerimage"
-        uses: docker/build-push-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          repository: k6io/operator
-          tags: |
-            ${{ env.GITHUB_SHA }}
-  kind:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: "Kustomize Build"
-        uses: karancode/kustomize-github-action@master
-        with:
-          kustomize_version: "3.0.0"
-          kustomize_build_dir: "config/default"
-          kustomize_output_file: "rendered.yaml"
-          kustomize_build_options: "--load_restrictor none"
-      - uses: engineerd/setup-kind@v0.5.0
-      - name: Testing
-        run: |
-          kubectl cluster-info
-          kubectl apply -f rendered.yaml
-          kubectl set image deployment/k6-operator-controller-manager manager=ghcr.io/k6io/operator:${{ env.GITHUB_SHA }} --record
-          sleep 30
-          kubectl create configmap crocodile-stress-test --from-file e2e/test.js
-          kubectl apply -f e2e/test.yaml
-          kubectl wait --for=condition=complete --timeout=180s job/k6-test-1
-          kubectl delete configmap crocodile-stress-test
-          kubectl delete -f e2e/test.yaml
+# name: "Create cluster using KinD"
+# on:
+#   - push
+#   - pull_request
+# jobs:
+#   docker:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: "Build:checkout"
+#         uses: actions/checkout@v2
+#       - name: "Build:dockerimage"
+#         uses: docker/build-push-action@v1
+#         with:
+#           registry: ghcr.io
+#           username: ${{ github.repository_owner }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
+#           repository: k6io/operator
+#           tags: |
+#             ${{ env.GITHUB_SHA }}
+#   kind:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@master
+#       - name: "Kustomize Build"
+#         uses: karancode/kustomize-github-action@master
+#         with:
+#           kustomize_version: "3.0.0"
+#           kustomize_build_dir: "config/default"
+#           kustomize_output_file: "rendered.yaml"
+#           kustomize_build_options: "--load_restrictor none"
+#       - uses: engineerd/setup-kind@v0.5.0
+#       - name: Testing
+#         run: |
+#           kubectl cluster-info
+#           kubectl apply -f rendered.yaml
+#           kubectl set image deployment/k6-operator-controller-manager manager=ghcr.io/k6io/operator:${{ env.GITHUB_SHA }} --record
+#           sleep 30
+#           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
+#           kubectl apply -f e2e/test.yaml
+#           kubectl wait --for=condition=complete --timeout=180s job/k6-test-1
+#           kubectl delete configmap crocodile-stress-test
+#           kubectl delete -f e2e/test.yaml
