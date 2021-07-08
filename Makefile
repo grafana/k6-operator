@@ -47,6 +47,13 @@ test-setup-ci:
 	mv kubebuilder $(KUBEBUILDER_ASSETS_ROOT)
 	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
+e2e: deploy
+	kubectl create configmap crocodile-stress-test --from-file e2e/test.js
+	kubectl apply -f e2e/test.yaml
+
+e2e-cleanup:
+	kubectl delete configmap crocodile-stress-test
+	kubectl delete -f e2e/test.yaml
 
 # Build manager binary
 manager: generate fmt vet

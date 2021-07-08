@@ -19,6 +19,4 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
           repository: k6io/operator
-          tags: |
-            latest
-            ${{ github.event.release.tag_name }}
+          tags: latest,${{ github.event.release.tag_name }}

@@ -9,4 +9,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: k6-operator-controller
-    namespace: system
+    namespace: k6-operator-system

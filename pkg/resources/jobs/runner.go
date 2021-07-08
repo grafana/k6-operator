@@ -61,13 +61,13 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	}
 
 	runnerAnnotations := make(map[string]string)
-	if k6.Spec.Runner.Annotations != nil {
-		runnerAnnotations = k6.Spec.Runner.Annotations
+	if k6.Spec.Runner.Metadata.Annotations != nil {
+		runnerAnnotations = k6.Spec.Runner.Metadata.Annotations
 	}
 
 	runnerLabels := newLabels(k6.Name)
-	if k6.Spec.Runner.Labels != nil {
-		for k, v := range k6.Spec.Runner.Labels { // Order not specified
+	if k6.Spec.Runner.Metadata.Labels != nil {
+		for k, v := range k6.Spec.Runner.Metadata.Labels { // Order not specified
 			if _, ok := runnerLabels[k]; !ok {
 				runnerLabels[k] = v
 			}
@@ -91,10 +91,13 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 				Spec: corev1.PodSpec{
 					Hostname:      name,
 					RestartPolicy: corev1.RestartPolicyNever,
+					Affinity:      k6.Spec.Runner.Affinity,
+					NodeSelector:  k6.Spec.Runner.NodeSelector,
 					Containers: []corev1.Container{{
 						Image:   image,
 						Name:    "k6",
 						Command: command,
+						Env:     k6.Spec.Runner.Env,
 						VolumeMounts: []corev1.VolumeMount{{
 							Name:      "k6-test-volume",
 							MountPath: "/test",
