@@ -3,8 +3,9 @@ package containers
 import (
 	"encoding/json"
 	"fmt"
-	v1 "k8s.io/api/core/v1"
 	"strings"
+
+	v1 "k8s.io/api/core/v1"
 )
 
 // NewCurlContainer is used to get a template for a new k6 starting curl container.
@@ -26,7 +27,7 @@ func NewCurlContainer(ips []string) v1.Container {
 	}
 
 	return v1.Container{
-		Name:  fmt.Sprintf("k6-curl"),
+		Name:  "k6-curl",
 		Image: "radial/busyboxplus:curl",
 		Command: []string{
 			"sh",

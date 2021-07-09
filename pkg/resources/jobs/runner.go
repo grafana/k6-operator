@@ -79,8 +79,10 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: k6.Namespace,
+			Name:        name,
+			Namespace:   k6.Namespace,
+			Labels:      runnerLabels,
+			Annotations: runnerAnnotations,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
