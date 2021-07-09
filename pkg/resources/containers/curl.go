@@ -33,6 +33,9 @@ func NewCurlContainer(ips []string) corev1.Container {
 		Resources: corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    *resource.NewQuantity(50, resource.DecimalExponent),
+				corev1.ResourceMemory: *resource.NewQuantity(100, resource.DecimalExponent),
+			},
+			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: *resource.NewQuantity(200, resource.DecimalExponent),
 			},
 		},
