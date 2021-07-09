@@ -32,11 +32,11 @@ func NewCurlContainer(ips []string) corev1.Container {
 		Image: "radial/busyboxplus:curl",
 		Resources: corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    *resource.NewQuantity(50, resource.DecimalExponent),
-				corev1.ResourceMemory: *resource.NewQuantity(100, resource.DecimalExponent),
+				corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalExponent),
+				corev1.ResourceMemory: *resource.NewMilliQuantity(100, resource.DecimalExponent),
 			},
 			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: *resource.NewQuantity(200, resource.DecimalExponent),
+				corev1.ResourceMemory: *resource.NewMilliQuantity(200, resource.DecimalExponent),
 			},
 		},
 		Command: []string{
