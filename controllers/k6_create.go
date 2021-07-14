@@ -3,10 +3,12 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	"github.com/k6io/operator/api/v1alpha1"
 	"github.com/k6io/operator/pkg/resources/jobs"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -55,6 +57,7 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 
 func launchTest(ctx context.Context, k6 *v1alpha1.K6, index int, log logr.Logger, r *K6Reconciler) error {
 	var job *batchv1.Job
+	var service *corev1.Service
 	var err error
 
 	msg := fmt.Sprintf("Launching k6 test #%d", index)
@@ -72,6 +75,21 @@ func launchTest(ctx context.Context, k6 *v1alpha1.K6, index int, log logr.Logger
 
 	if err = r.Create(ctx, job); err != nil {
 		log.Error(err, "Failed to launch k6 test")
+		return err
+	}
+
+	if service, err = jobs.NewRunnerService(k6, index); err != nil {
+		log.Error(err, "Failed to generate k6 test service")
+		return err
+	}
+
+	if err = ctrl.SetControllerReference(k6, service, r.Scheme); err != nil {
+		log.Error(err, "Failed to set controller reference for service")
+		return err
+	}
+
+	if err = r.Create(ctx, service); err != nil {
+		log.Error(err, "Failed to launch k6 test services")
 		return err
 	}
 

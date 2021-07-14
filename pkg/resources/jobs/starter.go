@@ -11,13 +11,17 @@ import (
 )
 
 // NewStarterJob builds a template used for creating a starter job
-func NewStarterJob(k6 *v1alpha1.K6, ips []string) *batchv1.Job {
+func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 
 	starterAnnotations := make(map[string]string)
 	if k6.Spec.Starter.Metadata.Annotations != nil {
 		starterAnnotations = k6.Spec.Starter.Metadata.Annotations
 	}
 
+	starterImage := "radial/busyboxplus:curl"
+	if k6.Spec.Starter.Image != "" {
+		starterImage = k6.Spec.Starter.Image
+	}
 	starterLabels := newLabels(k6.Name)
 	if k6.Spec.Starter.Metadata.Labels != nil {
 		for k, v := range k6.Spec.Starter.Metadata.Labels { // Order not specified
@@ -28,8 +32,10 @@ func NewStarterJob(k6 *v1alpha1.K6, ips []string) *batchv1.Job {
 	}
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-starter", k6.Name),
-			Namespace: k6.Namespace,
+			Name:        fmt.Sprintf("%s-starter", k6.Name),
+			Namespace:   k6.Namespace,
+			Labels:      starterLabels,
+			Annotations: starterAnnotations,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -42,7 +48,7 @@ func NewStarterJob(k6 *v1alpha1.K6, ips []string) *batchv1.Job {
 					NodeSelector:  k6.Spec.Starter.NodeSelector,
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
-						containers.NewCurlContainer(ips),
+						containers.NewCurlContainer(hostname, starterImage),
 					},
 				},
 			},

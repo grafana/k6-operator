@@ -1,0 +1,3 @@
+FROM radial/busyboxplus:curl
+
+COPY --from=redboxoss/scuttle:latest /scuttle /bin/scuttle

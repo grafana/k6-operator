@@ -15,8 +15,27 @@ jobs:
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v1
         with:
+          file: Dockerfile.controller
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
           repository: k6io/operator
-          tags: latest,${{ github.event.release.tag_name }}
+          tags: latest,controller-${{ github.event.release.tag_name }}
+      - name: "Build:dockerimage"
+        uses: docker/build-push-action@v1
+        with:
+          file: Dockerfile.runner
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          repository: k6io/operator
+          tags: latest-runner,runner-${{ github.event.release.tag_name }}
+      - name: "Build:dockerimage"
+        uses: docker/build-push-action@v1
+        with:
+          file: Dockerfile.starter
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          repository: k6io/operator
+          tags: latest-starter,starter-${{ github.event.release.tag_name }}

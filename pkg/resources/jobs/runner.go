@@ -23,7 +23,7 @@ type Script struct {
 // NewRunnerJob creates a new k6 job from a CRD
 func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.Name, index)
-	command := []string{"k6", "run", "--quiet"}
+	command := []string{"scuttle", "k6", "run", "--quiet"}
 
 	if k6.Spec.Parallelism > 1 {
 		var args []string
@@ -56,8 +56,8 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	var zero int64 = 0
 
 	image := "loadimpact/k6:latest"
-	if k6.Spec.Image != "" {
-		image = k6.Spec.Image
+	if k6.Spec.Runner.Image != "" {
+		image = k6.Spec.Runner.Image
 	}
 
 	runnerAnnotations := make(map[string]string)
@@ -77,10 +77,22 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
 	ports = append(ports, k6.Spec.Ports...)
 
+	env := []corev1.EnvVar{{
+		Name:  "ISTIO_QUIT_API",
+		Value: "http://127.0.0.1:15020",
+	}}
+	env = append(env, corev1.EnvVar{
+		Name:  "ENVOY_ADMIN_API",
+		Value: "http://127.0.0.1:15000",
+	})
+	env = append(env, k6.Spec.Runner.Env...)
+
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: k6.Namespace,
+			Name:        name,
+			Namespace:   k6.Namespace,
+			Labels:      runnerLabels,
+			Annotations: runnerAnnotations,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -94,10 +106,11 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 					Affinity:      k6.Spec.Runner.Affinity,
 					NodeSelector:  k6.Spec.Runner.NodeSelector,
 					Containers: []corev1.Container{{
-						Image:   image,
-						Name:    "k6",
-						Command: command,
-						Env:     k6.Spec.Runner.Env,
+						Image:     image,
+						Name:      "k6",
+						Resources: k6.Spec.Runner.Resources,
+						Command:   command,
+						Env:       env,
 						VolumeMounts: []corev1.VolumeMount{{
 							Name:      "k6-test-volume",
 							MountPath: "/test",
@@ -115,6 +128,48 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		job.Spec.Template.Spec.Affinity = newAntiAffinity()
 	}
 	return job, nil
+}
+
+func NewRunnerService(k6 *v1alpha1.K6, index int) (*corev1.Service, error) {
+	serviceName := fmt.Sprintf("%s-%s-%d", k6.Name, "service", index)
+	runnerName := fmt.Sprintf("%s-%d", k6.Name, index)
+
+	runnerAnnotations := make(map[string]string)
+	if k6.Spec.Runner.Metadata.Annotations != nil {
+		runnerAnnotations = k6.Spec.Runner.Metadata.Annotations
+	}
+
+	runnerLabels := newLabels(k6.Name)
+	if k6.Spec.Runner.Metadata.Labels != nil {
+		for k, v := range k6.Spec.Runner.Metadata.Labels { // Order not specified
+			if _, ok := runnerLabels[k]; !ok {
+				runnerLabels[k] = v
+			}
+		}
+	}
+
+	port := []corev1.ServicePort{{
+		Name:     "http-api",
+		Port:     6565,
+		Protocol: "TCP",
+	}}
+
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        serviceName,
+			Namespace:   k6.Namespace,
+			Labels:      runnerLabels,
+			Annotations: runnerAnnotations,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: port,
+			Selector: map[string]string{
+				"job-name": runnerName,
+			},
+		},
+	}
+
+	return service, nil
 }
 
 func newAntiAffinity() *corev1.Affinity {

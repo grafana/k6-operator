@@ -25,10 +25,12 @@ type PodMetadata struct {
 }
 
 type Pod struct {
-	Metadata     PodMetadata       `json:"metadata,omitempty"`
-	Affinity     *corev1.Affinity  `json:"affinity,omitempty"`
-	NodeSelector map[string]string `json:"nodeselector,omitempty"`
-	Env          []corev1.EnvVar   `json:"env,omitempty"`
+	Affinity     *corev1.Affinity            `json:"affinity,omitempty"`
+	Env          []corev1.EnvVar             `json:"env,omitempty"`
+	Image        string                      `json:"image,omitempty"`
+	Metadata     PodMetadata                 `json:"metadata,omitempty"`
+	NodeSelector map[string]string           `json:"nodeselector,omitempty"`
+	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // K6Spec defines the desired state of K6
@@ -37,7 +39,6 @@ type K6Spec struct {
 	Parallelism int32                  `json:"parallelism"`
 	Separate    bool                   `json:"separate,omitempty"`
 	Arguments   string                 `json:"arguments,omitempty"`
-	Image       string                 `json:"image,omitempty"`
 	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
 	Starter     Pod                    `json:"starter,omitempty"`
 	Runner      Pod                    `json:"runner,omitempty"`
