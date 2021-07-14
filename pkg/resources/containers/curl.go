@@ -38,6 +38,10 @@ func NewCurlContainer(hostnames []string, image string) corev1.Container {
 				Name:  "ENVOY_ADMIN_API",
 				Value: "http://localhost:15000",
 			},
+			{
+				Name:  "WAIT_FOR_ENVOY_TIMEOUT",
+				Value: "15",
+			},
 		},
 		Resources: corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{

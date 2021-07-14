@@ -85,6 +85,10 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		Name:  "ENVOY_ADMIN_API",
 		Value: "http://127.0.0.1:15000",
 	})
+	env = append(env, corev1.EnvVar{
+		Name:  "WAIT_FOR_ENVOY_TIMEOUT",
+		Value: "15",
+	})
 	env = append(env, k6.Spec.Runner.Env...)
 
 	job := &batchv1.Job{
