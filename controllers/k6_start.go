@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/k6io/operator/api/v1alpha1"
 	"github.com/k6io/operator/pkg/resources/jobs"
@@ -11,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 // StartJobs in the Ready phase using a curl container
@@ -24,7 +25,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 			"k6_cr": k6.Name,
 		})
 
-		opts := &client.ListOptions{LabelSelector: selector}
+		opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
 		pl := &v1.PodList{}
 
 		if e := r.List(ctx, pl, opts); e != nil {
