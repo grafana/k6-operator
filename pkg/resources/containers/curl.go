@@ -59,15 +59,6 @@ func NewCurlContainer(hostnames []string, image string) corev1.Container {
 			"-c",
 			strings.Join(parts, ";"),
 		},
-		Resources: corev1.ResourceRequirements{
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
-				corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
-			},
-		},
 	}
 }
 
