@@ -28,8 +28,10 @@ func NewStarterJob(k6 *v1alpha1.K6, ips []string) *batchv1.Job {
 	}
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-starter", k6.Name),
-			Namespace: k6.Namespace,
+			Name:        fmt.Sprintf("%s-starter", k6.Name),
+			Namespace:   k6.Namespace,
+			Labels:      starterLabels,
+			Annotations: starterAnnotations,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
