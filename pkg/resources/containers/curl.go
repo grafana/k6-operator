@@ -27,8 +27,8 @@ func NewCurlContainer(ips []string) corev1.Container {
 		parts = append(parts, fmt.Sprintf("curl -X PATCH -H 'Content-Type: application/json' http://%s:6565/v1/status -d '%s'", ip, req))
 	}
 
-	return corev1.Container{
-		Name:  fmt.Sprintf("k6-curl"),
+	return v1.Container{
+		Name:  "k6-curl",
 		Image: "radial/busyboxplus:curl",
 		Command: []string{
 			"sh",

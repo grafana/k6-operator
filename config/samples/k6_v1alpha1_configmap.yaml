@@ -15,7 +15,7 @@ data:
         { target: 200, duration: '30s' },
         { target: 0, duration: '30s' },
       ],
-      threshold: {
+      thresholds: {
         failed_requests: ['rate<=0'],
         http_req_duration: ['p(95)<500'],
       },
@@ -29,4 +29,3 @@ data:
       failRate.add(result.status !== 200);
       sleep(1);
     }
-
