@@ -112,9 +112,9 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 					Containers: []corev1.Container{{
 						Image:     image,
 						Name:      "k6",
-						Resources: k6.Spec.Runner.Resources,
 						Command:   command,
 						Env:       env,
+            Resources: k6.Spec.Runner.Resources,
 						VolumeMounts: []corev1.VolumeMount{{
 							Name:      "k6-test-volume",
 							MountPath: "/test",

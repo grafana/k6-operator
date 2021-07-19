@@ -25,7 +25,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 			"k6_cr": k6.Name,
 		})
 
-		opts := &client.ListOptions{LabelSelector: selector}
+		opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
 		pl := &v1.PodList{}
 
 		if e := r.List(ctx, pl, opts); e != nil {
