@@ -38,8 +38,6 @@ spec:
           properties:
             arguments:
               type: string
-            image:
-              type: string
             parallelism:
               format: int32
               type: integer
@@ -781,6 +779,8 @@ spec:
                     - name
                     type: object
                   type: array
+                image:
+                  type: string
                 metadata:
                   properties:
                     annotations:
@@ -1557,6 +1557,8 @@ spec:
                     - name
                     type: object
                   type: array
+                image:
+                  type: string
                 metadata:
                   properties:
                     annotations:

@@ -47,13 +47,20 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 			return false, nil
 		}
 
-		var ips []string
+		var hostnames []string
 
-		for _, pod := range pl.Items {
-			ips = append(ips, pod.Status.PodIP)
+		sl := &v1.ServiceList{}
+
+		if e := r.List(ctx, sl, opts); e != nil {
+			log.Error(e, "Could not list services")
+			return false, e
 		}
 
-		starter := jobs.NewStarterJob(k6, ips)
+		for _, service := range sl.Items {
+			hostnames = append(hostnames, service.ObjectMeta.Name)
+		}
+
+		starter := jobs.NewStarterJob(k6, hostnames)
 
 		if err = ctrl.SetControllerReference(k6, starter, r.Scheme); err != nil {
 			log.Error(err, "Failed to set controller reference for job")

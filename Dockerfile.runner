@@ -1,0 +1,4 @@
+FROM loadimpact/k6:latest
+
+COPY --from=redboxoss/scuttle:latest scuttle /bin/scuttle
+ENTRYPOINT ["scuttle", "k6"]
