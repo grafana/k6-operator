@@ -25,10 +25,11 @@ type PodMetadata struct {
 }
 
 type Pod struct {
-	Metadata     PodMetadata       `json:"metadata,omitempty"`
-	Affinity     *corev1.Affinity  `json:"affinity,omitempty"`
-	NodeSelector map[string]string `json:"nodeselector,omitempty"`
-	Env          []corev1.EnvVar   `json:"env,omitempty"`
+	Metadata     PodMetadata                 `json:"metadata,omitempty"`
+	Affinity     *corev1.Affinity            `json:"affinity,omitempty"`
+	NodeSelector map[string]string           `json:"nodeselector,omitempty"`
+	Env          []corev1.EnvVar             `json:"env,omitempty"`
+	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // K6Spec defines the desired state of K6
