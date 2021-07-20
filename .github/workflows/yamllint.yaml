@@ -1,3 +1,4 @@
+---
 name: Yaml Lint
 on: [push]
 jobs:
