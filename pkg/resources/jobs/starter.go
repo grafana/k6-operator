@@ -30,6 +30,10 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 			}
 		}
 	}
+	serviceAccountName := "default"
+	if k6.Spec.ServiceAccountName != "" {
+		serviceAccountName = k6.Spec.ServiceAccountName
+	}
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fmt.Sprintf("%s-starter", k6.Name),
@@ -44,9 +48,10 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 					Annotations: starterAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					Affinity:      k6.Spec.Starter.Affinity,
-					NodeSelector:  k6.Spec.Starter.NodeSelector,
-					RestartPolicy: corev1.RestartPolicyNever,
+					ServiceAccountName: serviceAccountName,
+					Affinity:           k6.Spec.Starter.Affinity,
+					NodeSelector:       k6.Spec.Starter.NodeSelector,
+					RestartPolicy:      corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						containers.NewCurlContainer(hostname, starterImage),
 					},
