@@ -258,10 +258,11 @@ func TestNewRunnerJob(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					Hostname:      "test-1",
-					RestartPolicy: corev1.RestartPolicyNever,
-					Affinity:      nil,
-					NodeSelector:  nil,
+					Hostname:           "test-1",
+					RestartPolicy:      corev1.RestartPolicyNever,
+					Affinity:           nil,
+					NodeSelector:       nil,
+					ServiceAccountName: "default",
 					Containers: []corev1.Container{{
 						Image:   "loadimpact/k6:latest",
 						Name:    "k6",
