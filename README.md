@@ -59,6 +59,27 @@ spec:
       name: k6-test
       file: test.js
   separate: false
+  runner:
+    image: <custom-image>
+    metadata:
+      labels:
+        cool-label: foo
+      annotations:
+        cool-annotation: bar
+    resources:
+      limits:
+        cpu: 200m
+        memory: 1000mi
+      requests:
+        cpu: 100m
+        memory: 500Mi
+  starter:
+    image: <custom-image>
+    metadata:
+      labels:
+        cool-label: foo
+      annotations:
+        cool-annotation: bar
 ```
 
 The test configuration is applied using
@@ -79,6 +100,28 @@ section, this is set to `my-test`.
 #### Separate
 Toggles whether the jobs created need to be distributed across different nodes. This is useful if you're running a
 test with a really high VU count and want to make sure the resources of each node won't become a bottleneck.
+
+#### Serviceaccount
+
+Defines the service account to be used for runners and starter pods. This allows for pulling images from a custom repository.
+
+#### Runner
+
+Defines options for the test runner pods. This includes:
+
+* passing resource limits and requests
+* passing in labels and annotations
+* passing in affinity and anti-affinity
+* passing in a custom image
+
+#### Starter
+
+Defines options for the starter pod. This includes:
+
+* passing in custom image
+* passing in labels and annotations
+
+
 
 ### Cleaning up between test runs
 After completing a test run, you need to clean up the test jobs created. This is done by running the following command:
@@ -130,6 +173,119 @@ spec:
 Note that we are replacing the test job image (`k6-prometheus:latest`), passing required arguments to `k6`
 (`--out prometheus`), and also exposing the ports required for Prometheus to scrape the metrics
 (in this case, that's port `5656`)
+
+If using the Prometheus Operator, you'll also need to create a pod monitor: 
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: k6-monitor
+spec:
+  selector:
+    matchLabels:
+      app: k6
+  podMetricsEndpoints:
+  - port: metrics
+```
+
+### Scheduling Tests
+
+While the k6 operator doesn't support scheduling k6 tests directly, the recommended path for scheduling tests is to use the cronjobs object from k8s directly. The cron job should run on a schedule and run a delete and then apply of a k6 object
+
+Running these tests requires a little more setup, the basic steps are:
+
+1. Create a configmap of js test files (Covered above)
+1. Create a configmap of the yaml for the k6 job
+1. Create a service account that lets k6 objects be created and deleted
+1. Create a cron job that deletes and applys the yaml
+
+Add a configMapGenerator to the kustomization.yaml:
+
+```yaml
+configMapGenerator:
+  - name: <test-name>-config
+    files:
+      - <test-name>.yaml
+```
+
+Then we are going to create a service account for the cron job to use:
+
+This is required to allow the cron job to actually delete and create the k6 objects.
+
+```yaml
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: k6-<namespace>
+rules:
+  - apiGroups:
+      - k6.io
+    resources:
+      - k6s
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: k6-<namespace>
+roleRef:
+  kind: ClusterRole
+  name: k6-<namespace>
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: k6-<namespace>
+    namespace: <namespace>
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k6-<namespace>
+```
+
+We're going to create a cron job:
+
+```yaml
+# snapshotter.yml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: <test-name>-cron
+spec:
+  schedule: "<cron-schedule>"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccount: k6
+          containers:
+            - name: kubectl
+              image: bitnami/kubectl
+              volumeMounts:
+                - name: k6-yaml
+                  mountPath: /tmp/
+              command:
+                - /bin/bash
+              args:
+                - -c
+                - "kubectl delete -f /tmp/<test-name>.yaml; kubectl apply -f /tmp/<test-name>.yaml"
+          restartPolicy: OnFailure
+          volumes:
+            - name: k6-yaml
+              configMap:
+                name: <test-name>-config
+```
+
 
 ## Uninstallation
 Running the command below will delete all resources created by the operator.

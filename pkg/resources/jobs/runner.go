@@ -74,6 +74,11 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		}
 	}
 
+	serviceAccountName := "default"
+	if k6.Spec.ServiceAccountName != "" {
+		serviceAccountName = k6.Spec.ServiceAccountName
+	}
+
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
 	ports = append(ports, k6.Spec.Ports...)
 
@@ -105,10 +110,11 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 					Annotations: runnerAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					Hostname:      name,
-					RestartPolicy: corev1.RestartPolicyNever,
-					Affinity:      k6.Spec.Runner.Affinity,
-					NodeSelector:  k6.Spec.Runner.NodeSelector,
+					ServiceAccountName: serviceAccountName,
+					Hostname:           name,
+					RestartPolicy:      corev1.RestartPolicyNever,
+					Affinity:           k6.Spec.Runner.Affinity,
+					NodeSelector:       k6.Spec.Runner.NodeSelector,
 					Containers: []corev1.Container{{
 						Image:     image,
 						Name:      "k6",
