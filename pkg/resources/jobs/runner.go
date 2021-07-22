@@ -23,7 +23,7 @@ type Script struct {
 // NewRunnerJob creates a new k6 job from a CRD
 func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.Name, index)
-	command := []string{"scuttle", "k6", "run"}
+	command := []string{"scuttle", "k6", "run", "--quiet"}
 
 	if k6.Spec.Parallelism > 1 {
 		var args []string

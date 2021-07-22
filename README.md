@@ -174,7 +174,7 @@ Note that we are replacing the test job image (`k6-prometheus:latest`), passing 
 (`--out prometheus`), and also exposing the ports required for Prometheus to scrape the metrics
 (in this case, that's port `5656`)
 
-You'll also need to create a pod monitor: 
+If using the Prometheus Operator, you'll also need to create a pod monitor: 
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
