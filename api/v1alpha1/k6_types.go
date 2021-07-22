@@ -32,7 +32,7 @@ type Pod struct {
 	Metadata                     PodMetadata                 `json:"metadata,omitempty"`
 	NodeSelector                 map[string]string           `json:"nodeselector,omitempty"`
 	Resources                    corev1.ResourceRequirements `json:"resources,omitempty"`
-	ServiceAccountName           string                      `json:"serviceAccountname,omitempty"`
+	ServiceAccountName           string                      `json:"serviceAccountName,omitempty"`
 }
 
 // K6Spec defines the desired state of K6

@@ -825,7 +825,7 @@ spec:
                         to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                   type: object
-                serviceAccountname:
+                serviceAccountName:
                   type: string
               type: object
             script:
@@ -1607,7 +1607,7 @@ spec:
                         to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                   type: object
-                serviceAccountname:
+                serviceAccountName:
                   type: string
               type: object
           required:
