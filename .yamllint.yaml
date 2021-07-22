@@ -1,0 +1,13 @@
+---
+extends: default
+ignore: |
+  /config/crd/bases/*
+rules:
+  line-length: disable
+  comments:
+    min-spaces-from-content: 1
+  trailing-spaces:
+    level: warning
+  truthy:
+    ignore: |
+      /.github/workflows
