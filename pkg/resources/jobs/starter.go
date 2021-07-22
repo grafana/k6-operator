@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/k6io/operator/api/v1alpha1"
 	"github.com/k6io/operator/pkg/resources/containers"
@@ -31,8 +32,14 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 		}
 	}
 	serviceAccountName := "default"
-	if k6.Spec.ServiceAccountName != "" {
+	if k6.Spec.Starter.ServiceAccountName != "" {
+		serviceAccountName = k6.Spec.Starter.ServiceAccountName
+	} else if k6.Spec.ServiceAccountName != "" {
 		serviceAccountName = k6.Spec.ServiceAccountName
+	}
+	automountServiceAccountToken := true
+	if k6.Spec.Runner.AutomountServiceAccountToken != "" {
+		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Runner.AutomountServiceAccountToken)
 	}
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -48,10 +55,11 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 					Annotations: starterAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: serviceAccountName,
-					Affinity:           k6.Spec.Starter.Affinity,
-					NodeSelector:       k6.Spec.Starter.NodeSelector,
-					RestartPolicy:      corev1.RestartPolicyNever,
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					ServiceAccountName:           serviceAccountName,
+					Affinity:                     k6.Spec.Starter.Affinity,
+					NodeSelector:                 k6.Spec.Starter.NodeSelector,
+					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						containers.NewCurlContainer(hostname, starterImage),
 					},

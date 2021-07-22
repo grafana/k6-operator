@@ -3,6 +3,7 @@ package jobs
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"strings"
 
@@ -75,8 +76,15 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	}
 
 	serviceAccountName := "default"
-	if k6.Spec.ServiceAccountName != "" {
+	if k6.Spec.Runner.ServiceAccountName != "" {
+		serviceAccountName = k6.Spec.Runner.ServiceAccountName
+	} else if k6.Spec.ServiceAccountName != "" {
 		serviceAccountName = k6.Spec.ServiceAccountName
+	}
+
+	automountServiceAccountToken := true
+	if k6.Spec.Runner.AutomountServiceAccountToken != "" {
+		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Runner.AutomountServiceAccountToken)
 	}
 
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
@@ -110,11 +118,12 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 					Annotations: runnerAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: serviceAccountName,
-					Hostname:           name,
-					RestartPolicy:      corev1.RestartPolicyNever,
-					Affinity:           k6.Spec.Runner.Affinity,
-					NodeSelector:       k6.Spec.Runner.NodeSelector,
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					ServiceAccountName:           serviceAccountName,
+					Hostname:                     name,
+					RestartPolicy:                corev1.RestartPolicyNever,
+					Affinity:                     k6.Spec.Runner.Affinity,
+					NodeSelector:                 k6.Spec.Runner.NodeSelector,
 					Containers: []corev1.Container{{
 						Image:     image,
 						Name:      "k6",

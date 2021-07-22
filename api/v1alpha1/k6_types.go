@@ -25,12 +25,14 @@ type PodMetadata struct {
 }
 
 type Pod struct {
-	Affinity     *corev1.Affinity            `json:"affinity,omitempty"`
-	Env          []corev1.EnvVar             `json:"env,omitempty"`
-	Image        string                      `json:"image,omitempty"`
-	Metadata     PodMetadata                 `json:"metadata,omitempty"`
-	NodeSelector map[string]string           `json:"nodeselector,omitempty"`
-	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
+	Affinity                     *corev1.Affinity            `json:"affinity,omitempty"`
+	AutomountServiceAccountToken string                      `json:"automountServiceAccountToken,omitempty"`
+	Env                          []corev1.EnvVar             `json:"env,omitempty"`
+	Image                        string                      `json:"image,omitempty"`
+	Metadata                     PodMetadata                 `json:"metadata,omitempty"`
+	NodeSelector                 map[string]string           `json:"nodeselector,omitempty"`
+	Resources                    corev1.ResourceRequirements `json:"resources,omitempty"`
+	ServiceAccountName           string                      `json:"serviceAccountname,omitempty"`
 }
 
 // K6Spec defines the desired state of K6
