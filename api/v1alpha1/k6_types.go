@@ -45,6 +45,8 @@ type K6Spec struct {
 	ServiceAccountName string                 `json:"serviceaccount,omitempty"`
 	Starter            Pod                    `json:"starter,omitempty"`
 	Runner             Pod                    `json:"runner,omitempty"`
+	Quiet              string                 `json:"quiet,omitempty"`
+	Paused             string                 `json:"paused,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
 }
 

@@ -24,7 +24,16 @@ type Script struct {
 // NewRunnerJob creates a new k6 job from a CRD
 func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.Name, index)
-	command := []string{"scuttle", "k6", "run", "--quiet"}
+	command := []string{"scuttle", "k6", "run"}
+
+	quiet := true
+	if k6.Spec.Quiet != "" {
+		quiet, _ = strconv.ParseBool(k6.Spec.Quiet)
+	}
+
+	if quiet {
+		command = append(command, "--quiet")
+	}
 
 	if k6.Spec.Parallelism > 1 {
 		var args []string
@@ -51,8 +60,16 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	command = append(
 		command,
 		fmt.Sprintf("/test/%s", script.File),
-		"--address=0.0.0.0:6565",
-		"--paused")
+		"--address=0.0.0.0:6565")
+
+	paused := true
+	if k6.Spec.Paused != "" {
+		paused, _ = strconv.ParseBool(k6.Spec.Paused)
+	}
+
+	if paused {
+		command = append(command, "--paused")
+	}
 
 	var zero int64 = 0
 
