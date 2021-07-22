@@ -78,8 +78,6 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	serviceAccountName := "default"
 	if k6.Spec.Runner.ServiceAccountName != "" {
 		serviceAccountName = k6.Spec.Runner.ServiceAccountName
-	} else if k6.Spec.ServiceAccountName != "" {
-		serviceAccountName = k6.Spec.ServiceAccountName
 	}
 
 	automountServiceAccountToken := true

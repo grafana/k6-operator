@@ -855,8 +855,6 @@ spec:
               type: object
             separate:
               type: boolean
-            serviceaccount:
-              type: string
             starter:
               properties:
                 affinity:

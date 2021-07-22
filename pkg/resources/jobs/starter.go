@@ -34,8 +34,6 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 	serviceAccountName := "default"
 	if k6.Spec.Starter.ServiceAccountName != "" {
 		serviceAccountName = k6.Spec.Starter.ServiceAccountName
-	} else if k6.Spec.ServiceAccountName != "" {
-		serviceAccountName = k6.Spec.ServiceAccountName
 	}
 	automountServiceAccountToken := true
 	if k6.Spec.Runner.AutomountServiceAccountToken != "" {
