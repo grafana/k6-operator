@@ -328,7 +328,6 @@ func TestNewRunnerJob(t *testing.T) {
 	}
 }
 
-
 func TestNewRunnerJobNoisy(t *testing.T) {
 	script := &Script{
 		Name: "test",
