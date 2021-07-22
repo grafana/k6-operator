@@ -1,3 +1,4 @@
+---
 name: "Create cluster using KinD"
 on:
   workflow_dispatch: {}
