@@ -46,6 +46,7 @@ type K6Spec struct {
 	Runner      Pod                    `json:"runner,omitempty"`
 	Quiet       string                 `json:"quiet,omitempty"`
 	Paused      string                 `json:"paused,omitempty"`
+	Istio       string                 `json:"istio,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
 }
 

@@ -24,7 +24,17 @@ type Script struct {
 // NewRunnerJob creates a new k6 job from a CRD
 func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.Name, index)
-	command := []string{"scuttle", "k6", "run"}
+	var command []string
+
+	istio := true
+	if k6.Spec.Istio != "" {
+		istio, _ = strconv.ParseBool(k6.Spec.Istio)
+	}
+
+	if istio {
+		command = append(command, "scuttle")
+	}
+	command = append(command, "k6", "run")
 
 	quiet := true
 	if k6.Spec.Quiet != "" {

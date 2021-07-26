@@ -47,7 +47,7 @@ func TestNewStarterJob(t *testing.T) {
 					NodeSelector:                 nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
-						containers.NewCurlContainer([]string{"testing"}, "image"),
+						containers.NewCurlContainer([]string{"testing"}, "image", []string{"scuttle", "k6", "run"}),
 					},
 				},
 			},

@@ -11,7 +11,7 @@ import (
 )
 
 // NewCurlContainer is used to get a template for a new k6 starting curl container.
-func NewCurlContainer(hostnames []string, image string) corev1.Container {
+func NewCurlContainer(hostnames []string, image string, command []string) corev1.Container {
 	req, _ := json.Marshal(
 		statusAPIRequest{
 			Data: statusAPIRequestData{
@@ -27,7 +27,6 @@ func NewCurlContainer(hostnames []string, image string) corev1.Container {
 	for _, hostname := range hostnames {
 		parts = append(parts, fmt.Sprintf("curl -X PATCH -H 'Content-Type: application/json' http://%s:6565/v1/status -d '%s'", hostname, req))
 	}
-
 	return corev1.Container{
 		Name:  "k6-curl",
 		Image: image,
@@ -53,12 +52,10 @@ func NewCurlContainer(hostnames []string, image string) corev1.Container {
 				corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
 			},
 		},
-		Command: []string{
-			"scuttle",
-			"sh",
-			"-c",
+		Command: append(
+			command,
 			strings.Join(parts, ";"),
-		},
+		),
 	}
 }
 

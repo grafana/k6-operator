@@ -38,6 +38,8 @@ spec:
           properties:
             arguments:
               type: string
+            istio:
+              type: string
             parallelism:
               format: int32
               type: integer
