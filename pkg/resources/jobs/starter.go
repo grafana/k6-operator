@@ -39,6 +39,15 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 	if k6.Spec.Starter.AutomountServiceAccountToken != "" {
 		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Starter.AutomountServiceAccountToken)
 	}
+	istio := true
+	if k6.Spec.Istio != "" {
+		istio, _ = strconv.ParseBool(k6.Spec.Istio)
+	}
+	var command []string
+	if istio {
+		command = append(command, "scuttle")
+	}
+	command = append(command, "k6", "run")
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fmt.Sprintf("%s-starter", k6.Name),
@@ -59,7 +68,7 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 					NodeSelector:                 k6.Spec.Starter.NodeSelector,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
-						containers.NewCurlContainer(hostname, starterImage),
+						containers.NewCurlContainer(hostname, starterImage, command),
 					},
 				},
 			},
