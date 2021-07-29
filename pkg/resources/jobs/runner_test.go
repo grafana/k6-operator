@@ -231,6 +231,7 @@ func TestNewRunnerJob(t *testing.T) {
 	}
 
 	var zero int64 = 0
+	automountServiceAccountToken := true
 
 	expectedOutcome := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -258,11 +259,12 @@ func TestNewRunnerJob(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					Hostname:           "test-1",
-					RestartPolicy:      corev1.RestartPolicyNever,
-					Affinity:           nil,
-					NodeSelector:       nil,
-					ServiceAccountName: "default",
+					Hostname:                     "test-1",
+					RestartPolicy:                corev1.RestartPolicyNever,
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					ServiceAccountName:           "default",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Containers: []corev1.Container{{
 						Image:   "loadimpact/k6:latest",
 						Name:    "k6",

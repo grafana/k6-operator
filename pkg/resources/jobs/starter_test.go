@@ -12,6 +12,8 @@ import (
 )
 
 func TestNewStarterJob(t *testing.T) {
+	automountServiceAccountToken := true
+
 	expectedOutcome := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-starter",
@@ -38,10 +40,11 @@ func TestNewStarterJob(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: "default",
-					Affinity:           nil,
-					NodeSelector:       nil,
-					RestartPolicy:      corev1.RestartPolicyNever,
+					ServiceAccountName:           "default",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						containers.NewCurlContainer([]string{"testing"}, "image"),
 					},
