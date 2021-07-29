@@ -327,3 +327,431 @@ func TestNewRunnerJob(t *testing.T) {
 		t.Errorf("NewRunnerJob returned unexpected data, diff: %s", diff)
 	}
 }
+
+
+func TestNewRunnerJobNoisy(t *testing.T) {
+	script := &Script{
+		Name: "test",
+		File: "thing.js",
+		Type: "ConfigMap",
+	}
+
+	var zero int64 = 0
+	automountServiceAccountToken := true
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-1",
+			Namespace: "test",
+			Labels: map[string]string{
+				"app":    "k6",
+				"k6_cr":  "test",
+				"label1": "awesome",
+			},
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app":    "k6",
+						"k6_cr":  "test",
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Hostname:                     "test-1",
+					RestartPolicy:                corev1.RestartPolicyNever,
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					ServiceAccountName:           "default",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					Containers: []corev1.Container{{
+						Image:   "loadimpact/k6:latest",
+						Name:    "k6",
+						Command: []string{"scuttle", "k6", "run", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
+						Env: []corev1.EnvVar{{
+							Name:  "ISTIO_QUIT_API",
+							Value: "http://127.0.0.1:15020",
+						},
+							{
+								Name:  "ENVOY_ADMIN_API",
+								Value: "http://127.0.0.1:15000",
+							}, {
+								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
+								Value: "15",
+							},
+						},
+						Resources: corev1.ResourceRequirements{},
+						VolumeMounts: []corev1.VolumeMount{{
+							Name:      "k6-test-volume",
+							MountPath: "/test",
+						}},
+						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+					}},
+					TerminationGracePeriodSeconds: &zero,
+					Volumes:                       newVolumeSpec(script),
+				},
+			},
+		},
+	}
+	k6 := &v1alpha1.K6{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.K6Spec{
+			Quiet: "false",
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Runner: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+			},
+		},
+	}
+
+	job, err := NewRunnerJob(k6, 1)
+	if err != nil {
+		t.Errorf("NewRunnerJob errored, got: %v", err)
+	}
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Errorf("NewRunnerJob returned unexpected data, diff: %s", diff)
+	}
+}
+
+func TestNewRunnerJobUnpaused(t *testing.T) {
+	script := &Script{
+		Name: "test",
+		File: "thing.js",
+		Type: "ConfigMap",
+	}
+
+	var zero int64 = 0
+	automountServiceAccountToken := true
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-1",
+			Namespace: "test",
+			Labels: map[string]string{
+				"app":    "k6",
+				"k6_cr":  "test",
+				"label1": "awesome",
+			},
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app":    "k6",
+						"k6_cr":  "test",
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Hostname:                     "test-1",
+					RestartPolicy:                corev1.RestartPolicyNever,
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					ServiceAccountName:           "default",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					Containers: []corev1.Container{{
+						Image:   "loadimpact/k6:latest",
+						Name:    "k6",
+						Command: []string{"scuttle", "k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565"},
+						Env: []corev1.EnvVar{{
+							Name:  "ISTIO_QUIT_API",
+							Value: "http://127.0.0.1:15020",
+						},
+							{
+								Name:  "ENVOY_ADMIN_API",
+								Value: "http://127.0.0.1:15000",
+							}, {
+								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
+								Value: "15",
+							},
+						},
+						Resources: corev1.ResourceRequirements{},
+						VolumeMounts: []corev1.VolumeMount{{
+							Name:      "k6-test-volume",
+							MountPath: "/test",
+						}},
+						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+					}},
+					TerminationGracePeriodSeconds: &zero,
+					Volumes:                       newVolumeSpec(script),
+				},
+			},
+		},
+	}
+	k6 := &v1alpha1.K6{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.K6Spec{
+			Paused: "false",
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Runner: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+			},
+		},
+	}
+
+	job, err := NewRunnerJob(k6, 1)
+	if err != nil {
+		t.Errorf("NewRunnerJob errored, got: %v", err)
+	}
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Errorf("NewRunnerJob returned unexpected data, diff: %s", diff)
+	}
+}
+
+func TestNewRunnerJobArguments(t *testing.T) {
+	script := &Script{
+		Name: "test",
+		File: "thing.js",
+		Type: "ConfigMap",
+	}
+
+	var zero int64 = 0
+	automountServiceAccountToken := true
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-1",
+			Namespace: "test",
+			Labels: map[string]string{
+				"app":    "k6",
+				"k6_cr":  "test",
+				"label1": "awesome",
+			},
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app":    "k6",
+						"k6_cr":  "test",
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Hostname:                     "test-1",
+					RestartPolicy:                corev1.RestartPolicyNever,
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					ServiceAccountName:           "default",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					Containers: []corev1.Container{{
+						Image:   "loadimpact/k6:latest",
+						Name:    "k6",
+						Command: []string{"scuttle", "k6", "run", "--quiet", "--cool-thing", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
+						Env: []corev1.EnvVar{{
+							Name:  "ISTIO_QUIT_API",
+							Value: "http://127.0.0.1:15020",
+						},
+							{
+								Name:  "ENVOY_ADMIN_API",
+								Value: "http://127.0.0.1:15000",
+							}, {
+								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
+								Value: "15",
+							},
+						},
+						Resources: corev1.ResourceRequirements{},
+						VolumeMounts: []corev1.VolumeMount{{
+							Name:      "k6-test-volume",
+							MountPath: "/test",
+						}},
+						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+					}},
+					TerminationGracePeriodSeconds: &zero,
+					Volumes:                       newVolumeSpec(script),
+				},
+			},
+		},
+	}
+
+	k6 := &v1alpha1.K6{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.K6Spec{
+			Arguments: "--cool-thing",
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Runner: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+			},
+		},
+	}
+
+	job, err := NewRunnerJob(k6, 1)
+	if err != nil {
+		t.Errorf("NewRunnerJob errored, got: %v", err)
+	}
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Errorf("NewRunnerJob returned unexpected data, diff: %s", diff)
+	}
+}
+
+func TestNewRunnerJobServiceAccount(t *testing.T) {
+	script := &Script{
+		Name: "test",
+		File: "thing.js",
+		Type: "ConfigMap",
+	}
+
+	var zero int64 = 0
+	automountServiceAccountToken := true
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-1",
+			Namespace: "test",
+			Labels: map[string]string{
+				"app":    "k6",
+				"k6_cr":  "test",
+				"label1": "awesome",
+			},
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app":    "k6",
+						"k6_cr":  "test",
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Hostname:                     "test-1",
+					RestartPolicy:                corev1.RestartPolicyNever,
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					ServiceAccountName:           "test",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					Containers: []corev1.Container{{
+						Image:   "loadimpact/k6:latest",
+						Name:    "k6",
+						Command: []string{"scuttle", "k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
+						Env: []corev1.EnvVar{{
+							Name:  "ISTIO_QUIT_API",
+							Value: "http://127.0.0.1:15020",
+						},
+							{
+								Name:  "ENVOY_ADMIN_API",
+								Value: "http://127.0.0.1:15000",
+							}, {
+								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
+								Value: "15",
+							},
+						},
+						Resources: corev1.ResourceRequirements{},
+						VolumeMounts: []corev1.VolumeMount{{
+							Name:      "k6-test-volume",
+							MountPath: "/test",
+						}},
+						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+					}},
+					TerminationGracePeriodSeconds: &zero,
+					Volumes:                       newVolumeSpec(script),
+				},
+			},
+		},
+	}
+
+	k6 := &v1alpha1.K6{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.K6Spec{
+
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Runner: v1alpha1.Pod{
+				ServiceAccountName: "test",
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+			},
+		},
+	}
+
+	job, err := NewRunnerJob(k6, 1)
+	if err != nil {
+		t.Errorf("NewRunnerJob errored, got: %v", err)
+	}
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Errorf("NewRunnerJob returned unexpected data, diff: %s", diff)
+	}
+}

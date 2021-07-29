@@ -41,6 +41,8 @@ spec:
             parallelism:
               format: int32
               type: integer
+            paused:
+              type: string
             ports:
               items:
                 description: ContainerPort represents a network port in a single container.
@@ -73,6 +75,8 @@ spec:
                 - containerPort
                 type: object
               type: array
+            quiet:
+              type: string
             runner:
               properties:
                 affinity:
@@ -855,8 +859,6 @@ spec:
               type: object
             separate:
               type: boolean
-            serviceaccount:
-              type: string
             starter:
               properties:
                 affinity:

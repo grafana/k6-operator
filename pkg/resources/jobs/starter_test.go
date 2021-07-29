@@ -12,6 +12,7 @@ import (
 )
 
 func TestNewStarterJob(t *testing.T) {
+
 	automountServiceAccountToken := true
 
 	expectedOutcome := &batchv1.Job{
