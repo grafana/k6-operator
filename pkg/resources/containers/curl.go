@@ -11,7 +11,7 @@ import (
 )
 
 // NewCurlContainer is used to get a template for a new k6 starting curl container.
-func NewCurlContainer(hostnames []string, image string, command []string) corev1.Container {
+func NewCurlContainer(hostnames []string, image string, command []string, env []corev1.EnvVar) corev1.Container {
 	req, _ := json.Marshal(
 		statusAPIRequest{
 			Data: statusAPIRequestData{
@@ -30,19 +30,7 @@ func NewCurlContainer(hostnames []string, image string, command []string) corev1
 	return corev1.Container{
 		Name:  "k6-curl",
 		Image: image,
-		Env: []corev1.EnvVar{{
-			Name:  "ISTIO_QUIT_API",
-			Value: "http://127.0.0.1:15020",
-		},
-			{
-				Name:  "ENVOY_ADMIN_API",
-				Value: "http://localhost:15000",
-			},
-			{
-				Name:  "WAIT_FOR_ENVOY_TIMEOUT",
-				Value: "15",
-			},
-		},
+		Env:   env,
 		Resources: corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),

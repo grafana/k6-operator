@@ -24,7 +24,7 @@ type Script struct {
 // NewRunnerJob creates a new k6 job from a CRD
 func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.Name, index)
-	command := []string{"scuttle", "k6", "run"}
+	command, istioEnabled := newCommand(k6.Spec.Scuttle.Enabled)
 
 	quiet := true
 	if k6.Spec.Quiet != "" {
@@ -105,18 +105,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
 	ports = append(ports, k6.Spec.Ports...)
 
-	env := []corev1.EnvVar{{
-		Name:  "ISTIO_QUIT_API",
-		Value: "http://127.0.0.1:15020",
-	}}
-	env = append(env, corev1.EnvVar{
-		Name:  "ENVOY_ADMIN_API",
-		Value: "http://127.0.0.1:15000",
-	})
-	env = append(env, corev1.EnvVar{
-		Name:  "WAIT_FOR_ENVOY_TIMEOUT",
-		Value: "15",
-	})
+	env := newIstioEnvVar(k6.Spec.Scuttle, istioEnabled)
 	env = append(env, k6.Spec.Runner.Env...)
 
 	job := &batchv1.Job{

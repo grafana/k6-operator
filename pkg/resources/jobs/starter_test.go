@@ -47,7 +47,19 @@ func TestNewStarterJob(t *testing.T) {
 					NodeSelector:                 nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
-						containers.NewCurlContainer([]string{"testing"}, "image", []string{"scuttle", "k6", "run"}),
+						containers.NewCurlContainer([]string{"testing"}, "image", []string{"scuttle", "k6", "run"}, []corev1.EnvVar{
+							{
+								Name:  "ENVOY_ADMIN_API",
+								Value: "http://127.0.0.1:15000",
+							},
+							{
+								Name:  "ISTIO_QUIT_API",
+								Value: "http://127.0.0.1:15020",
+							},
+							{
+								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
+								Value: "15",
+							}}),
 					},
 				},
 			},

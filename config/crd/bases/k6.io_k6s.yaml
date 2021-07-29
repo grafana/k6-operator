@@ -38,8 +38,6 @@ spec:
           properties:
             arguments:
               type: string
-            istio:
-              type: string
             parallelism:
               format: int32
               type: integer
@@ -858,6 +856,29 @@ spec:
                   required:
                   - name
                   type: object
+              type: object
+            scuttle:
+              properties:
+                enabled:
+                  type: string
+                envoyAdminApi:
+                  type: string
+                genericQuitEndpoint:
+                  type: string
+                istioQuitApi:
+                  type: string
+                neverKillIstio:
+                  type: boolean
+                neverKillIstioOnFailure:
+                  type: boolean
+                quitWithoutEnvoyTimeout:
+                  type: string
+                scuttleLogging:
+                  type: boolean
+                startWithoutEnvoy:
+                  type: boolean
+                waitForEnvoyTimeout:
+                  type: string
               type: object
             separate:
               type: boolean
