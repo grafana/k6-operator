@@ -36,8 +36,8 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 		serviceAccountName = k6.Spec.Starter.ServiceAccountName
 	}
 	automountServiceAccountToken := true
-	if k6.Spec.Runner.AutomountServiceAccountToken != "" {
-		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Runner.AutomountServiceAccountToken)
+	if k6.Spec.Starter.AutomountServiceAccountToken != "" {
+		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Starter.AutomountServiceAccountToken)
 	}
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{

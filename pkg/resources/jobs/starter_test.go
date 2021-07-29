@@ -41,8 +41,8 @@ func TestNewStarterJob(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					AutomountServiceAccountToken: &automountServiceAccountToken,
 					ServiceAccountName:           "default",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
