@@ -674,6 +674,8 @@ spec:
                           type: array
                       type: object
                   type: object
+                automountServiceAccountToken:
+                  type: string
                 env:
                   items:
                     description: EnvVar represents an environment variable present
@@ -823,6 +825,8 @@ spec:
                         to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                   type: object
+                serviceAccountName:
+                  type: string
               type: object
             script:
               description: K6Script describes where the script to execute the tests
@@ -851,8 +855,6 @@ spec:
               type: object
             separate:
               type: boolean
-            serviceaccount:
-              type: string
             starter:
               properties:
                 affinity:
@@ -1454,6 +1456,8 @@ spec:
                           type: array
                       type: object
                   type: object
+                automountServiceAccountToken:
+                  type: string
                 env:
                   items:
                     description: EnvVar represents an environment variable present
@@ -1603,6 +1607,8 @@ spec:
                         to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                   type: object
+                serviceAccountName:
+                  type: string
               type: object
           required:
           - parallelism
