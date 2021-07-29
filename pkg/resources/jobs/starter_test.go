@@ -41,13 +41,13 @@ func TestNewStarterJob(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
+					ServiceAccountName:           "default",
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
-						containers.NewCurlContainer([]string{"testing"}, "image"),
+						containers.NewCurlContainer([]string{"testing"}, "image", []string{"scuttle", "k6", "run"}),
 					},
 				},
 			},
