@@ -269,14 +269,16 @@ func TestNewRunnerJob(t *testing.T) {
 						Image:   "loadimpact/k6:latest",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
-						Env: []corev1.EnvVar{{
-							Name:  "ISTIO_QUIT_API",
-							Value: "http://127.0.0.1:15020",
-						},
+						Env: []corev1.EnvVar{
 							{
 								Name:  "ENVOY_ADMIN_API",
 								Value: "http://127.0.0.1:15000",
-							}, {
+							},
+							{
+								Name:  "ISTIO_QUIT_API",
+								Value: "http://127.0.0.1:15020",
+							},
+							{
 								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
 								Value: "15",
 							},
@@ -328,7 +330,6 @@ func TestNewRunnerJob(t *testing.T) {
 	}
 }
 
-
 func TestNewRunnerJobNoisy(t *testing.T) {
 	script := &Script{
 		Name: "test",
@@ -375,14 +376,16 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 						Image:   "loadimpact/k6:latest",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
-						Env: []corev1.EnvVar{{
-							Name:  "ISTIO_QUIT_API",
-							Value: "http://127.0.0.1:15020",
-						},
+						Env: []corev1.EnvVar{
 							{
 								Name:  "ENVOY_ADMIN_API",
 								Value: "http://127.0.0.1:15000",
-							}, {
+							},
+							{
+								Name:  "ISTIO_QUIT_API",
+								Value: "http://127.0.0.1:15020",
+							},
+							{
 								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
 								Value: "15",
 							},
@@ -481,14 +484,16 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 						Image:   "loadimpact/k6:latest",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565"},
-						Env: []corev1.EnvVar{{
-							Name:  "ISTIO_QUIT_API",
-							Value: "http://127.0.0.1:15020",
-						},
+						Env: []corev1.EnvVar{
 							{
 								Name:  "ENVOY_ADMIN_API",
 								Value: "http://127.0.0.1:15000",
-							}, {
+							},
+							{
+								Name:  "ISTIO_QUIT_API",
+								Value: "http://127.0.0.1:15020",
+							},
+							{
 								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
 								Value: "15",
 							},
@@ -587,14 +592,16 @@ func TestNewRunnerJobArguments(t *testing.T) {
 						Image:   "loadimpact/k6:latest",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "--quiet", "--cool-thing", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
-						Env: []corev1.EnvVar{{
-							Name:  "ISTIO_QUIT_API",
-							Value: "http://127.0.0.1:15020",
-						},
+						Env: []corev1.EnvVar{
 							{
 								Name:  "ENVOY_ADMIN_API",
 								Value: "http://127.0.0.1:15000",
-							}, {
+							},
+							{
+								Name:  "ISTIO_QUIT_API",
+								Value: "http://127.0.0.1:15020",
+							},
+							{
 								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
 								Value: "15",
 							},
@@ -694,14 +701,16 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 						Image:   "loadimpact/k6:latest",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
-						Env: []corev1.EnvVar{{
-							Name:  "ISTIO_QUIT_API",
-							Value: "http://127.0.0.1:15020",
-						},
+						Env: []corev1.EnvVar{
 							{
 								Name:  "ENVOY_ADMIN_API",
 								Value: "http://127.0.0.1:15000",
-							}, {
+							},
+							{
+								Name:  "ISTIO_QUIT_API",
+								Value: "http://127.0.0.1:15020",
+							},
+							{
 								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
 								Value: "15",
 							},

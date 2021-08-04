@@ -35,6 +35,19 @@ type Pod struct {
 	ServiceAccountName           string                      `json:"serviceAccountName,omitempty"`
 }
 
+type K6Scuttle struct {
+	Enabled                 string `json:"enabled,omitempty"`
+	EnvoyAdminApi           string `json:"envoyAdminApi,omitempty"`
+	NeverKillIstio          bool   `json:"neverKillIstio,omitempty"`
+	NeverKillIstioOnFailure bool   `json:"neverKillIstioOnFailure,omitempty"`
+	ScuttleLogging          bool   `json:"scuttleLogging,omitempty"`
+	StartWithoutEnvoy       bool   `json:"startWithoutEnvoy,omitempty"`
+	WaitForEnvoyTimeout     string `json:"waitForEnvoyTimeout,omitempty"`
+	IstioQuitApi            string `json:"istioQuitApi,omitempty"`
+	GenericQuitEndpoint     string `json:"genericQuitEndpoint,omitempty"`
+	QuitWithoutEnvoyTimeout string `json:"quitWithoutEnvoyTimeout,omitempty"`
+}
+
 // K6Spec defines the desired state of K6
 type K6Spec struct {
 	Script      K6Script               `json:"script"`
@@ -46,6 +59,7 @@ type K6Spec struct {
 	Runner      Pod                    `json:"runner,omitempty"`
 	Quiet       string                 `json:"quiet,omitempty"`
 	Paused      string                 `json:"paused,omitempty"`
+	Scuttle     K6Scuttle              `json:"scuttle,omitempty"`
 	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
 }
 
