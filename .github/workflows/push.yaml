@@ -14,7 +14,7 @@ jobs:
       - name: "Build:checkout"
         uses: actions/checkout@v2
       - name: "Build:dockerimage"
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2
         with:
           file: Dockerfile.controller
           registry: ghcr.io
@@ -23,7 +23,7 @@ jobs:
           repository: k6io/operator
           tags: latest,controller-${{ github.event.release.tag_name }}
       - name: "Build:dockerimage"
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2
         with:
           file: Dockerfile.runner
           registry: ghcr.io
@@ -32,7 +32,7 @@ jobs:
           repository: k6io/operator
           tags: latest-runner,runner-${{ github.event.release.tag_name }}
       - name: "Build:dockerimage"
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2
         with:
           file: Dockerfile.starter
           registry: ghcr.io
