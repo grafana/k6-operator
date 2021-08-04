@@ -13,30 +13,24 @@ jobs:
     steps:
       - name: "Build:checkout"
         uses: actions/checkout@v2
+      - name: "Build:login"
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
         with:
           file: Dockerfile.controller
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          repository: k6io/operator
-          tags: latest,controller-${{ github.event.release.tag_name }}
+          tags: k6io/operator:latest,k6io/operator:controller-${{ github.event.release.tag_name }}
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
         with:
           file: Dockerfile.runner
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          repository: k6io/operator
-          tags: latest-runner,runner-${{ github.event.release.tag_name }}
+          tags: k6io/operator:latest-runner,k6io/operator:runner-${{ github.event.release.tag_name }}
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
         with:
           file: Dockerfile.starter
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          repository: k6io/operator
-          tags: latest-starter,starter-${{ github.event.release.tag_name }}
+          tags: k6io/operator:latest-starter,k6io/operator:starter-${{ github.event.release.tag_name }}
