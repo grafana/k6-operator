@@ -7,7 +7,7 @@
 > This project is **experimental** and changes a lot between commits.
 > Use at your own risk. 
 
-`k6io/operator` is a kubernetes operator for running distributed k6 tests in your cluster.
+`grafana/k6-operator` is a kubernetes operator for running distributed k6 tests in your cluster.
 
 Read also the [complete tutorial](https://k6.io/blog/running-distributed-tests-on-k8s/) to learn more about how to use this project.
 
@@ -131,7 +131,7 @@ $ kubectl delete -f /path/to/your/k6-resource.yml
 
 ### Using extensions
 By default, the operator will use `loadimpact/k6:latest` as the container image for the test jobs. If you want to use
-extensions built with [xk6](https://github.com/k6io/xk6) you'll need to create your own image and override the `image`
+extensions built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image`
 property on the `K6` kubernetes resource. For example, the following Dockerfile can be used to create a container
 image using github.com/szkiba/xk6-prometheus as an extension:
 
@@ -140,7 +140,7 @@ image using github.com/szkiba/xk6-prometheus as an extension:
 # Build the k6 binary with the extension
 FROM golang:1.16.4-buster as builder
 
-RUN go install github.com/k6io/xk6/cmd/xk6@latest
+RUN go install github.com/grafana/xk6/cmd/xk6@latest
 RUN xk6 build --output /k6 --with github.com/szkiba/xk6-prometheus@latest
 
 # Use the operator's base image and override the k6 binary

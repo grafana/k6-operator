@@ -2,11 +2,12 @@ package segmentation_test
 
 import (
 	"fmt"
-	"github.com/k6io/operator/pkg/segmentation"
+	"testing"
+
+	"github.com/grafana/k6-operator/pkg/segmentation"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
-	"testing"
 )
 
 func TestSegmentation(t *testing.T) {

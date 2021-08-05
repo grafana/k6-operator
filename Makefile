@@ -12,7 +12,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/k6io/operator:latest
+IMG ?= ghcr.io/grafana/operator:latest
 # Default dockerfile to build
 DOCKERFILE ?= "Dockerfile.controller"
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)

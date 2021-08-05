@@ -3,7 +3,7 @@ package jobs
 import (
 	"strconv"
 
-	"github.com/k6io/operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
