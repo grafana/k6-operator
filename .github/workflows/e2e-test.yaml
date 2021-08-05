@@ -19,6 +19,7 @@ jobs:
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
         with:
+          context: .
           push: true
           tags: |
             k6io/operator:${{ env.GITHUB_SHA }}

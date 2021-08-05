@@ -24,18 +24,21 @@ jobs:
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
         with:
+          context: .
           push: true
           file: Dockerfile.controller
           tags: k6io/operator:latest,k6io/operator:controller-${{ github.event.release.tag_name }}
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
         with:
+          context: .
           push: true
           file: Dockerfile.runner
           tags: k6io/operator:latest-runner,k6io/operator:runner-${{ github.event.release.tag_name }}
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
         with:
+          context: .
           push: true
           file: Dockerfile.starter
           tags: k6io/operator:latest-starter,k6io/operator:starter-${{ github.event.release.tag_name }}
