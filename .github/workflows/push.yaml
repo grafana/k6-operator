@@ -27,18 +27,18 @@ jobs:
           context: .
           push: true
           file: Dockerfile.controller
-          tags: ghcr.io/k6io/operator:latest,ghcr.io/k6io/operator:controller-${{ github.event.release.tag_name }}
+          tags: ghcr.io/grafana/operator:latest,ghcr.io/grafana/operator:controller-${{ github.event.release.tag_name }}
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
           file: Dockerfile.runner
-          tags: ghcr.io/k6io/operator:latest-runner,ghcr.io/k6io/operator:runner-${{ github.event.release.tag_name }}
+          tags: ghcr.io/grafana/operator:latest-runner,ghcr.io/grafana/operator:runner-${{ github.event.release.tag_name }}
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
           file: Dockerfile.starter
-          tags: ghcr.io/k6io/operator:latest-starter,ghcr.io/k6io/operator:starter-${{ github.event.release.tag_name }}
+          tags: ghcr.io/grafana/operator:latest-starter,ghcr.io/grafana/operator:starter-${{ github.event.release.tag_name }}

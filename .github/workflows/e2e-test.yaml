@@ -22,7 +22,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/k6io/operator:${{ env.GITHUB_SHA }}
+            ghcr.io/grafana/operator:${{ env.GITHUB_SHA }}
   kind:
     runs-on: ubuntu-latest
     steps:
