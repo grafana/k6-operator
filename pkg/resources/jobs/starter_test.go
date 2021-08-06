@@ -47,7 +47,7 @@ func TestNewStarterJob(t *testing.T) {
 					NodeSelector:                 nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
-						containers.NewCurlContainer([]string{"testing"}, "image", []string{"scuttle", "k6", "run"}, []corev1.EnvVar{
+						containers.NewCurlContainer([]string{"testing"}, "image", []string{"scuttle", "sh", "-c"}, []corev1.EnvVar{
 							{
 								Name:  "ENVOY_ADMIN_API",
 								Value: "http://127.0.0.1:15000",

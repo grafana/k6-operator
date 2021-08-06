@@ -21,21 +21,21 @@ func TestNewLabels(t *testing.T) {
 	}
 }
 
-func TestNewCommandIfTrue(t *testing.T) {
+func TestNewIstioCommandIfTrue(t *testing.T) {
 	expectedOutcome := []string{"scuttle", "k6", "run"}
-	command, _ := newCommand("true")
+	command, _ := newIstioCommand("true", []string{"k6", "run"})
 
 	if diff := deep.Equal(expectedOutcome, command); diff != nil {
-		t.Errorf("newCommand returned unexpected data, diff: %s", diff)
+		t.Errorf("newIstioCommand returned unexpected data, diff: %s", diff)
 	}
 }
 
-func TestNewCommandIfFalse(t *testing.T) {
+func TestNewIstioCommandIfFalse(t *testing.T) {
 	expectedOutcome := []string{"k6", "run"}
-	command, _ := newCommand("false")
+	command, _ := newIstioCommand("false", []string{"k6", "run"})
 
 	if diff := deep.Equal(expectedOutcome, command); diff != nil {
-		t.Errorf("newCommand returned unexpected data, diff: %s", diff)
+		t.Errorf("newIstioCommand returned unexpected data, diff: %s", diff)
 	}
 }
 
