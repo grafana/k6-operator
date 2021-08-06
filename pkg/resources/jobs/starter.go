@@ -39,7 +39,7 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 	if k6.Spec.Starter.AutomountServiceAccountToken != "" {
 		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Starter.AutomountServiceAccountToken)
 	}
-	command, istioEnabled := newCommand(k6.Spec.Scuttle.Enabled, []string{"sh", "-c"})
+	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, []string{"sh", "-c"})
 	env := newIstioEnvVar(k6.Spec.Scuttle, istioEnabled)
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
