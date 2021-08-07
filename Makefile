@@ -14,7 +14,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # Image to use for building Go
 GO_BUILDER_IMG ?= "golang:1.18"
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/grafana/k6-operator:latest
+IMG ?= 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:v0.0.7rc-202108071259
 # Default dockerfile to build
 DOCKERFILE ?= "Dockerfile.controller"
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
