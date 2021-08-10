@@ -266,7 +266,7 @@ func TestNewRunnerJob(t *testing.T) {
 					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Containers: []corev1.Container{{
-						Image:   "loadimpact/k6:latest",
+						Image:   "ghcr.io/grafana/operator:latest-runner",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
 						Env: []corev1.EnvVar{{
@@ -328,7 +328,6 @@ func TestNewRunnerJob(t *testing.T) {
 	}
 }
 
-
 func TestNewRunnerJobNoisy(t *testing.T) {
 	script := &Script{
 		Name: "test",
@@ -372,7 +371,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Containers: []corev1.Container{{
-						Image:   "loadimpact/k6:latest",
+						Image:   "ghcr.io/grafana/operator:latest-runner",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
 						Env: []corev1.EnvVar{{
@@ -478,7 +477,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Containers: []corev1.Container{{
-						Image:   "loadimpact/k6:latest",
+						Image:   "ghcr.io/grafana/operator:latest-runner",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565"},
 						Env: []corev1.EnvVar{{
@@ -584,7 +583,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Containers: []corev1.Container{{
-						Image:   "loadimpact/k6:latest",
+						Image:   "ghcr.io/grafana/operator:latest-runner",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "--quiet", "--cool-thing", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
 						Env: []corev1.EnvVar{{
@@ -691,7 +690,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 					ServiceAccountName:           "test",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Containers: []corev1.Container{{
-						Image:   "loadimpact/k6:latest",
+						Image:   "ghcr.io/grafana/operator:latest-runner",
 						Name:    "k6",
 						Command: []string{"scuttle", "k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
 						Env: []corev1.EnvVar{{
