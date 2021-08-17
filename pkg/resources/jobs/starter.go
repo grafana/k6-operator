@@ -19,10 +19,11 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 		starterAnnotations = k6.Spec.Starter.Metadata.Annotations
 	}
 
-	starterImage := "radial/busyboxplus:curl"
+	starterImage := "ghcr.io/grafana/operator:latest-starter"
 	if k6.Spec.Starter.Image != "" {
 		starterImage = k6.Spec.Starter.Image
 	}
+
 	starterLabels := newLabels(k6.Name)
 	if k6.Spec.Starter.Metadata.Labels != nil {
 		for k, v := range k6.Spec.Starter.Metadata.Labels { // Order not specified

@@ -73,7 +73,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 
 	var zero int64 = 0
 
-	image := "loadimpact/k6:latest"
+	image := "ghcr.io/grafana/operator:latest-runner"
 	if k6.Spec.Runner.Image != "" {
 		image = k6.Spec.Runner.Image
 	}
