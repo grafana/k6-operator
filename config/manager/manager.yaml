@@ -14,6 +14,9 @@ metadata:
   namespace: system
   labels:
     control-plane: controller-manager
+    tags.datadoghq.com/env: "dev"
+    tags.datadoghq.com/service: "laasie-k6-operator-controller"
+    tags.datadoghq.com/version: "247f897"
 spec:
   selector:
     matchLabels:
@@ -23,6 +26,9 @@ spec:
     metadata:
       labels:
         control-plane: controller-manager
+        tags.datadoghq.com/env: "dev"
+        tags.datadoghq.com/service: "laasie-k6-operator-controller"
+        tags.datadoghq.com/version: "247f897"
     spec:
       serviceAccountName: k6-operator-controller
       containers:
@@ -39,4 +45,17 @@ spec:
             requests:
               cpu: 100m
               memory: 50Mi
+          env:
+          - name: DD_ENV
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['tags.datadoghq.com/env']
+          - name: DD_SERVICE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['tags.datadoghq.com/service']
+          - name: DD_VERSION
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['tags.datadoghq.com/version']
       terminationGracePeriodSeconds: 10
