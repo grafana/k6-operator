@@ -13,6 +13,9 @@ Read also the [complete tutorial](https://k6.io/blog/running-distributed-tests-o
 
 ## Setup
 
+### Cluster requirements
+To be able to spawn runner pods, k6-operator needs Istio enabled in namespace, where it operates.
+
 ### Deploying the operator
 Install the operator by running the command below:
 
