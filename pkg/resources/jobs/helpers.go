@@ -21,9 +21,7 @@ func newIstioCommand(istio bool, inheritedCommands []string) []string {
 		command = append(command, "scuttle")
 	}
 
-	for _, inheritedCommand := range inheritedCommands {
-		command = append(command, inheritedCommand)
-	}
+	command = append(command, inheritedCommands...)
 
 	return command
 }
@@ -118,9 +116,7 @@ func newLinkerdCommand(linkerd bool, inheritedCommands []string) []string {
 		command = append(command, "/linkerd-await", "--shutdown", "--")
 	}
 
-	for _, inheritedCommand := range inheritedCommands {
-		command = append(command, inheritedCommand)
-	}
+	command = append(command, inheritedCommands...)
 
 	return command
 }
