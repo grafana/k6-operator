@@ -15,7 +15,7 @@ func newLabels(name string) map[string]string {
 }
 
 func newIstioCommand(istioEnabled string, inheritedCommands []string) ([]string, bool) {
-	istio := true
+	istio := false
 	if istioEnabled != "" {
 		istio, _ = strconv.ParseBool(istioEnabled)
 	}
