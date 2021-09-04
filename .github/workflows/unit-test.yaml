@@ -24,3 +24,10 @@ jobs:
           make test
         env:
           ENVTEST_K8S_VERSION: ${{ matrix.k8s_version }}
+      - name: Convert coverage.out to coverage.lcov
+        uses: jandelgado/gcov2lcov-action@v1.0.6
+      - name: Coveralls
+        uses: coverallsapp/github-action@v1.1.2
+        with:
+          github-token: ${{ secrets.github_token }}
+          path-to-lcov: coverage.lcov

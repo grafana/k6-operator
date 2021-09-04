@@ -35,7 +35,7 @@ GOARCH=$(shell go env GOARCH)
 KUBEBUILDER_ASSETS_ROOT=/tmp
 KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS_ROOT)/kubebuilder/bin
 test: generate fmt vet manifests
-	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); setup-envtest use --use-env -p env $(ENVTEST_K8S_VERSION); go test ./... -coverprofile cover.out
+	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); setup-envtest use --use-env -p env $(ENVTEST_K8S_VERSION); go test ./... -v -covermode=count -coverprofile=coverage.out
 
 test-setup:
 	curl -L -O "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz"

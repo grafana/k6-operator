@@ -24,9 +24,16 @@ type Script struct {
 // NewRunnerJob creates a new k6 job from a CRD
 func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.Name, index)
-	postCommand := []string{"k6", "run"}
+	command := []string{"k6", "run"}
+	image := "ghcr.io/grafana/operator:latest-runner"
 
-	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, postCommand)
+	if k6.Spec.ServiceMesh.Istio.Enabled {
+		command = newIstioCommand(k6.Spec.ServiceMesh.Istio.Enabled, command)
+		image = "ghcr.io/grafana/operator:latest-runner-istio"
+	} else if k6.Spec.ServiceMesh.Linkerd.Enabled {
+		command = newLinkerdCommand(k6.Spec.ServiceMesh.Linkerd.Enabled, command)
+		image = "ghcr.io/grafana/operator:latest-runner-linkerd"
+	}
 
 	quiet := true
 	if k6.Spec.Quiet != "" {
@@ -75,7 +82,6 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 
 	var zero int64 = 0
 
-	image := "ghcr.io/grafana/operator:latest-runner"
 	if k6.Spec.Runner.Image != "" {
 		image = k6.Spec.Runner.Image
 	}
@@ -107,7 +113,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
 	ports = append(ports, k6.Spec.Ports...)
 
-	env := newIstioEnvVar(k6.Spec.Scuttle, istioEnabled)
+	env := newIstioEnvVar(k6.Spec.ServiceMesh.Istio, k6.Spec.ServiceMesh.Istio.Enabled)
 	env = append(env, k6.Spec.Runner.Env...)
 
 	job := &batchv1.Job{

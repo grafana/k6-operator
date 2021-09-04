@@ -857,31 +857,39 @@ spec:
                   - name
                   type: object
               type: object
-            scuttle:
-              properties:
-                enabled:
-                  type: string
-                envoyAdminApi:
-                  type: string
-                genericQuitEndpoint:
-                  type: string
-                istioQuitApi:
-                  type: string
-                neverKillIstio:
-                  type: boolean
-                neverKillIstioOnFailure:
-                  type: boolean
-                quitWithoutEnvoyTimeout:
-                  type: string
-                scuttleLogging:
-                  type: boolean
-                startWithoutEnvoy:
-                  type: boolean
-                waitForEnvoyTimeout:
-                  type: string
-              type: object
             separate:
               type: boolean
+            serviceMesh:
+              properties:
+                istio:
+                  properties:
+                    enabled:
+                      type: boolean
+                    envoyAdminApi:
+                      type: string
+                    genericQuitEndpoint:
+                      type: string
+                    istioQuitApi:
+                      type: string
+                    neverKillIstio:
+                      type: boolean
+                    neverKillIstioOnFailure:
+                      type: boolean
+                    quitWithoutEnvoyTimeout:
+                      type: string
+                    scuttleLogging:
+                      type: boolean
+                    startWithoutEnvoy:
+                      type: boolean
+                    waitForEnvoyTimeout:
+                      type: string
+                  type: object
+                linkerd:
+                  properties:
+                    enabled:
+                      type: boolean
+                  type: object
+              type: object
             starter:
               properties:
                 affinity:

@@ -122,6 +122,41 @@ Defines options for the starter pod. This includes:
 * passing in labels and annotations
 
 
+#### ServiceMesh
+
+Service Meshes are used in k8s to provide connectivity, security, and more. However, cronjobs don't always work well with the service meshes due to side cars.
+
+The default is to not have any service mesh enabled.
+
+The K6 Operator supports two different service meshes:
+
+* Istio/Envoy
+* Linkerd
+
+Only one of these can be enabled at any given time. These can both enabled via as the serviceMesh options:
+
+##### Istio
+
+```yaml
+spec:
+  serviceMesh:
+    istio:
+      enabled: true
+```
+
+K6 uses [scuttle](https://github.com/redboxllc/scuttle) to provide a wrapper that will wait for the sidecar and then to kill the sidecar afterwards
+
+##### Linkerd
+
+```yaml
+spec:
+  serviceMesh:
+    linkerd:
+      enabled: true
+```
+
+K6 uses [linked-await](https://github.com/linkerd/linkerd-await) to provide an appropriate wrapper and will turn off the proxy afterwards.
+
 
 ### Cleaning up between test runs
 After completing a test run, you need to clean up the test jobs created. This is done by running the following command:

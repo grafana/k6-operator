@@ -21,24 +21,40 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: "Build:dockerimage"
+      - name: "Build:controller"
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
           file: Dockerfile.controller
           tags: ghcr.io/grafana/operator:latest,ghcr.io/grafana/operator:controller-${{ github.event.release.tag_name }}
-      - name: "Build:dockerimage"
+      # Build Istio Images
+      - name: "Build:istio-runner"
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          file: Dockerfile.runner
-          tags: ghcr.io/grafana/operator:latest-runner,ghcr.io/grafana/operator:runner-${{ github.event.release.tag_name }}
-      - name: "Build:dockerimage"
+          file: docker/istio/Dockerfile.runner
+          tags: ghcr.io/grafana/operator:latest-runner-istio,ghcr.io/grafana/operator:runner-${{ github.event.release.tag_name }}-istio
+      - name: "Build:istio-starter"
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          file: Dockerfile.starter
-          tags: ghcr.io/grafana/operator:latest-starter,ghcr.io/grafana/operator:starter-${{ github.event.release.tag_name }}
+          file: docker/istio/Dockerfile.starter
+          tags: ghcr.io/grafana/operator:latest-starter-istio,ghcr.io/grafana/operator:starter-${{ github.event.release.tag_name }}-istio
+      # Build Linkerd Images
+      - name: "Build:linkerd-runner"
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: docker/linkerd/Dockerfile.runner
+          tags: ghcr.io/grafana/operator:latest-runner-linkerd,ghcr.io/grafana/operator:runner-${{ github.event.release.tag_name }}-linkerd
+      - name: "Build:linkerd-starter"
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: docker/linkerd/Dockerfile.starter
+          tags: ghcr.io/grafana/operator:latest-starter-linkerd,ghcr.io/grafana/operator:starter-${{ github.event.release.tag_name }}-linkerd

@@ -23,7 +23,7 @@ func TestNewLabels(t *testing.T) {
 
 func TestNewIstioCommandIfTrue(t *testing.T) {
 	expectedOutcome := []string{"scuttle", "k6", "run"}
-	command, _ := newIstioCommand("true", []string{"k6", "run"})
+	command := newIstioCommand(true, []string{"k6", "run"})
 
 	if diff := deep.Equal(expectedOutcome, command); diff != nil {
 		t.Errorf("newIstioCommand returned unexpected data, diff: %s", diff)
@@ -32,10 +32,28 @@ func TestNewIstioCommandIfTrue(t *testing.T) {
 
 func TestNewIstioCommandIfFalse(t *testing.T) {
 	expectedOutcome := []string{"k6", "run"}
-	command, _ := newIstioCommand("false", []string{"k6", "run"})
+	command := newIstioCommand(false, []string{"k6", "run"})
 
 	if diff := deep.Equal(expectedOutcome, command); diff != nil {
 		t.Errorf("newIstioCommand returned unexpected data, diff: %s", diff)
+	}
+}
+
+func TestNewLinkerdCommandIfTrue(t *testing.T) {
+	expectedOutcome := []string{"/linkerd-await", "--shutdown", "--", "k6", "run"}
+	command := newLinkerdCommand(true, []string{"k6", "run"})
+
+	if diff := deep.Equal(expectedOutcome, command); diff != nil {
+		t.Errorf("newLinkerdCommand returned unexpected data, diff: %s", diff)
+	}
+}
+
+func TestNewLinkerdCommandIfFalse(t *testing.T) {
+	expectedOutcome := []string{"k6", "run"}
+	command := newLinkerdCommand(false, []string{"k6", "run"})
+
+	if diff := deep.Equal(expectedOutcome, command); diff != nil {
+		t.Errorf("newLinkerdCommand returned unexpected data, diff: %s", diff)
 	}
 }
 
@@ -55,7 +73,7 @@ func TestNewIstioDefaultEnvVar(t *testing.T) {
 		},
 	}
 
-	envVars := newIstioEnvVar(v1alpha1.K6Scuttle{
+	envVars := newIstioEnvVar(v1alpha1.K6Istio{
 		EnvoyAdminApi:       "",
 		IstioQuitApi:        "",
 		WaitForEnvoyTimeout: "",
@@ -83,7 +101,7 @@ func TestNewIstioEnvVarVaryingTheDefault(t *testing.T) {
 		},
 	}
 
-	envVars := newIstioEnvVar(v1alpha1.K6Scuttle{
+	envVars := newIstioEnvVar(v1alpha1.K6Istio{
 		EnvoyAdminApi:       "http://localhost:15020",
 		IstioQuitApi:        "http://127.17.0.1:15020",
 		WaitForEnvoyTimeout: "50",
@@ -114,7 +132,7 @@ func TestNewIstioEnvVarTrueValues(t *testing.T) {
 		},
 	}
 
-	envVars := newIstioEnvVar(v1alpha1.K6Scuttle{
+	envVars := newIstioEnvVar(v1alpha1.K6Istio{
 		EnvoyAdminApi:       "",
 		IstioQuitApi:        "",
 		WaitForEnvoyTimeout: "",
@@ -142,7 +160,7 @@ func TestNewIstioEnvVarFalseValues(t *testing.T) {
 		},
 	}
 
-	envVars := newIstioEnvVar(v1alpha1.K6Scuttle{
+	envVars := newIstioEnvVar(v1alpha1.K6Istio{
 		EnvoyAdminApi:       "",
 		IstioQuitApi:        "",
 		WaitForEnvoyTimeout: "",

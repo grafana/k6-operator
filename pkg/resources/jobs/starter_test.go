@@ -149,8 +149,91 @@ func TestNewStarterJobIstio(t *testing.T) {
 			Namespace: "test",
 		},
 		Spec: v1alpha1.K6Spec{
-			Scuttle: v1alpha1.K6Scuttle{
-				Enabled: "true",
+			ServiceMesh: v1alpha1.K6ServiceMesh{
+				Istio: v1alpha1.K6Istio{
+					Enabled: true,
+				},
+			},
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Starter: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Image: "image",
+			},
+		},
+	}
+
+	job := NewStarterJob(k6, []string{"testing"})
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Error(diff)
+	}
+
+}
+
+func TestNewStarterJobLinkerd(t *testing.T) {
+
+	automountServiceAccountToken := true
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-starter",
+			Namespace: "test",
+			Labels: map[string]string{
+				"app":    "k6",
+				"k6_cr":  "test",
+				"label1": "awesome",
+			},
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app":    "k6",
+						"k6_cr":  "test",
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					ServiceAccountName:           "default",
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					RestartPolicy:                corev1.RestartPolicyNever,
+					Containers: []corev1.Container{
+						containers.NewCurlContainer([]string{"testing"}, "image", []string{"/linkerd-await", "--shutdown", "--", "sh", "-c"}, []corev1.EnvVar{}),
+					},
+				},
+			},
+		},
+	}
+
+	k6 := &v1alpha1.K6{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.K6Spec{
+			ServiceMesh: v1alpha1.K6ServiceMesh{
+				Linkerd: v1alpha1.K6Linkerd{
+					Enabled: true,
+				},
 			},
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
