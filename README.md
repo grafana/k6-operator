@@ -41,6 +41,8 @@ The operator utilises `ConfigMap`s to serve test scripts to the jobs. To upload 
 $ kubectl create configmap my-test --from-file /path/to/my/test.js
 ``` 
 
+***Note: there is a character limit of 1048576 bytes to a single configmap. If you need to have a larger test file, you'll need to use a volumeClaim instead***
+
 ### Executing tests
 Tests are executed by applying the custom resource `K6` to a cluster where the operator is running. The properties
 of a test run are few, but allow you to control some key aspects of a distributed execution.
@@ -103,7 +105,22 @@ test with a really high VU count and want to make sure the resources of each nod
 
 #### Serviceaccount
 
-Defines the service account to be used for runners and starter pods. This allows for pulling images from a custom repository.
+If you want to use a custom Service Account you'll need to pass it into both the starter and runner object:
+
+```yaml
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: <test-name>
+spec:
+  script:
+    configMap:
+      name: "<configmap>"
+  runner:
+    serviceAccountName: <service-account>
+  starter:
+    serviceAccountName: <service-account>
+```
 
 #### Runner
 
@@ -163,11 +180,12 @@ spec:
     configMap: 
       name: crocodile-stress-test
       file: test.js
-  image: k6-prometheus:latest
   arguments: --out prometheus
   ports:
   - containerPort: 5656
     name: metrics
+  runner:
+    image: k6-prometheus:latest
 ```
 
 Note that we are replacing the test job image (`k6-prometheus:latest`), passing required arguments to `k6`
