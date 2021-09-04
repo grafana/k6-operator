@@ -234,7 +234,7 @@ This is required to allow the cron job to actually delete and create the k6 obje
 ```yaml
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   name: k6-<namespace>
 rules:
@@ -251,12 +251,12 @@ rules:
       - update
       - watch
 ---
-kind: ClusterRoleBinding
+kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: k6-<namespace>
 roleRef:
-  kind: ClusterRole
+  kind: Role
   name: k6-<namespace>
   apiGroup: rbac.authorization.k8s.io
 subjects:
