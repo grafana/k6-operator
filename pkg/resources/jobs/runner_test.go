@@ -261,6 +261,7 @@ func TestNewRunnerJob(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Hostname:                     "test-1",
 					RestartPolicy:                corev1.RestartPolicyNever,
+					SecurityContext:              &corev1.PodSecurityContext{},
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					ServiceAccountName:           "default",

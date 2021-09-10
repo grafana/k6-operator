@@ -68,6 +68,10 @@ spec:
         cool-label: foo
       annotations:
         cool-annotation: bar
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
     resources:
       limits:
         cpu: 200m
@@ -82,6 +86,10 @@ spec:
         cool-label: foo
       annotations:
         cool-annotation: bar
+    securityContext:
+      runAsUser: 2000
+      runAsGroup: 2000
+      runAsNonRoot: true
 ```
 
 The test configuration is applied using
