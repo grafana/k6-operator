@@ -13,10 +13,15 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image to use for building Go
 GO_BUILDER_IMG ?= "golang:1.18"
+# Image version to use for all building/pushing image targets
+IMAGE_VERSION ?= v0.0.7rc2-202110131601
+
 # Image URL to use all building/pushing image targets
-IMG ?= 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:v0.0.7rc-202108071259
+IMG ?= 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION}
+
 # Default dockerfile to build
 DOCKERFILE ?= "Dockerfile.controller"
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,crdVersions=v1,maxDescLen=0"
 
@@ -103,6 +108,30 @@ generate: controller-gen
 # Build the docker image
 docker-build: test
 	docker build . -t ${IMG} -f ${DOCKERFILE} --build-arg GO_BUILDER_IMG=${GO_BUILDER_IMG}
+
+docker-build-controller:
+	docker build . -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION} -f Dockerfile.controller
+
+docker-build-runner:
+	docker build . -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:${IMAGE_VERSION} -f Dockerfile.runner
+
+docker-build-starter:
+	docker build . -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:${IMAGE_VERSION} -f Dockerfile.starter
+
+docker-push-controller:
+	docker tag 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION} 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:main
+	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION}
+	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:main
+
+docker-push-runner:
+	docker tag 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:${IMAGE_VERSION} 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:main
+	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:${IMAGE_VERSION}
+	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:main
+
+docker-push-starter:
+	docker tag 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:${IMAGE_VERSION} 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:main
+	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:${IMAGE_VERSION}
+	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:main
 
 # Push the docker image
 docker-push:
