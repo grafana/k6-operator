@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -ev
+
+make docker-push-controller
+make docker-push-runner
+make docker-push-starter

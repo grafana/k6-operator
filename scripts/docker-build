@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+# Be sure to set the IMAGE_VERSION env var in Makefile before you run this.
+
+set -ev
+
+make docker-build-controller
+make docker-build-runner
+make docker-build-starter
