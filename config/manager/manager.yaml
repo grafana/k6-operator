@@ -46,16 +46,10 @@ spec:
               cpu: 100m
               memory: 50Mi
           env:
-          - name: DD_ENV
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['tags.datadoghq.com/env']
+          - name: DD_ENV # Note the datadog agent only supports literal values and doesn't work when DD_* env vars are set using fieldRef, configmap, or anything else.
+            value: "edge"
           - name: DD_SERVICE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['tags.datadoghq.com/service']
+            value: "laasie-k6-operator-controller"
           - name: DD_VERSION
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['tags.datadoghq.com/version']
+            value: "v0.0.7rc2-202110131601"
       terminationGracePeriodSeconds: 10
