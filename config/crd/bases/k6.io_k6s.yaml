@@ -38,6 +38,12 @@ spec:
             properties:
               arguments:
                 type: string
+              cleanup:
+                description: Cleanup allows for automatic cleanup of resources post
+                  execution
+                enum:
+                - post
+                type: string
               parallelism:
                 format: int32
                 type: integer
@@ -1694,6 +1700,7 @@ spec:
                 enum:
                 - created
                 - started
+                - finished
                 type: string
             type: object
         type: object
