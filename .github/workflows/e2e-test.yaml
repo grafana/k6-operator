@@ -20,9 +20,10 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
+          file: Dockerfile.controller
           push: true
           tags: |
-            ghcr.io/grafana/operator:${{ env.GITHUB_SHA }}
+            ghcr.io/grafana/operator:${{ github.sha }}
   kind:
     runs-on: ubuntu-latest
     steps:
@@ -35,14 +36,18 @@ jobs:
           kustomize_output_file: "rendered.yaml"
           kustomize_build_options: "--load_restrictor none"
       - uses: engineerd/setup-kind@v0.5.0
+        with:
+          version: "v0.11.1"
       - name: Testing
         run: |
           kubectl cluster-info
           kubectl apply -f rendered.yaml
-          kubectl set image deployment/k6-operator-controller-manager manager=ghcr.io/grafana/operator:${{ env.GITHUB_SHA }} --record
-          sleep 30
+          kubectl -n k6-operator-system set image deployment/k6-operator-controller-manager manager=ghcr.io/grafana/operator:${{ github.sha }} --record
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
           kubectl apply -f e2e/test.yaml
-          kubectl wait --for=condition=complete --timeout=180s job/k6-test-1
+          sleep 30
+          kubectl get namespaces
+          kubectl get jobs -A
+          kubectl wait --for=condition=complete --timeout=180s job/k6-sample-1
           kubectl delete configmap crocodile-stress-test
           kubectl delete -f e2e/test.yaml
