@@ -42,7 +42,7 @@ jobs:
         run: |
           kubectl cluster-info
           kubectl apply -f rendered.yaml
-          kubectl -n k6-operator-system set image deployment/k6-operator-controller-manager manager=ghcr.io/grafana/operator:${{ github.sha }} --record
+          kubectl -n k6-operator-system set image deployment/k6-operator-controller-manager manager=ghcr.io/grafana/operator:${{ github.sha }}
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
           kubectl apply -f e2e/test.yaml
           sleep 30
