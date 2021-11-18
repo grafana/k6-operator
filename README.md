@@ -5,7 +5,7 @@
 > ### ⚠️ Experimental
 >
 > This project is **experimental** and changes a lot between commits.
-> Use at your own risk. 
+> Use at your own risk.
 
 `grafana/k6-operator` is a kubernetes operator for running distributed k6 tests in your cluster.
 
@@ -18,7 +18,7 @@ Install the operator by running the command below:
 
 ```bash
 $ make deploy
-``` 
+```
 
 ### Installing the CRD
 
@@ -39,7 +39,7 @@ The operator utilises `ConfigMap`s to serve test scripts to the jobs. To upload 
 
 ```bash
 $ kubectl create configmap my-test --from-file /path/to/my/test.js
-``` 
+```
 
 ***Note: there is a character limit of 1048576 bytes to a single configmap. If you need to have a larger test file, you'll need to use a volumeClaim instead***
 
@@ -56,7 +56,7 @@ metadata:
   name: k6-sample
 spec:
   parallelism: 4
-  script: 
+  script:
     configMap:
       name: k6-test
       file: test.js
@@ -89,7 +89,7 @@ The test configuration is applied using
 ```bash
 $ kubectl apply -f /path/to/your/k6-resource.yml
 ```
-     
+
 #### Parallelism
 How many instances of k6 you want to create. Each instance will be assigned an equal execution segment. For instance,
 if your test script is configured to run 200 VUs and parallelism is set to 4, as in the example above, the operator will
@@ -157,7 +157,7 @@ image using github.com/szkiba/xk6-prometheus as an extension:
 # Build the k6 binary with the extension
 FROM golang:1.16.4-buster as builder
 
-RUN go install github.com/grafana/xk6/cmd/xk6@latest
+RUN go install go.k6.io/xk6/cmd/xk6@latest
 RUN xk6 build --output /k6 --with github.com/szkiba/xk6-prometheus@latest
 
 # Use the operator's base image and override the k6 binary
@@ -176,8 +176,8 @@ metadata:
   name: k6-sample-with-extensions
 spec:
   parallelism: 4
-  script: 
-    configMap: 
+  script:
+    configMap:
       name: crocodile-stress-test
       file: test.js
   arguments: --out prometheus
@@ -192,7 +192,7 @@ Note that we are replacing the test job image (`k6-prometheus:latest`), passing 
 (`--out prometheus`), and also exposing the ports required for Prometheus to scrape the metrics
 (in this case, that's port `5656`)
 
-If using the Prometheus Operator, you'll also need to create a pod monitor: 
+If using the Prometheus Operator, you'll also need to create a pod monitor:
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
@@ -329,7 +329,7 @@ $ make delete
 
 #### Run e2e Tests
 
-- [install kind and create a k8s cluster](https://kind.sigs.k8s.io/docs/user/quick-start/) (or create your own dev cluster) 
+- [install kind and create a k8s cluster](https://kind.sigs.k8s.io/docs/user/quick-start/) (or create your own dev cluster)
 - `make e2e`
 - validate tests have been run
 - `make e2e-cleanup`
