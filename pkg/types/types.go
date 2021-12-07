@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -11,23 +12,25 @@ import (
 
 // Internal type created to support Spec.script options
 type Script struct {
-	Name string
-	File string
-	Type string // ConfigMap | VolumeClaim | LocalFile
+	Name     string // name of ConfigMap or VolumeClaim or "LocalFile"
+	Filename string
+	Path     string
+	Type     string // ConfigMap | VolumeClaim | LocalFile
 }
 
 // ParseScript extracts Script data bits from K6 spec and performs basic validation
 func ParseScript(spec *v1alpha1.K6Spec) (*Script, error) {
-	s := &Script{}
-	s.File = "test.js"
+	s := &Script{
+		Filename: "test.js",
+		Path:     "/test/",
+	}
 
 	if spec.Script.VolumeClaim.Name != "" {
 		s.Name = spec.Script.VolumeClaim.Name
 		if spec.Script.VolumeClaim.File != "" {
-			s.File = spec.Script.VolumeClaim.File
+			s.Filename = spec.Script.VolumeClaim.File
 		}
 
-		s.File = fmt.Sprintf("/test/%s", s.File)
 		s.Type = "VolumeClaim"
 		return s, nil
 	}
@@ -36,22 +39,25 @@ func ParseScript(spec *v1alpha1.K6Spec) (*Script, error) {
 		s.Name = spec.Script.ConfigMap.Name
 
 		if spec.Script.ConfigMap.File != "" {
-			s.File = spec.Script.ConfigMap.File
+			s.Filename = spec.Script.ConfigMap.File
 		}
 
-		s.File = fmt.Sprintf("/test/%s", s.File)
 		s.Type = "ConfigMap"
 		return s, nil
 	}
 
 	if spec.Script.LocalFile != "" {
 		s.Name = "LocalFile"
-		s.File = spec.Script.LocalFile
 		s.Type = "LocalFile"
+		s.Path, s.Filename = filepath.Split(spec.Script.LocalFile)
 		return s, nil
 	}
 
 	return nil, errors.New("Script definition should contain one of: ConfigMap, VolumeClaim, LocalFile")
+}
+
+func (s *Script) FullName() string {
+	return s.Path + s.Filename
 }
 
 // Volume creates a Volume spec for the script
@@ -99,7 +105,7 @@ func (s *Script) VolumeMount() corev1.VolumeMount {
 func (s *Script) UpdateCommand(cmd []string) []string {
 	if s.Type == "LocalFile" {
 		joincmd := strings.Join(cmd, " ")
-		checkCommand := []string{"sh", "-c", fmt.Sprintf("if [ ! -f %v ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\n%v", s.File, joincmd)}
+		checkCommand := []string{"sh", "-c", fmt.Sprintf("if [ ! -f %v ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\n%v", s.FullName(), joincmd)}
 		return checkCommand
 	}
 	return cmd
