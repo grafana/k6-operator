@@ -146,6 +146,42 @@ After completing a test run, you need to clean up the test jobs created. This is
 $ kubectl delete -f /path/to/your/k6-resource.yml
 ```
 
+### Multi-file tests
+
+In case your k6 script is split between more than one JS file, you can simply create a configmap with several data entries like this:
+```bash
+kubectl create configmap scenarios-test --from-file test.js --from-file utils.js
+```
+
+If there are too many files to specify manually, kubectl with folder might be an option:
+```bash
+kubectl create configmap scenarios-test --from-file=./test
+```
+
+Alternatively, you can create an archive with k6:
+```bash
+k6 archive test.js [args]
+```
+
+The above command will create an archive.tar in your current folder unless `-O` option is used to change the name of the output archive. Then it is possible to put that archive into configmap similarly to JS script:
+```bash
+kubectl create configmap scenarios-test --from-file=archive.tar
+```
+
+In case of using an archive it must be additionally specified in your yaml for K6 deployment:
+
+```bash
+...
+spec:
+  parallelism: 1
+  script:
+    configMap:
+      name: "crocodile-stress-test"
+      file: "archive.tar" # <-- change here
+```
+
+In other words, `file` option must be the correct entrypoint for `k6 run`.
+
 ### Using extensions
 By default, the operator will use `loadimpact/k6:latest` as the container image for the test jobs. If you want to use
 extensions built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image`
