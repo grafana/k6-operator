@@ -62,3 +62,14 @@ vars:
 #    kind: Service
 #    version: v1
 #    name: webhook-service
+
+# Uncomment this section if you need cloud output and copy-paste your token
+# secretGenerator:
+# - name: cloud-token
+#   literals:
+#   - token=
+#   options:
+#     annotations:
+#       kubernetes.io/service-account.name: k6-operator-controller
+#     labels:
+#       k6cloud: token

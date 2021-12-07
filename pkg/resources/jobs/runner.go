@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -9,20 +8,14 @@ import (
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/segmentation"
+	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Internal script type created from Spec.script possible options
-type Script struct {
-	Name string
-	File string
-	Type string
-}
-
 // NewRunnerJob creates a new k6 job from a CRD
-func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
+func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.Name, index)
 	postCommand := []string{"k6", "run"}
 
@@ -48,8 +41,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		command = append(command, args...)
 	}
 
-	script, err := newScript(k6.Spec)
-
+	script, err := types.ParseScript(&k6.Spec)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +65,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		command = append(command, "--paused")
 	}
 
-	command = appendFileCheckerCommand(script, command)
+	command = script.UpdateCommand(command)
 
 	var (
 		zero   int64 = 0
@@ -91,6 +83,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	}
 
 	runnerLabels := newLabels(k6.Name)
+	runnerLabels["runner"] = "true"
 	if k6.Spec.Runner.Metadata.Labels != nil {
 		for k, v := range k6.Spec.Runner.Metadata.Labels { // Order not specified
 			if _, ok := runnerLabels[k]; !ok {
@@ -113,6 +106,15 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 	ports = append(ports, k6.Spec.Ports...)
 
 	env := newIstioEnvVar(k6.Spec.Scuttle, istioEnabled)
+	if len(testRunId) > 0 {
+		env = append(env, corev1.EnvVar{
+			Name:  "K6_CLOUD_PUSH_REF_ID",
+			Value: testRunId,
+		}, corev1.EnvVar{
+			Name:  "K6_CLOUD_TOKEN",
+			Value: token,
+		})
+	}
 	env = append(env, k6.Spec.Runner.Env...)
 
 	job := &batchv1.Job{
@@ -138,16 +140,20 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 					NodeSelector:                 k6.Spec.Runner.NodeSelector,
 					SecurityContext:              &k6.Spec.Runner.SecurityContext,
 					Containers: []corev1.Container{{
-						Image:        image,
-						Name:         "k6",
-						Command:      command,
-						Env:          env,
-						Resources:    k6.Spec.Runner.Resources,
-						VolumeMounts: newVolumeMountSpec(script),
-						Ports:        ports,
+						Image:     image,
+						Name:      "k6",
+						Command:   command,
+						Env:       env,
+						Resources: k6.Spec.Runner.Resources,
+						VolumeMounts: []corev1.VolumeMount{
+							script.VolumeMount(),
+						},
+						Ports: ports,
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes:                       newVolumeSpec(script),
+					Volumes: []corev1.Volume{
+						script.Volume(),
+					},
 				},
 			},
 		},
@@ -169,6 +175,7 @@ func NewRunnerService(k6 *v1alpha1.K6, index int) (*corev1.Service, error) {
 	}
 
 	runnerLabels := newLabels(k6.Name)
+	runnerLabels["runner"] = "true"
 	if k6.Spec.Runner.Metadata.Labels != nil {
 		for k, v := range k6.Spec.Runner.Metadata.Labels { // Order not specified
 			if _, ok := runnerLabels[k]; !ok {
@@ -222,86 +229,4 @@ func newAntiAffinity() *corev1.Affinity {
 			},
 		},
 	}
-}
-
-func newVolumeMountSpec(s *Script) []corev1.VolumeMount {
-	if s.Type == "LocalFile" {
-		return []corev1.VolumeMount{}
-	}
-	return []corev1.VolumeMount{{
-		Name:      "k6-test-volume",
-		MountPath: "/test",
-	}}
-}
-
-func newVolumeSpec(s *Script) []corev1.Volume {
-	switch s.Type {
-	case "VolumeClaim":
-		return []corev1.Volume{{
-			Name: "k6-test-volume",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: s.Name,
-				},
-			},
-		}}
-	case "ConfigMap":
-		return []corev1.Volume{{
-			Name: "k6-test-volume",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: s.Name,
-					},
-				},
-			},
-		}}
-	default:
-		return []corev1.Volume{}
-	}
-}
-
-func newScript(spec v1alpha1.K6Spec) (*Script, error) {
-	s := &Script{}
-	s.File = "test.js"
-
-	if spec.Script.VolumeClaim.Name != "" {
-		s.Name = spec.Script.VolumeClaim.Name
-		if spec.Script.VolumeClaim.File != "" {
-			s.File = spec.Script.VolumeClaim.File
-		}
-
-		s.File = fmt.Sprintf("/test/%s", s.File)
-		s.Type = "VolumeClaim"
-		return s, nil
-	}
-
-	if spec.Script.ConfigMap.Name != "" {
-		s.Name = spec.Script.ConfigMap.Name
-
-		if spec.Script.ConfigMap.File != "" {
-			s.File = spec.Script.ConfigMap.File
-		}
-		s.File = fmt.Sprintf("/test/%s", s.File)
-		s.Type = "ConfigMap"
-		return s, nil
-	}
-
-	if spec.Script.LocalFile != "" {
-		s.Name = "LocalFile"
-		s.File = spec.Script.LocalFile
-		s.Type = "LocalFile"
-		return s, nil
-	}
-
-	return nil, errors.New("ConfigMap, VolumeClaim or LocalFile not provided in script definition")
-}
-
-func appendFileCheckerCommand(s *Script, cmd []string) []string {
-	if s.Type == "LocalFile" {
-		joincmd := strings.Join(cmd, " ")
-		checkCommand := []string{"sh", "-c", fmt.Sprintf("if [ ! -f %v ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\n%v", s.File, joincmd)}
-		return checkCommand
-	}
-	return cmd
 }
