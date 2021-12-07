@@ -53,8 +53,8 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 
 	var (
 		// k6 allows to run archive command on archives too so type of file here doesn't matter
-		scriptName  = fmt.Sprintf("/test/%s", script.File)
-		archiveName = fmt.Sprintf("./%s.archived.tar", script.File)
+		scriptName  = script.FullName()
+		archiveName = fmt.Sprintf("./%s.archived.tar", script.Filename)
 	)
 	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, []string{"sh", "-c"})
 	command = append(command, fmt.Sprintf("k6 archive %s -O %s %s && k6 inspect --execution-requirements %s",
@@ -84,12 +84,11 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
-							ImagePullPolicy: "Never",
-							Image:           image,
-							Name:            "k6",
-							Command:         command,
-							Env:             env,
-							Resources:       k6.Spec.Runner.Resources,
+							Image:     image,
+							Name:      "k6",
+							Command:   command,
+							Env:       env,
+							Resources: k6.Spec.Runner.Resources,
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "k6-test-volume",
