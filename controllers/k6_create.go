@@ -14,7 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// CreateJobs that will spawn k6 pods, running distributed tests
+// CreateJobs creates jobs that will spawn k6 pods for distributed test
 func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
 	var err error
 	var res ctrl.Result
@@ -62,7 +62,7 @@ func launchTest(ctx context.Context, k6 *v1alpha1.K6, index int, log logr.Logger
 	msg := fmt.Sprintf("Launching k6 test #%d", index)
 	log.Info(msg)
 
-	if job, err = jobs.NewRunnerJob(k6, index); err != nil {
+	if job, err = jobs.NewRunnerJob(k6, index, testRunId, token); err != nil {
 		log.Error(err, "Failed to generate k6 test job")
 		return err
 	}

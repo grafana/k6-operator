@@ -27,6 +27,7 @@ func NewCurlContainer(hostnames []string, image string, command []string, env []
 	for _, hostname := range hostnames {
 		parts = append(parts, fmt.Sprintf("curl --retry 3 -X PATCH -H 'Content-Type: application/json' http://%s:6565/v1/status -d '%s'", hostname, req))
 	}
+
 	return corev1.Container{
 		Name:  "k6-curl",
 		Image: image,
