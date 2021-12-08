@@ -888,7 +888,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 					Containers: []corev1.Container{{
 						Image:   "ghcr.io/grafana/operator:latest-runner",
 						Name:    "k6",
-						Command: []string{"k6", "run", "--quiet", "--out", "cloud", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
+						Command: []string{"k6", "run", "--quiet", "--out", "cloud", "/test/test.js", "--address=0.0.0.0:6565", "--paused", "--tag", "instance_id=1"},
 						Env: []corev1.EnvVar{
 							{
 								Name:  "K6_CLOUD_PUSH_REF_ID",
