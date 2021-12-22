@@ -154,6 +154,50 @@ Defines options for the starter pod. This includes:
 * passing in custom image
 * passing in labels and annotations
 
+### k6 outputs
+
+#### k6 Cloud output
+
+k6 supports [output to its Cloud](https://k6.io/docs/results-visualization/cloud) with `k6 run --out cloud script.js` command. To use this option in k6-operator, set the argument in yaml:
+
+```yaml
+...
+  script:
+    configMap:
+      name: "<configmap>"
+  arguments: --out cloud
+...
+```
+
+Then uncomment cloud output section in `config/default/kustomization.yaml` and copy your token from the Cloud there:
+
+```yaml
+# Uncomment this section if you need cloud output and copy-paste your token
+secretGenerator:
+- name: cloud-token
+  literals:
+  - token=<copy-paste-token-string-here>
+  options:
+    annotations:
+      kubernetes.io/service-account.name: k6-operator-controller
+    labels:
+      k6cloud: token
+```
+
+This is sufficient to run k6 with the Cloud output and default values of `projectID` and `name` (`"k6-operator-test"`). For non-default values, extended script options can be used like this:
+
+```js
+export let options = {
+  ...
+  ext: {
+    loadimpact: {
+      name: 'Configured k6-operator test',
+      projectID: 1234567,
+    }
+  }
+};
+```
+
 ### Cleaning up between test runs
 After completing a test run, you need to clean up the test jobs created. This is done by running the following command:
 ```bash

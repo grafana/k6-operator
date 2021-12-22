@@ -13,7 +13,6 @@ import (
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
 	"github.com/grafana/k6-operator/pkg/types"
-	k6types "go.k6.io/k6/lib/types"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -154,31 +153,26 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 				return false, err
 			}
 
-			var execSpec struct {
-				TotalDuration k6types.NullDuration `json:"totalDuration"`
-				MaxVUs        uint64               `json:"maxVUs"`
-			}
+			var inspectOutput cloud.InspectOutput
 
-			if err := json.Unmarshal(buf.Bytes(), &execSpec); err != nil {
+			if err := json.Unmarshal(buf.Bytes(), &inspectOutput); err != nil {
 				return true, err
 			}
 
-			log.Info(fmt.Sprintf("Execution requirements: %+v", execSpec))
+			log.Info(fmt.Sprintf("k6 inspect: %+v", inspectOutput))
 
-			if int32(execSpec.MaxVUs) < k6.Spec.Parallelism {
+			if int32(inspectOutput.MaxVUs) < k6.Spec.Parallelism {
 				err = fmt.Errorf("number of instances > number of VUs")
 				// TODO maybe change this to a warning and simply set parallelism = maxVUs and proceed with execution?
 				// But logr doesn't seem to have warning level by default, only with V() method...
 				// It makes sense to return to this after / during logr VS logrus issue https://github.com/grafana/k6-operator/issues/84
 				log.Error(err, "Parallelism argument cannot be larger than maximum VUs in the script",
-					"maxVUs", execSpec.MaxVUs,
+					"maxVUs", inspectOutput.MaxVUs,
 					"parallelism", k6.Spec.Parallelism)
 				return false, err
 			}
 
-			if refID, err := cloud.CreateTestRun("k6-operator-test", token,
-				execSpec.MaxVUs, execSpec.TotalDuration.TimeDuration().Seconds(),
-				log); err != nil {
+			if refID, err := cloud.CreateTestRun(inspectOutput, token, log); err != nil {
 				return true, err
 			} else {
 				testRunId = refID
