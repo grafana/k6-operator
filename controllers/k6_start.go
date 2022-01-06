@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -14,6 +16,22 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func isPodReady(pod *v1.Pod) bool {
+	resp, err := http.Get(fmt.Sprintf("%v/v1/status", pod.Status.HostIP))
+
+	if err != nil {
+		return false
+	}
+
+	status, err := strconv.Atoi(resp.Status)
+
+	if err != nil {
+		return false
+	}
+
+	return status < 400
+}
 
 // StartJobs in the Ready phase using a curl container
 func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
@@ -35,7 +53,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 
 		var count int
 		for _, pod := range pl.Items {
-			if pod.Status.Phase != "Running" {
+			if pod.Status.Phase != "Running" && !isPodReady(&pod) {
 				continue
 			}
 			count++
