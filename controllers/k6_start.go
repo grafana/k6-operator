@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -24,13 +23,7 @@ func isPodReady(pod *v1.Pod) bool {
 		return false
 	}
 
-	status, err := strconv.Atoi(resp.Status)
-
-	if err != nil {
-		return false
-	}
-
-	return status < 400
+	return resp.StatusCode < 400
 }
 
 // StartJobs in the Ready phase using a curl container
