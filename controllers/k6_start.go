@@ -17,6 +17,9 @@ import (
 )
 
 func isPodReady(pod *v1.Pod) bool {
+        if len(pod.Status.HostIP) < 1 {
+            return false
+        }
 	resp, err := http.Get(fmt.Sprintf("%v/v1/status", pod.Status.HostIP))
 
 	if err != nil {
