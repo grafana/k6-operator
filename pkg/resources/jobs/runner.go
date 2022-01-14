@@ -37,7 +37,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		command = append(command, "--quiet")
 	}
 
-	if k6.Spec.Parallelism > 1 {
+	if k6.Spec.Parallelism > 1 && !k6.Spec.DisableFragmentation {
 		var args []string
 		var err error
 

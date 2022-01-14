@@ -38,6 +38,8 @@ spec:
             properties:
               arguments:
                 type: string
+              disableFragmentation:
+                type: boolean
               parallelism:
                 format: int32
                 type: integer
