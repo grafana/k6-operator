@@ -868,6 +868,8 @@ spec:
                     required:
                     - name
                     type: object
+                  localFile:
+                    type: string
                   volumeClaim:
                     description: K6VolumeClaim describes the volume claim script location
                     properties:
