@@ -16,13 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func isPodReady(pod *v1.Pod) bool {
-        if len(pod.Status.HostIP) < 1 {
-            return false
-        }
-	resp, err := http.Get(fmt.Sprintf("%v/v1/status", pod.Status.HostIP))
+func isServiceReady(log logr.Logger, service *v1.Service) bool {
+	resp, err := http.Get(fmt.Sprintf("http://%v.%v.svc.cluster.local:6565/v1/status", service.ObjectMeta.Name, service.ObjectMeta.Namespace))
 
 	if err != nil {
+		log.Error(err, fmt.Sprintf("failed to get status from %v", service.ObjectMeta.Name))
 		return false
 	}
 
@@ -49,7 +47,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 
 		var count int
 		for _, pod := range pl.Items {
-			if pod.Status.Phase != "Running" && !isPodReady(&pod) {
+			if pod.Status.Phase != "Running" {
 				continue
 			}
 			count++
@@ -72,6 +70,11 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 
 		for _, service := range sl.Items {
 			hostnames = append(hostnames, service.ObjectMeta.Name)
+
+			if !isServiceReady(log, &service) {
+				log.Info(fmt.Sprintf("%v service is not ready, aborting", service.ObjectMeta.Name))
+				return false, nil
+			}
 		}
 
 		starter := jobs.NewStarterJob(k6, hostnames)
