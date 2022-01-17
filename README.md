@@ -35,15 +35,23 @@ Two samples are available in `config/samples`, one for a test script and one for
 
 ### Adding test scripts
 
-The operator utilises `ConfigMap`s to serve test scripts to the jobs. To upload your own test script, run the following:
+The operator utilises `ConfigMap`s and `LocalFile` to serve test scripts to the jobs. To upload your own test script, run the following command to configure through `ConfigMap`:
 
+#### ConfigMap
 ```bash
 $ kubectl create configmap my-test --from-file /path/to/my/test.js
 ```
 
-***Note: there is a character limit of 1048576 bytes to a single configmap. If you need to have a larger test file, you'll need to use a volumeClaim instead***
+***Note: there is a character limit of 1048576 bytes to a single configmap. If you need to have a larger test file, you'll need to use a volumeClaim or a LocalFile instead***
+
+#### LocalFile
+
+There is a sample avaiable in `config/samples/k6_v1alpha1_k6_with_localfile.yaml` on how to configure to run a test script inside the docker image.
+
+***Note: if there is any limitation on usage of volumeClaim in your cluster you can use this option, but always prefer the usage of volumeClaim.***
 
 ### Executing tests
+
 Tests are executed by applying the custom resource `K6` to a cluster where the operator is running. The properties
 of a test run are few, but allow you to control some key aspects of a distributed execution.
 
@@ -137,8 +145,6 @@ Defines options for the starter pod. This includes:
 
 * passing in custom image
 * passing in labels and annotations
-
-
 
 ### Cleaning up between test runs
 After completing a test run, you need to clean up the test jobs created. This is done by running the following command:
