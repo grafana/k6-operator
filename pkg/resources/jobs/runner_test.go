@@ -99,7 +99,14 @@ func TestNewScriptNoScript(t *testing.T) {
 
 func TestNewVolumeSpecVolumeClaim(t *testing.T) {
 
-	expectedOutcome := []corev1.Volume{}
+	expectedOutcome := []corev1.Volume{{
+		Name: "k6-test-volume",
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+				ClaimName: "test",
+			},
+		},
+	}}
 
 	k6 := &Script{
 		Type: "VolumeClaim",
