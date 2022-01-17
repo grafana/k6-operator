@@ -67,6 +67,7 @@ type K6Spec struct {
 type K6Script struct {
 	VolumeClaim K6VolumeClaim `json:"volumeClaim,omitempty"`
 	ConfigMap   K6Configmap   `json:"configMap,omitempty"`
+	LocalFile   string        `json:"localFile,omitempty"`
 }
 
 // K6VolumeClaim describes the volume claim script location
