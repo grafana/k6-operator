@@ -61,7 +61,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 
 	command = append(
 		command,
-		fmt.Sprintf("/test/%s", script.File),
+		fmt.Sprintf(script.File),
 		"--address=0.0.0.0:6565")
 
 	paused := true
@@ -131,16 +131,13 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 					Affinity:                     k6.Spec.Runner.Affinity,
 					NodeSelector:                 k6.Spec.Runner.NodeSelector,
 					Containers: []corev1.Container{{
-						Image:     image,
-						Name:      "k6",
-						Command:   command,
-						Env:       env,
-						Resources: k6.Spec.Runner.Resources,
-						VolumeMounts: []corev1.VolumeMount{{
-							Name:      "k6-test-volume",
-							MountPath: "/test",
-						}},
-						Ports: ports,
+						Image:        image,
+						Name:         "k6",
+						Command:      command,
+						Env:          env,
+						Resources:    k6.Spec.Runner.Resources,
+						VolumeMounts: newVolumeMountSpec(script),
+						Ports:        ports,
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       newVolumeSpec(script),
@@ -220,8 +217,19 @@ func newAntiAffinity() *corev1.Affinity {
 	}
 }
 
+func newVolumeMountSpec(s *Script) []corev1.VolumeMount {
+	if s.Type == "LocalFile" {
+		return []corev1.VolumeMount{}
+	}
+	return []corev1.VolumeMount{{
+		Name:      "k6-test-volume",
+		MountPath: "/test",
+	}}
+}
+
 func newVolumeSpec(s *Script) []corev1.Volume {
-	if s.Type == "VolumeClaim" {
+	switch s.Type {
+	case "VolumeClaim":
 		return []corev1.Volume{{
 			Name: "k6-test-volume",
 			VolumeSource: corev1.VolumeSource{
@@ -230,18 +238,20 @@ func newVolumeSpec(s *Script) []corev1.Volume {
 				},
 			},
 		}}
-	}
-
-	return []corev1.Volume{{
-		Name: "k6-test-volume",
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: s.Name,
+	case "ConfigMap":
+		return []corev1.Volume{{
+			Name: "k6-test-volume",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: s.Name,
+					},
 				},
 			},
-		},
-	}}
+		}}
+	default:
+		return []corev1.Volume{}
+	}
 }
 
 func newScript(spec v1alpha1.K6Spec) (*Script, error) {
@@ -254,6 +264,7 @@ func newScript(spec v1alpha1.K6Spec) (*Script, error) {
 			s.File = spec.Script.VolumeClaim.File
 		}
 
+		s.File = fmt.Sprintf("/test/%s", s.File)
 		s.Type = "VolumeClaim"
 		return s, nil
 	}
@@ -264,10 +275,17 @@ func newScript(spec v1alpha1.K6Spec) (*Script, error) {
 		if spec.Script.ConfigMap.File != "" {
 			s.File = spec.Script.ConfigMap.File
 		}
-
+		s.File = fmt.Sprintf("/test/%s", s.File)
 		s.Type = "ConfigMap"
 		return s, nil
 	}
 
-	return nil, errors.New("ConfigMap or VolumeClaim not provided in script definition")
+	if spec.Script.LocalFile != "" {
+		s.Name = "LocalFile"
+		s.File = spec.Script.LocalFile
+		s.Type = "LocalFile"
+		return s, nil
+	}
+
+	return nil, errors.New("ConfigMap, VolumeClaim or LocalFile not provided in script definition")
 }

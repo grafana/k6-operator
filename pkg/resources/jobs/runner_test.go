@@ -16,7 +16,7 @@ func TestNewScriptVolumeClaim(t *testing.T) {
 
 	expectedOutcome := &Script{
 		Name: "Test",
-		File: "thing.js",
+		File: "/test/thing.js",
 		Type: "VolumeClaim",
 	}
 
@@ -42,7 +42,7 @@ func TestNewScriptConfigMap(t *testing.T) {
 
 	expectedOutcome := &Script{
 		Name: "Test",
-		File: "thing.js",
+		File: "/test/thing.js",
 		Type: "ConfigMap",
 	}
 
@@ -64,6 +64,29 @@ func TestNewScriptConfigMap(t *testing.T) {
 	}
 }
 
+func TestNewScriptLocalFile(t *testing.T) {
+
+	expectedOutcome := &Script{
+		Name: "LocalFile",
+		File: "/custom/my_test.js",
+		Type: "LocalFile",
+	}
+
+	k6 := v1alpha1.K6Spec{
+		Script: v1alpha1.K6Script{
+			LocalFile: "/custom/my_test.js",
+		},
+	}
+
+	script, err := newScript(k6)
+	if err != nil {
+		t.Errorf("NewScript with LocalFile errored, got: %v, want: %v", err, expectedOutcome)
+	}
+	if !reflect.DeepEqual(script, expectedOutcome) {
+		t.Errorf("NewScript with LocalFile failed to return expected output, got: %v, expected: %v", script, expectedOutcome)
+	}
+}
+
 func TestNewScriptNoScript(t *testing.T) {
 
 	k6 := v1alpha1.K6Spec{}
@@ -75,14 +98,8 @@ func TestNewScriptNoScript(t *testing.T) {
 }
 
 func TestNewVolumeSpecVolumeClaim(t *testing.T) {
-	expectedOutcome := []corev1.Volume{{
-		Name: "k6-test-volume",
-		VolumeSource: corev1.VolumeSource{
-			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-				ClaimName: "test",
-			},
-		},
-	}}
+
+	expectedOutcome := []corev1.Volume{}
 
 	k6 := &Script{
 		Type: "VolumeClaim",
@@ -119,16 +136,7 @@ func TestNewVolumeSpecConfigMap(t *testing.T) {
 }
 
 func TestNewVolumeSpecNoType(t *testing.T) {
-	expectedOutcome := []corev1.Volume{{
-		Name: "k6-test-volume",
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: "test",
-				},
-			},
-		},
-	}}
+	expectedOutcome := []corev1.Volume{}
 
 	k6 := &Script{
 		Name: "test",
