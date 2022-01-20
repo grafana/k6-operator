@@ -7,3 +7,5 @@ spec:
   parallelism: 4
   script:
     localFile: /test/test.js
+  runner:
+    image: <custom-image>
