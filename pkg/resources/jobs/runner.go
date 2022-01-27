@@ -73,6 +73,8 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 		command = append(command, "--paused")
 	}
 
+	command = appendFileCheckerCommand(script, command)
+
 	var zero int64 = 0
 
 	image := "ghcr.io/grafana/operator:latest-runner"
@@ -288,4 +290,13 @@ func newScript(spec v1alpha1.K6Spec) (*Script, error) {
 	}
 
 	return nil, errors.New("ConfigMap, VolumeClaim or LocalFile not provided in script definition")
+}
+
+func appendFileCheckerCommand(s *Script, cmd []string) []string {
+	if s.Type == "LocalFile" {
+		joincmd := strings.Join(cmd, " ")
+		checkCommand := []string{"sh", "-c", fmt.Sprintf("if [ ! -f %v ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\n%v", s.File, joincmd)}
+		return checkCommand
+	}
+	return cmd
 }
