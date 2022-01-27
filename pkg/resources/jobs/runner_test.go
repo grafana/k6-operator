@@ -93,7 +93,7 @@ func TestNewScriptNoScript(t *testing.T) {
 
 	script, err := newScript(k6)
 	if err == nil && script != nil {
-		t.Errorf("Expected Error from NewScript, got: %v, want: %v", err, errors.New("configMap or VolumeClaim not provided in script definition"))
+		t.Errorf("Expected Error from NewScript, got: %v, want: %v", err, errors.New("configMap, VolumeClaim or LocalFile not provided in script definition"))
 	}
 }
 
@@ -802,6 +802,97 @@ func TestNewRunnerJobIstio(t *testing.T) {
 					Name: "test",
 					File: "test.js",
 				},
+			},
+			Runner: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+			},
+		},
+	}
+
+	job, err := NewRunnerJob(k6, 1)
+	if err != nil {
+		t.Errorf("NewRunnerJob errored, got: %v", err)
+	}
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Errorf("NewRunnerJob returned unexpected data, diff: %s", diff)
+	}
+}
+
+func TestNewRunnerJobLocalFile(t *testing.T) {
+	script := &Script{
+		Name: "test",
+		File: "/test/test.js",
+		Type: "LocalFile",
+	}
+
+	var zero int64 = 0
+	automountServiceAccountToken := true
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-1",
+			Namespace: "test",
+			Labels: map[string]string{
+				"app":    "k6",
+				"k6_cr":  "test",
+				"label1": "awesome",
+			},
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app":    "k6",
+						"k6_cr":  "test",
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Hostname:                     "test-1",
+					RestartPolicy:                corev1.RestartPolicyNever,
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					ServiceAccountName:           "default",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					Containers: []corev1.Container{{
+						Image:        "ghcr.io/grafana/operator:latest-runner",
+						Name:         "k6",
+						Command:      []string{"sh", "-c", "if [ ! -f /test/test.js ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\nk6 run --quiet /test/test.js --address=0.0.0.0:6565 --paused"},
+						Env:          []corev1.EnvVar{},
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: []corev1.VolumeMount{},
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
+					}},
+					TerminationGracePeriodSeconds: &zero,
+					Volumes:                       newVolumeSpec(script),
+				},
+			},
+		},
+	}
+	k6 := &v1alpha1.K6{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.K6Spec{
+			Scuttle: v1alpha1.K6Scuttle{
+				Enabled: "false",
+			},
+			Script: v1alpha1.K6Script{
+				LocalFile: "/test/test.js",
 			},
 			Runner: v1alpha1.Pod{
 				Metadata: v1alpha1.PodMetadata{
