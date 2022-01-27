@@ -57,12 +57,6 @@ e2e-cleanup:
 	kubectl delete configmap crocodile-stress-test
 	kubectl delete -f e2e/test.yaml
 
-e2e-localfile: deploy
-	kubectl apply -f e2e/testLocalFile.yaml
-
-e2e-localfile-cleanup:
-	kubectl delete -f e2e/testLocalFile.yaml
-
 # Build manager binary
 manager: generate fmt vet
 	go build -o bin/manager main.go
