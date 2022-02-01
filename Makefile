@@ -36,6 +36,7 @@ GOOS=$(shell go env GOOS)
 GOARCH=$(shell go env GOARCH)
 KUBEBUILDER_ASSETS_ROOT=/tmp
 KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS_ROOT)/kubebuilder/bin
+
 test: generate fmt vet manifests
 	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); setup-envtest use --use-env -p env $(ENVTEST_K8S_VERSION); go test ./... -coverprofile cover.out
 
@@ -67,22 +68,13 @@ manager: generate fmt vet
 run: generate fmt vet manifests
 	go run ./main.go
 
-# Install CRDs into a cluster
-install: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
-
-# Uninstall CRDs from a cluster
-uninstall: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
-
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+deploy: manifests helm
+	$(HELM) install k6-operator ./helm/charts -f ./helm/charts/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
 
 # Delete operator from a cluster
-delete: manifests kustomize
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+delete: manifests helm
+	$(HELM) uninstall k6-operator
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -125,27 +117,26 @@ else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
-kustomize:
-ifeq (, $(shell which kustomize))
+helm:
+ifeq (, $(shell which helm))
 	@{ \
 	set -e ;\
-	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
+	HELM_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$HELM_GEN_TMP_DIR ;\
 	go mod init tmp ;\
 	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.5 ;\
 	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
 	}
-KUSTOMIZE=$(GOBIN)/kustomize
+HELM=$(GOBIN)/helm
 else
-KUSTOMIZE=$(shell which kustomize)
+HELM=$(shell which helm)
 endif
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
 bundle: manifests
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(HELM) template k6-operator ./helm/charts -f ./helm/charts/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG) | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 
 # Build the bundle image.
