@@ -14,7 +14,8 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # Image to use for building Go
 GO_BUILDER_IMG ?= "golang:1.18"
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/grafana/k6-operator:latest
+IMG_NAME ?= ghcr.io/grafana/k6-operator
+IMG_TAG ?= latest
 # Default dockerfile to build
 DOCKERFILE ?= "Dockerfile.controller"
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -144,6 +145,46 @@ endif
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
 bundle: manifests
+	operator-sdk generate kustomize manifests -q
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG_NAME):$(IMG_TAG)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	operator-sdk bundle validate ./bundle
+
+# Build the bundle image.
+.PHONY: bundle-build
+bundle-build:
+	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+# ===============================================================
+# This section is only about the HELM deployment of the operator
+# ===============================================================
+
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy-helm: manifests helm
+	$(HELM) install k6-operator ./helm/charts -f ./helm/charts/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
+
+# Delete operator from a cluster
+delete-helm: manifests helm
+	$(HELM) uninstall k6-operator
+
+helm:
+ifeq (, $(shell which helm))
+	@{ \
+	set -e ;\
+	HELM_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$HELM_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+	}
+HELM=$(GOBIN)/helm
+else
+HELM=$(shell which helm)
+endif
+
+# Generate bundle manifests and metadata, then validate generated files.
+.PHONY: bundle
+bundle-helm: manifests
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG_NAME}:${IMG_TAG}
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
