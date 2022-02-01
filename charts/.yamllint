@@ -1,0 +1,21 @@
+---
+extends: default
+
+ignore: |
+  templates/*.yaml
+  repository-metadata.yaml
+
+rules:
+  document-start: disable
+  braces:
+    max-spaces-inside: 1
+    level: error
+  brackets:
+    max-spaces-inside: 1
+    level: error
+  empty-lines:
+    max: 1
+  indentation:
+    spaces: 2
+  line-length:
+    max: 200

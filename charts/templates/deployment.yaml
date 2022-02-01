@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-controller-manager
+  namespace: {{- include "operator.namespace" . }}
+  labels: &labels
+    control-plane: {{ .Values.controlPlane }}
+    {{- with .Values.customLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations: &annotations
+    {{- include "operator.annotations" . | default "{}" | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: {{ .Values.controlPlane }}
+  template:
+    metadata:
+      labels:
+        <<: *labels
+      annotations:
+        <<: *annotations
+    spec:
+      containers:
+        {{- if .Values.authProxy.enabled }}
+        - name: kube-rbac-proxy
+          image: "{{ .Values.authProxy.image.name }}:{{ .Values.authProxy.image.tag }}"
+          imagePullPolicy: {{ .Values.authProxy.image.pullPolicy }}
+          {{- if .Values.authProxy.resources }}
+          resources:
+            {{- toYaml .Values.authProxy.resources | nindent 12 }}
+          {{- end }}
+          {{- if .Values.authProxy.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.authProxy.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.authProxy.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.authProxy.readinessProbe | nindent 12 }}
+          {{- end }}
+          args:
+            - --secure-listen-address=0.0.0.0:8443
+            - --upstream=http://127.0.0.1:8080/
+            - --logtostderr=true
+            - --v=10
+          {{- include "operator.readinessProbe" . }}
+          ports:
+            - containerPort: 8443
+              name: https
+        {{- end }}
+        - name: manager
+          image: "{{ .Values.manager.image.name }}:{{ .Values.manager.image.tag }}"
+          imagePullPolicy: {{ .Values.manager.image.pullPolicy }}
+          {{- if .Values.manager.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.manager.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.manager.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.manager.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.manager.resources | nindent 12 }}
+          {{- if .Values.manager.env }}
+          env:
+            {{- with .Values.manager.env }}
+              {{- toYaml . | nindent 10 }}
+            {{- end }}
+          {{- end }}
+          command:
+            - /manager
+          args:
+            - --enable-leader-election
+            {{- if .Values.authProxy.enabled }}
+            - --metrics-addr=127.0.0.1:8080
+            {{- end }}
+      serviceAccount: {{ .Values.manager.serviceAccount }}
+      terminationGracePeriodSeconds: 10

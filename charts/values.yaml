@@ -1,0 +1,61 @@
+# customAnnotations -- Custom Annotations to be applied on all resources
+customAnnotations: {}
+
+# customLabels -- Custom Label to be applied on all resources
+customLabels: {}
+
+namespace:
+  # namespace.create -- create the namespace (default: true)
+  create: true
+
+prometheus:
+  # prometheus.enabled -- enables the prometheus metrics scraping (default: false)
+  enabled: false
+
+authProxy:
+  # authProxy.enabled -- enables the protection of /metrics endpoint. (https://github.com/brancz/kube-rbac-proxy)
+  enabled: true
+  image:
+    # authProxy.image.name -- rbac-proxy image name
+    name: gcr.io/kubebuilder/kube-rbac-proxy
+    # authProxy.image.tag -- rbac-proxy image tag
+    tag: v0.5.0
+    # authProxy.image.pullPolicy -- pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent)
+    pullPolicy: IfNotPresent
+  # authProxy.resources -- rbac-proxy resource limitation/request
+  resources: {}
+  # authProxy.livenessProbe -- Liveness probe in Probe format
+  livenessProbe: {}
+  # authProxy.readinessProbe -- Readiness probe in Probe format
+  readinessProbe: {}
+
+controlPlane: "controller-manager"
+
+manager:
+  # manager.serviceAccount -- kubernetes service account for the manager
+  serviceAccount: k6-operator-controller
+  image:
+    # manager.image.name -- controller-manager image name
+    name: ghcr.io/grafana/operator
+    # manager.image.tag -- controller-manager image tag
+    tag: latest
+    # manager.image.pullPolicy -- pull policy for the image possible values Always, Never, IfNotPresent (default: Always)
+    pullPolicy: Always
+  # manager.livenessProbe -- Liveness probe in Probe format
+  livenessProbe: {}
+  # manager.readinessProbe -- Readiness probe in Probe format
+  readinessProbe: {}
+  # manager.env -- Environment variable to be passet to the controller
+  env: {}
+  # manager.resources -- controller-manager Resources definition
+  resources:
+    limits:
+      # manager.resources.limits.cpu -- controller-manager CPU limit (Max)
+      cpu: 100m
+      # manager.resources.limits.memory -- controller-manager Memory limit (Max)
+      memory: 100Mi
+    requests:
+      # manager.resources.requests.cpu -- controller-manager CPU request (Min)
+      cpu: 100m
+      # manager.resources.requests.memory -- controller-manager Memory request (Min)
+      memory: 50Mi
