@@ -1,0 +1,54 @@
+---
+name: "Create cluster using KinD"
+on:
+  workflow_dispatch: {}
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Build:checkout"
+        uses: actions/checkout@v2
+      - name: "Build:buildx"
+        uses: docker/setup-buildx-action@v1
+      - name: "Build:login"
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Build:dockerimage"
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile.controller
+          push: true
+          tags: |
+            ghcr.io/grafana/operator:${{ github.sha }}
+  kind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.7.2
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.2.0
+        if: steps.list-changed.outputs.changed == 'true'
+
+      - name: Testing
+        run: |
+          helm install k6-operator ./charts/ -f ./charts/values.yaml
+          kubectl create configmap crocodile-stress-test --from-file e2e/test.js
+          kubectl apply -f e2e/test.yaml
+          sleep 30
+          kubectl get namespaces
+          kubectl get jobs -A
+          kubectl wait --for=condition=complete --timeout=180s job/k6-sample-1
+          kubectl delete configmap crocodile-stress-test
+          kubectl delete -f e2e/test.yaml

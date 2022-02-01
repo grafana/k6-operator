@@ -1,8 +1,9 @@
+---
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[]'
+    alm-examples: "[]"
     capabilities: Basic Install
     containerImage: ghcr.io/grafana/operator
     repository: https://github.com/grafana/k6-operator
@@ -13,42 +14,42 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: K6 is the Schema for the k6s API
-      displayName: K6
-      kind: K6
-      name: k6s.k6.io
-      version: v1alpha1
+      - description: K6 is the Schema for the k6s API
+        displayName: K6
+        kind: K6
+        name: k6s.k6.io
+        version: v1alpha1
   description: k6-operator
   displayName: k6-operator
   icon:
-  - base64data: ""
-    mediatype: ""
+    - base64data: ""
+      mediatype: ""
   install:
     spec:
       deployments: null
     strategy: ""
   installModes:
-  - supported: false
-    type: OwnNamespace
-  - supported: false
-    type: SingleNamespace
-  - supported: false
-    type: MultiNamespace
-  - supported: true
-    type: AllNamespaces
+    - supported: false
+      type: OwnNamespace
+    - supported: false
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
   keywords:
-  - testing
-  - performance
-  - reliability
-  - k6
+    - testing
+    - performance
+    - reliability
+    - k6
   links:
-  - name: k6 Operator
-    url: https://github.com/grafana/k6-operator
+    - name: k6 Operator
+      url: https://github.com/grafana/k6-operator
   maintainers:
-  - email: yorugac@k6.io
-    name: Olha Yevtushenko
-  - email: daniel@k6.io
-    name: Daniel González Lopes
+    - email: yorugac@k6.io
+      name: Olha Yevtushenko
+    - email: daniel@k6.io
+      name: Daniel González Lopes
   maturity: alpha
   provider:
     name: k6.io

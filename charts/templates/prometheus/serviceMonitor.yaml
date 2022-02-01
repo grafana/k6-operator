@@ -1,0 +1,22 @@
+{{- if .Values.prometheus.enabled }}
+# Prometheus Monitor Service (Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    control-plane: {{ .Values.controlPlane }}
+    {{- with .Values.customLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- include "operator.annotations" . | default "{}" | nindent 4 }}
+  name: controller-manager-metrics-monitor
+  namespace: system
+spec:
+  endpoints:
+    - path: /metrics
+      port: https
+  selector:
+    matchLabels:
+      control-plane: {{ .Values.controlPlane }}
+{{- end }}

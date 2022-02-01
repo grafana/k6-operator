@@ -1,0 +1,14 @@
+{{- if .Values.namespace.create }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Name }}-system
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    control-plane: {{ .Values.controlPlane }}
+    {{- with .Values.customLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- include "operator.annotations" . | default "{}" | nindent 4 }}
+{{- end }}

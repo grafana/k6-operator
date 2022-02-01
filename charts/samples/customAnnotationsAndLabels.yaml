@@ -1,0 +1,50 @@
+customAnnotations:
+  "customized-annotation": "k6-operator"
+
+customLabels:
+  "customized-labels": "k6-operator"
+
+certManager:
+  enabled: true
+
+authProxy:
+  resources:
+    limits:
+      cpu: 100m
+      memory: 100Mi
+    requests:
+      cpu: 100m
+      memory: 50Mi
+
+manager:
+  image:
+    name: ghcr.io/grafana/operator
+    tag: latest
+    pullPolicy: IfNotPresent
+  env:
+    - name: ENV_EXAMPLE_1
+      value: "true"
+    - name: ENV_EXAMPLE_2
+      value: "1"
+    - name: ENV_EXAMPLE_3
+      value: "testing"
+  readinessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /readyz
+      port: 8081
+      scheme: HTTP
+    initialDelaySeconds: 20
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 10
+  livenessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /healthz
+      port: 8081
+      scheme: HTTP
+    initialDelaySeconds: 20
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 10
