@@ -62,7 +62,7 @@ func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	case "created":
 		return StartJobs(ctx, log, k6, r)
 	case "started":
-		return ReconcileJobs(ctx, log, k6, r)
+		return FinishJobs(ctx, log, k6, r)
 	case "finished":
 		// delete if configured
 		if k6.Spec.Cleanup == "post" {

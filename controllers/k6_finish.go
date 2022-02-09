@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Reconcile k6 status with job status
-func ReconcileJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
+// Mark k6 as finished as jobs finish
+func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
 	selector := labels.SelectorFromSet(map[string]string{
 		"app":   "k6",
 		"k6_cr": k6.Name,
