@@ -33,6 +33,7 @@ type Pod struct {
 	NodeSelector                 map[string]string           `json:"nodeselector,omitempty"`
 	Resources                    corev1.ResourceRequirements `json:"resources,omitempty"`
 	ServiceAccountName           string                      `json:"serviceAccountName,omitempty"`
+	SecurityContext              corev1.PodSecurityContext   `json:"securityContext,omitempty"`
 }
 
 type K6Scuttle struct {

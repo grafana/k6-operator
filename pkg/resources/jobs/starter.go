@@ -40,6 +40,7 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 	if k6.Spec.Starter.AutomountServiceAccountToken != "" {
 		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Starter.AutomountServiceAccountToken)
 	}
+
 	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, []string{"sh", "-c"})
 	env := newIstioEnvVar(k6.Spec.Scuttle, istioEnabled)
 	return &batchv1.Job{
@@ -61,6 +62,7 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 					Affinity:                     k6.Spec.Starter.Affinity,
 					NodeSelector:                 k6.Spec.Starter.NodeSelector,
 					RestartPolicy:                corev1.RestartPolicyNever,
+					SecurityContext:              &k6.Spec.Starter.SecurityContext,
 					Containers: []corev1.Container{
 						containers.NewCurlContainer(hostname, starterImage, command, env),
 					},

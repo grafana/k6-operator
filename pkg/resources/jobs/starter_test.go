@@ -46,6 +46,7 @@ func TestNewStarterJob(t *testing.T) {
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
+					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
 						containers.NewCurlContainer([]string{"testing"}, "image", []string{"sh", "-c"},
 							[]corev1.EnvVar{}),
@@ -123,6 +124,7 @@ func TestNewStarterJobIstio(t *testing.T) {
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
+					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
 						containers.NewCurlContainer([]string{"testing"}, "image", []string{"scuttle", "sh", "-c"}, []corev1.EnvVar{
 							{
