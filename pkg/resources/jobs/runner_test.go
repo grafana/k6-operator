@@ -262,6 +262,7 @@ func TestNewRunnerJob(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -357,6 +358,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -453,6 +455,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -549,6 +552,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -646,6 +650,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -744,6 +749,7 @@ func TestNewRunnerJobIstio(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -855,6 +861,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{

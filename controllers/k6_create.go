@@ -16,7 +16,6 @@ import (
 
 // CreateJobs that will spawn k6 pods, running distributed tests
 func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
-
 	var err error
 	var res ctrl.Result
 

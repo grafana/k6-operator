@@ -75,7 +75,10 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 
 	command = appendFileCheckerCommand(script, command)
 
-	var zero int64 = 0
+	var (
+		zero   int64 = 0
+		zero32 int32 = 0
+	)
 
 	image := "ghcr.io/grafana/operator:latest-runner"
 	if k6.Spec.Runner.Image != "" {
@@ -120,6 +123,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int) (*batchv1.Job, error) {
 			Annotations: runnerAnnotations,
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: &zero32,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      runnerLabels,
