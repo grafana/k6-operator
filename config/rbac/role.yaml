@@ -65,6 +65,7 @@ rules:
       - k6.io
     resources:
       - k6s/status
+      - k6s/finalizers
     verbs:
       - get
       - patch
