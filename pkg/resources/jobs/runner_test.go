@@ -376,7 +376,6 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 					NodeSelector:                 nil,
 					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
-					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
 						Image:     "ghcr.io/grafana/operator:latest-runner",
 						Name:      "k6",
@@ -473,7 +472,6 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 					NodeSelector:                 nil,
 					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
-					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
 						Image:     "ghcr.io/grafana/operator:latest-runner",
 						Name:      "k6",
@@ -570,7 +568,6 @@ func TestNewRunnerJobArguments(t *testing.T) {
 					NodeSelector:                 nil,
 					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
-					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
 						Image:     "ghcr.io/grafana/operator:latest-runner",
 						Name:      "k6",
@@ -668,7 +665,6 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 					NodeSelector:                 nil,
 					ServiceAccountName:           "test",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
-					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
 						Image:     "ghcr.io/grafana/operator:latest-runner",
 						Name:      "k6",
@@ -767,7 +763,6 @@ func TestNewRunnerJobIstio(t *testing.T) {
 					NodeSelector:                 nil,
 					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
-					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
 						Image:   "ghcr.io/grafana/operator:latest-runner",
 						Name:    "k6",
