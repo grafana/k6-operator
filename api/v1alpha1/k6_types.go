@@ -61,7 +61,7 @@ type K6Spec struct {
 	Quiet       string                 `json:"quiet,omitempty"`
 	Paused      string                 `json:"paused,omitempty"`
 	Scuttle     K6Scuttle              `json:"scuttle,omitempty"`
-	//	Cleanup     Cleanup `json:"cleanup,omitempty"` // TODO
+	Cleanup     Cleanup                `json:"cleanup,omitempty"`
 }
 
 // K6Script describes where the script to execute the tests is found
@@ -83,12 +83,14 @@ type K6Configmap struct {
 	File string `json:"file,omitempty"`
 }
 
-// Cleanup allows for automatic cleanup of resources pre or post execution
-// +kubebuilder:validation:Enum=pre;post
-// type Cleanup string
+//TODO: cleanup pre-execution?
+
+// Cleanup allows for automatic cleanup of resources post execution
+// +kubebuilder:validation:Enum=post
+type Cleanup string
 
 // Stage describes which stage of the test execution lifecycle our runners are in
-// +kubebuilder:validation:Enum=created;started
+// +kubebuilder:validation:Enum=created;started;finished
 type Stage string
 
 // K6Status defines the observed state of K6
