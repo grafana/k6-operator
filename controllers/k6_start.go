@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -14,6 +15,17 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func isServiceReady(log logr.Logger, service *v1.Service) bool {
+	resp, err := http.Get(fmt.Sprintf("http://%v.%v.svc.cluster.local:6565/v1/status", service.ObjectMeta.Name, service.ObjectMeta.Namespace))
+
+	if err != nil {
+		log.Error(err, fmt.Sprintf("failed to get status from %v", service.ObjectMeta.Name))
+		return false
+	}
+
+	return resp.StatusCode < 400
+}
 
 // StartJobs in the Ready phase using a curl container
 func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
@@ -58,6 +70,11 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 
 		for _, service := range sl.Items {
 			hostnames = append(hostnames, service.ObjectMeta.Name)
+
+			if !isServiceReady(log, &service) {
+				log.Info(fmt.Sprintf("%v service is not ready, aborting", service.ObjectMeta.Name))
+				return false, nil
+			}
 		}
 
 		starter := jobs.NewStarterJob(k6, hostnames)

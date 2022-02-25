@@ -38,6 +38,12 @@ spec:
             properties:
               arguments:
                 type: string
+              cleanup:
+                description: Cleanup allows for automatic cleanup of resources post
+                  execution
+                enum:
+                - post
+                type: string
               parallelism:
                 format: int32
                 type: integer
@@ -997,6 +1003,8 @@ spec:
                     required:
                     - name
                     type: object
+                  localFile:
+                    type: string
                   volumeClaim:
                     description: K6VolumeClaim describes the volume claim script location
                     properties:
@@ -1950,6 +1958,7 @@ spec:
                 enum:
                 - created
                 - started
+                - finished
                 type: string
             type: object
         type: object
