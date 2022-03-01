@@ -37,7 +37,7 @@ type TestRun struct {
 	ProcessThresholds bool                `json:"process_thresholds"`
 }
 
-func CreateTestRun(opts InspectOutput, token string, log logr.Logger) (string, error) {
+func CreateTestRun(opts InspectOutput, host, token string, log logr.Logger) (string, error) {
 	if len(opts.External.Loadimpact.Name) < 1 {
 		opts.External.Loadimpact.Name = "k6-operator-test"
 	}
@@ -59,8 +59,12 @@ func CreateTestRun(opts InspectOutput, token string, log logr.Logger) (string, e
 		opts.Thresholds = make(map[string][]string)
 	}
 
-	client = cloudapi.NewClient(logger, token, cloudConfig.Host.String, consts.Version, time.Duration(time.Minute))
-	resp, err := createTestRun(client, &TestRun{
+	if len(host) == 0 {
+		host = cloudConfig.Host.String
+	}
+
+	client = cloudapi.NewClient(logger, token, host, consts.Version, time.Duration(time.Minute))
+	resp, err := createTestRun(client, host, &TestRun{
 		Name:       opts.External.Loadimpact.Name,
 		ProjectID:  cloudConfig.ProjectID.Int64,
 		VUsMax:     int64(opts.MaxVUs),
@@ -81,8 +85,8 @@ func CreateTestRun(opts InspectOutput, token string, log logr.Logger) (string, e
 
 // We cannot use cloudapi.TestRun struct and cloudapi.Client.CreateTestRun call because they're not aware of
 // process_thresholds argument; so let's use custom struct and function instead
-func createTestRun(client *cloudapi.Client, testRun *TestRun) (*cloudapi.CreateTestRunResponse, error) {
-	url := "https://ingest.k6.io/v1/tests"
+func createTestRun(client *cloudapi.Client, host string, testRun *TestRun) (*cloudapi.CreateTestRunResponse, error) {
+	url := host + "/v1/tests"
 	req, err := client.NewRequest("POST", url, testRun)
 	if err != nil {
 		return nil, err
