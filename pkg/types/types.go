@@ -123,7 +123,7 @@ type CLI struct {
 func ParseCLI(spec *v1alpha1.K6Spec) *CLI {
 	lastArgV := func(start int, args []string) (end int) {
 		var nextArg bool
-		end = start + 1
+		end = start
 		for !nextArg && end < len(args) {
 			if args[end][0] == '-' {
 				nextArg = true

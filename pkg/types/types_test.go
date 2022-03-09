@@ -62,6 +62,14 @@ func Test_ParseCLI(t *testing.T) {
 				HasCloudOut: true,
 			},
 		},
+		{
+			"VerboseOutWithCloudArgs",
+			"--vus 10 --out json -o csv --out cloud --verbose",
+			CLI{
+				ArchiveArgs: "--vus 10 --verbose",
+				HasCloudOut: true,
+			},
+		},
 	}
 
 	for _, test := range tests {
