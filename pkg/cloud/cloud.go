@@ -35,9 +35,10 @@ type TestRun struct {
 	Thresholds        map[string][]string `json:"thresholds"`
 	Duration          int64               `json:"duration"`
 	ProcessThresholds bool                `json:"process_thresholds"`
+	Instances         int32               `json:"instances"`
 }
 
-func CreateTestRun(opts InspectOutput, host, token string, log logr.Logger) (string, error) {
+func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (string, error) {
 	if len(opts.External.Loadimpact.Name) < 1 {
 		opts.External.Loadimpact.Name = "k6-operator-test"
 	}
@@ -74,6 +75,7 @@ func CreateTestRun(opts InspectOutput, host, token string, log logr.Logger) (str
 		// but it would be good to come up with another solution.
 		Duration:          int64(opts.TotalDuration.TimeDuration().Seconds()) * 2,
 		ProcessThresholds: true,
+		Instances:         instances,
 	})
 
 	if err != nil {

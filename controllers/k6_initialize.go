@@ -176,7 +176,7 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 
 			host := getEnvVar(k6.Spec.Runner.Env, "K6_CLOUD_HOST")
 
-			if refID, err := cloud.CreateTestRun(inspectOutput, host, token, log); err != nil {
+			if refID, err := cloud.CreateTestRun(inspectOutput, k6.Spec.Parallelism, host, token, log); err != nil {
 				return true, err
 			} else {
 				testRunId = refID
