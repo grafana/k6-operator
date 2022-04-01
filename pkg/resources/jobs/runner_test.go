@@ -884,6 +884,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					ServiceAccountName:           "default",
+					SecurityContext:              &corev1.PodSecurityContext{},
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Containers: []corev1.Container{{
 						Image:   "ghcr.io/grafana/operator:latest-runner",
@@ -972,6 +973,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: expectedLabels,
