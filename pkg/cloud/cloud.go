@@ -66,14 +66,11 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 
 	client = cloudapi.NewClient(logger, token, host, consts.Version, time.Duration(time.Minute))
 	resp, err := createTestRun(client, host, &TestRun{
-		Name:       opts.External.Loadimpact.Name,
-		ProjectID:  cloudConfig.ProjectID.Int64,
-		VUsMax:     int64(opts.MaxVUs),
-		Thresholds: opts.Thresholds,
-		// This is heuristic increase of duration to take into account that it takes time to start the pods.
-		// By current observations, it shouldn't matter that much since we're sending a finish call in the end,
-		// but it would be good to come up with another solution.
-		Duration:          int64(opts.TotalDuration.TimeDuration().Seconds()) * 2,
+		Name:              opts.External.Loadimpact.Name,
+		ProjectID:         cloudConfig.ProjectID.Int64,
+		VUsMax:            int64(opts.MaxVUs),
+		Thresholds:        opts.Thresholds,
+		Duration:          int64(opts.TotalDuration.TimeDuration().Seconds()),
 		ProcessThresholds: true,
 		Instances:         instances,
 	})
