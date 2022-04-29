@@ -26,8 +26,9 @@ import (
 // k6 Cloud related vars
 // Right now operator works with one test at a time so these should be safe.
 var (
-	testRunId string
-	token     string
+	testRunId     string
+	token         string
+	inspectOutput cloud.InspectOutput
 )
 
 // InitializeJobs creates jobs that will run initial checks for distributed test if any are necessary
@@ -152,8 +153,6 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 				log.Error(err, "unable to copy logs from the pod")
 				return false, err
 			}
-
-			var inspectOutput cloud.InspectOutput
 
 			if err := json.Unmarshal(buf.Bytes(), &inspectOutput); err != nil {
 				// this shouldn't normally happen but if it does, let's log output by default
