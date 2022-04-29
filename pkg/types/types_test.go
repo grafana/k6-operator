@@ -66,7 +66,7 @@ func Test_ParseCLI(t *testing.T) {
 			"VerboseOutWithCloudArgs",
 			"--vus 10 --out json -o csv --out cloud --verbose",
 			CLI{
-				ArchiveArgs: "--vus 10 --verbose",
+				ArchiveArgs: "--vus 10",
 				HasCloudOut: true,
 			},
 		},
