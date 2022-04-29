@@ -156,7 +156,7 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 			var inspectOutput cloud.InspectOutput
 
 			if err := json.Unmarshal(buf.Bytes(), &inspectOutput); err != nil {
-				// this shouldn't normally happen to if it does, let's log output by default
+				// this shouldn't normally happen but if it does, let's log output by default
 				log.Error(err, fmt.Sprintf("unable to marshal: `%s`", buf.String()))
 				return true, err
 			}
