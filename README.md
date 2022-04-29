@@ -158,7 +158,9 @@ Defines options for the starter pod. This includes:
 
 #### k6 Cloud output
 
-k6 supports [output to its Cloud](https://k6.io/docs/results-visualization/cloud) with `k6 run --out cloud script.js` command. To use this option in k6-operator, set the argument in yaml:
+k6 supports [output to its Cloud](https://k6.io/docs/results-visualization/cloud) with `k6 run --out cloud script.js` command. This feature is available in k6-operator as well for subscribed users. Note that it supports only `parallelism: 20` or less.
+
+To use this option in k6-operator, set the argument in yaml:
 
 ```yaml
 ...
