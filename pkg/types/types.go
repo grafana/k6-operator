@@ -111,8 +111,9 @@ func (s *Script) UpdateCommand(cmd []string) []string {
 	return cmd
 }
 
-// Internal type to support k6 invocation in initialization stage.
-// Not all k6 commands allow the same set of arguments so CLI is object meant to contain only the ones fit for the arhive call.
+// CLI is an innternal type to support k6 invocation in initialization stage.
+// Not all k6 commands allow the same set of arguments so CLI is an object
+// meant to contain only the ones fit for the archive call.
 // Maybe revise this once crococonf is closer to integration?
 type CLI struct {
 	ArchiveArgs string
@@ -156,6 +157,10 @@ func ParseCLI(spec *v1alpha1.K6Spec) *CLI {
 				}
 			case "-l", "--linger", "--no-usage-report":
 				// non-archive arguments, so skip them
+				break
+			case "--verbose", "-v":
+				// this argument is acceptable by archive but it'd
+				// mess up the JSON output of `k6 inspect`
 				break
 			default:
 				if len(cli.ArchiveArgs) > 0 {
