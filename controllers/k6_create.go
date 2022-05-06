@@ -25,6 +25,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 		return res, err
 	}
 
+	log.Info("Changing stage of K6 status to created")
 	k6.Status.Stage = "created"
 	if err = r.Client.Status().Update(ctx, k6); err != nil {
 		log.Error(err, "Could not update status of custom resource")

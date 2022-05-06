@@ -96,6 +96,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 		return ctrl.Result{}, err
 	}
 
+	log.Info("Changing stage of K6 status to started")
 	k6.Status.Stage = "started"
 	if err = r.Client.Status().Update(ctx, k6); err != nil {
 		log.Error(err, "Could not update status of custom resource")

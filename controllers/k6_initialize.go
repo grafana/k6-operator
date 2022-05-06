@@ -35,6 +35,7 @@ var (
 func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (res ctrl.Result, err error) {
 	log.Info("Initialize test")
 
+	log.Info("Changing stage of K6 status to initialization")
 	k6.Status.Stage = "initialization"
 	if err = r.Client.Status().Update(ctx, k6); err != nil {
 		log.Error(err, "Could not update status of custom resource")
@@ -190,6 +191,7 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 		return
 	}
 
+	log.Info("Changing stage of K6 status to initialized")
 	k6.Status.Stage = "initialized"
 	if err = r.Client.Status().Update(ctx, k6); err != nil {
 		log.Error(err, "Could not update status of custom resource")
