@@ -77,6 +77,7 @@ func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 		}
 	}
 
+	log.Info("Changing stage of K6 status to finished")
 	k6.Status.Stage = "finished"
 	if err = r.Client.Status().Update(ctx, k6); err != nil {
 		log.Error(err, "Could not update status of custom resource")
