@@ -205,7 +205,7 @@ image using github.com/szkiba/xk6-prometheus as an extension:
 
 ```Dockerfile
 # Build the k6 binary with the extension
-FROM golang:1.16.4-buster as builder
+FROM golang:1.18.1 as builder
 
 RUN go install go.k6.io/xk6/cmd/xk6@latest
 RUN xk6 build --output /k6 --with github.com/szkiba/xk6-prometheus@latest
