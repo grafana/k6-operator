@@ -84,23 +84,16 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
-							Image:     image,
-							Name:      "k6",
-							Command:   command,
-							Env:       env,
-							Resources: k6.Spec.Runner.Resources,
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "k6-test-volume",
-									MountPath: "/test",
-								},
-							},
-							Ports: ports,
+							Image:        image,
+							Name:         "k6",
+							Command:      command,
+							Env:          env,
+							Resources:    k6.Spec.Runner.Resources,
+							VolumeMounts: script.VolumeMount(),
+							Ports:        ports,
 						},
 					},
-					Volumes: []corev1.Volume{
-						script.Volume(),
-					},
+					Volumes: script.Volume(),
 				},
 			},
 		},
