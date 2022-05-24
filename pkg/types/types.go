@@ -61,42 +61,48 @@ func (s *Script) FullName() string {
 }
 
 // Volume creates a Volume spec for the script
-func (s *Script) Volume() corev1.Volume {
+func (s *Script) Volume() []corev1.Volume {
 	switch s.Type {
 	case "VolumeClaim":
-		return corev1.Volume{
-			Name: "k6-test-volume",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: s.Name,
+		return []corev1.Volume{
+			corev1.Volume{
+				Name: "k6-test-volume",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: s.Name,
+					},
 				},
 			},
 		}
 
 	case "ConfigMap":
-		return corev1.Volume{
-			Name: "k6-test-volume",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: s.Name,
+		return []corev1.Volume{
+			corev1.Volume{
+				Name: "k6-test-volume",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: s.Name,
+						},
 					},
 				},
 			},
 		}
 	default:
-		return corev1.Volume{}
+		return []corev1.Volume{}
 	}
 }
 
 // VolumeMount creates a VolumeMount spec for the script
-func (s *Script) VolumeMount() corev1.VolumeMount {
+func (s *Script) VolumeMount() []corev1.VolumeMount {
 	if s.Type == "LocalFile" {
-		return corev1.VolumeMount{}
+		return []corev1.VolumeMount{}
 	}
-	return corev1.VolumeMount{
-		Name:      "k6-test-volume",
-		MountPath: "/test",
+	return []corev1.VolumeMount{
+		corev1.VolumeMount{
+			Name:      "k6-test-volume",
+			MountPath: "/test",
+		},
 	}
 }
 

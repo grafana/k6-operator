@@ -99,11 +99,13 @@ func TestNewScriptNoScript(t *testing.T) {
 }
 
 func TestNewVolumeSpecVolumeClaim(t *testing.T) {
-	expectedOutcome := corev1.Volume{
-		Name: "k6-test-volume",
-		VolumeSource: corev1.VolumeSource{
-			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-				ClaimName: "test",
+	expectedOutcome := []corev1.Volume{
+		corev1.Volume{
+			Name: "k6-test-volume",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: "test",
+				},
 			},
 		},
 	}
@@ -120,12 +122,14 @@ func TestNewVolumeSpecVolumeClaim(t *testing.T) {
 }
 
 func TestNewVolumeSpecConfigMap(t *testing.T) {
-	expectedOutcome := corev1.Volume{
-		Name: "k6-test-volume",
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: "test",
+	expectedOutcome := []corev1.Volume{
+		corev1.Volume{
+			Name: "k6-test-volume",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -143,7 +147,7 @@ func TestNewVolumeSpecConfigMap(t *testing.T) {
 }
 
 func TestNewVolumeSpecNoType(t *testing.T) {
-	expectedOutcome := corev1.Volume{}
+	expectedOutcome := []corev1.Volume{}
 
 	script := &types.Script{
 		Name: "test",
@@ -283,21 +287,16 @@ func TestNewRunnerJob(t *testing.T) {
 					ServiceAccountName:           "default",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Containers: []corev1.Container{{
-						Image:     "ghcr.io/grafana/operator:latest-runner",
-						Name:      "k6",
-						Command:   []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
-						Env:       []corev1.EnvVar{},
-						Resources: corev1.ResourceRequirements{},
-						VolumeMounts: []corev1.VolumeMount{{
-							Name:      "k6-test-volume",
-							MountPath: "/test",
-						}},
-						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+						Image:        "ghcr.io/grafana/operator:latest-runner",
+						Name:         "k6",
+						Command:      []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
+						Env:          []corev1.EnvVar{},
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: script.VolumeMount(),
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes: []corev1.Volume{
-						script.Volume(),
-					},
+					Volumes:                       script.Volume(),
 				},
 			},
 		},
@@ -380,21 +379,16 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
-						Image:     "ghcr.io/grafana/operator:latest-runner",
-						Name:      "k6",
-						Command:   []string{"k6", "run", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
-						Env:       []corev1.EnvVar{},
-						Resources: corev1.ResourceRequirements{},
-						VolumeMounts: []corev1.VolumeMount{{
-							Name:      "k6-test-volume",
-							MountPath: "/test",
-						}},
-						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+						Image:        "ghcr.io/grafana/operator:latest-runner",
+						Name:         "k6",
+						Command:      []string{"k6", "run", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
+						Env:          []corev1.EnvVar{},
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: script.VolumeMount(),
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes: []corev1.Volume{
-						script.Volume(),
-					},
+					Volumes:                       script.Volume(),
 				},
 			},
 		},
@@ -478,21 +472,16 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
-						Image:     "ghcr.io/grafana/operator:latest-runner",
-						Name:      "k6",
-						Command:   []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565"},
-						Env:       []corev1.EnvVar{},
-						Resources: corev1.ResourceRequirements{},
-						VolumeMounts: []corev1.VolumeMount{{
-							Name:      "k6-test-volume",
-							MountPath: "/test",
-						}},
-						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+						Image:        "ghcr.io/grafana/operator:latest-runner",
+						Name:         "k6",
+						Command:      []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565"},
+						Env:          []corev1.EnvVar{},
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: script.VolumeMount(),
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes: []corev1.Volume{
-						script.Volume(),
-					},
+					Volumes:                       script.Volume(),
 				},
 			},
 		},
@@ -576,21 +565,16 @@ func TestNewRunnerJobArguments(t *testing.T) {
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
-						Image:     "ghcr.io/grafana/operator:latest-runner",
-						Name:      "k6",
-						Command:   []string{"k6", "run", "--quiet", "--cool-thing", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
-						Env:       []corev1.EnvVar{},
-						Resources: corev1.ResourceRequirements{},
-						VolumeMounts: []corev1.VolumeMount{{
-							Name:      "k6-test-volume",
-							MountPath: "/test",
-						}},
-						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+						Image:        "ghcr.io/grafana/operator:latest-runner",
+						Name:         "k6",
+						Command:      []string{"k6", "run", "--quiet", "--cool-thing", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
+						Env:          []corev1.EnvVar{},
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: script.VolumeMount(),
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes: []corev1.Volume{
-						script.Volume(),
-					},
+					Volumes:                       script.Volume(),
 				},
 			},
 		},
@@ -675,21 +659,16 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
-						Image:     "ghcr.io/grafana/operator:latest-runner",
-						Name:      "k6",
-						Command:   []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
-						Env:       []corev1.EnvVar{},
-						Resources: corev1.ResourceRequirements{},
-						VolumeMounts: []corev1.VolumeMount{{
-							Name:      "k6-test-volume",
-							MountPath: "/test",
-						}},
-						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+						Image:        "ghcr.io/grafana/operator:latest-runner",
+						Name:         "k6",
+						Command:      []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused"},
+						Env:          []corev1.EnvVar{},
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: script.VolumeMount(),
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes: []corev1.Volume{
-						script.Volume(),
-					},
+					Volumes:                       script.Volume(),
 				},
 			},
 		},
@@ -792,17 +771,12 @@ func TestNewRunnerJobIstio(t *testing.T) {
 								Value: "15",
 							},
 						},
-						Resources: corev1.ResourceRequirements{},
-						VolumeMounts: []corev1.VolumeMount{{
-							Name:      "k6-test-volume",
-							MountPath: "/test",
-						}},
-						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: script.VolumeMount(),
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes: []corev1.Volume{
-						script.Volume(),
-					},
+					Volumes:                       script.Volume(),
 				},
 			},
 		},
@@ -900,17 +874,12 @@ func TestNewRunnerJobCloud(t *testing.T) {
 								Value: "token",
 							},
 						},
-						Resources: corev1.ResourceRequirements{},
-						VolumeMounts: []corev1.VolumeMount{{
-							Name:      "k6-test-volume",
-							MountPath: "/test",
-						}},
-						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: script.VolumeMount(),
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes: []corev1.Volume{
-						script.Volume(),
-					},
+					Volumes:                       script.Volume(),
 				},
 			},
 		},
@@ -990,20 +959,16 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{{
-						Image:     "ghcr.io/grafana/operator:latest-runner",
-						Name:      "k6",
-						Command:   []string{"sh", "-c", "if [ ! -f /test/test.js ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\nk6 run --quiet /test/test.js --address=0.0.0.0:6565 --paused"},
-						Env:       []corev1.EnvVar{},
-						Resources: corev1.ResourceRequirements{},
-						VolumeMounts: []corev1.VolumeMount{
-							script.VolumeMount(),
-						},
-						Ports: []corev1.ContainerPort{{ContainerPort: 6565}},
+						Image:        "ghcr.io/grafana/operator:latest-runner",
+						Name:         "k6",
+						Command:      []string{"sh", "-c", "if [ ! -f /test/test.js ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\nk6 run --quiet /test/test.js --address=0.0.0.0:6565 --paused"},
+						Env:          []corev1.EnvVar{},
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: script.VolumeMount(),
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes: []corev1.Volume{
-						script.Volume(),
-					},
+					Volumes:                       script.Volume(),
 				},
 			},
 		},
