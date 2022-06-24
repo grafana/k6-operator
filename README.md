@@ -2,12 +2,7 @@
 
 # k6 Operator
 
-> ### ⚠️ Experimental
->
-> This project is **experimental** and changes a lot between commits.
-> Use at your own risk.
-
-`grafana/k6-operator` is a kubernetes operator for running distributed k6 tests in your cluster.
+`grafana/k6-operator` is a Kubernetes operator for running distributed k6 tests in your cluster.
 
 Read also the [complete tutorial](https://k6.io/blog/running-distributed-tests-on-k8s/) to learn more about how to use this project.
 
