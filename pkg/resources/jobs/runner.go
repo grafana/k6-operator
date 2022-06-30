@@ -151,12 +151,12 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 						Command:      command,
 						Env:          env,
 						Resources:    k6.Spec.Runner.Resources,
-						VolumeMounts: script.VolumeMount(),
+						VolumeMounts: append(script.VolumeMount(), k6.Spec.Runner.VolumeMounts...),
 						Ports:        ports,
 						EnvFrom:      k6.Spec.Runner.EnvFrom,
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes:                       script.Volume(),
+					Volumes:                       append(script.Volume(), k6.Spec.Runner.Volumes...),
 				},
 			},
 		},
@@ -165,6 +165,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 	if k6.Spec.Separate {
 		job.Spec.Template.Spec.Affinity = newAntiAffinity()
 	}
+
 	return job, nil
 }
 

@@ -260,6 +260,22 @@ func TestNewRunnerJob(t *testing.T) {
 		"label1": "awesome",
 	}
 
+	additionalVolume := corev1.Volume{
+		Name: "test",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "test",
+				},
+			},
+		},
+	}
+
+	additionalVolumeMount := corev1.VolumeMount{
+		Name:      "test",
+		MountPath: "/test",
+	}
+
 	expectedOutcome := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-1",
@@ -292,7 +308,7 @@ func TestNewRunnerJob(t *testing.T) {
 						Command:      []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused", "--tag", "instance_id=1"},
 						Env:          []corev1.EnvVar{},
 						Resources:    corev1.ResourceRequirements{},
-						VolumeMounts: script.VolumeMount(),
+						VolumeMounts: append(script.VolumeMount(), additionalVolumeMount),
 						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 						EnvFrom: []corev1.EnvFromSource{
 							{
@@ -305,7 +321,7 @@ func TestNewRunnerJob(t *testing.T) {
 						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes:                       script.Volume(),
+					Volumes:                       append(script.Volume(), additionalVolume),
 				},
 			},
 		},
@@ -339,6 +355,12 @@ func TestNewRunnerJob(t *testing.T) {
 							},
 						},
 					},
+				},
+				Volumes: []corev1.Volume{
+					additionalVolume,
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					additionalVolumeMount,
 				},
 			},
 		},
