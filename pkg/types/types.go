@@ -132,7 +132,8 @@ func ParseCLI(spec *v1alpha1.K6Spec) *CLI {
 		var nextArg bool
 		end = start
 		for !nextArg && end < len(args) {
-			if args[end][0] == '-' {
+			args[end] = strings.TrimSpace(args[end])
+			if len(args[end]) > 0 && args[end][0] == '-' {
 				nextArg = true
 				break
 			}
