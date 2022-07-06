@@ -241,7 +241,7 @@ In other words, `file` option must be the correct entrypoint for `k6 run`.
 By default, the operator will use `loadimpact/k6:latest` as the container image for the test jobs. If you want to use
 extensions built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image`
 property on the `K6` kubernetes resource. For example, the following Dockerfile can be used to create a container
-image using github.com/szkiba/xk6-prometheus as an extension:
+image using `https://github.com/grafana/xk6-output-prometheus-remote` as an extension:
 
 
 ```Dockerfile
@@ -249,14 +249,14 @@ image using github.com/szkiba/xk6-prometheus as an extension:
 FROM golang:1.18.1 as builder
 
 RUN go install go.k6.io/xk6/cmd/xk6@latest
-RUN xk6 build --output /k6 --with github.com/szkiba/xk6-prometheus@latest
+RUN xk6 build --output /k6 --with github.com/grafana/xk6-output-prometheus-remote@latest
 
 # Use the operator's base image and override the k6 binary
 FROM loadimpact/k6:latest
 COPY --from=builder /k6 /usr/bin/k6
 ```
 
-If we build and tag this image as `k6-prometheus:latest`, when we can use it as follows:
+If we build and tag this image as `k6-prometheus:local`, then we can use it as follows:
 
 ```yaml
 # k6-resource-with-extensions.yml
@@ -271,19 +271,18 @@ spec:
     configMap:
       name: crocodile-stress-test
       file: test.js
-  arguments: --out prometheus
-  ports:
-  - containerPort: 5656
-    name: metrics
+  arguments: -o output-prometheus-remote
   runner:
-    image: k6-prometheus:latest
+    image: k6-prometheus:local
+    env:
+      - name: K6_PROMETHEUS_REMOTE_URL
+        value: http://prometheus.somewhere:9090/api/v1/write
 ```
 
 Note that we are replacing the test job image (`k6-prometheus:latest`), passing required arguments to `k6`
-(`--out prometheus`), and also exposing the ports required for Prometheus to scrape the metrics
-(in this case, that's port `5656`)
+(`-o output-prometheus-remote`), and also setting the environment variable to the runner (`K6_PROMETHEUS_REMOTE_URL`).
 
-If using the Prometheus Operator, you'll also need to create a pod monitor:
+<!-- If using the Prometheus Operator, you'll also need to create a pod monitor:
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
@@ -296,7 +295,7 @@ spec:
       app: k6
   podMetricsEndpoints:
   - port: metrics
-```
+``` -->
 
 ### Scheduling Tests
 
