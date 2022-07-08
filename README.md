@@ -39,6 +39,19 @@ $ kubectl create configmap my-test --from-file /path/to/my/test.js
 
 ***Note: there is a character limit of 1048576 bytes to a single configmap. If you need to have a larger test file, you'll need to use a volumeClaim or a LocalFile instead***
 
+#### VolumeClaim
+
+If you have a PVC with the name `stress-test` containing your script and any other supporting file(s), you can pass it to the test like this:
+
+```
+spec:
+  parallelism: 2
+  script:
+    volumeClaim:
+      name: "stress-test"
+      file: "test.js"
+```
+
 #### LocalFile
 
 There is a sample avaiable in `config/samples/k6_v1alpha1_k6_with_localfile.yaml` on how to configure to run a test script inside the docker image.
