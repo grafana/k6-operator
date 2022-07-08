@@ -48,6 +48,6 @@ jobs:
           sleep 30
           kubectl get namespaces
           kubectl get jobs -A
-          kubectl wait --for=condition=complete --timeout=180s job/k6-sample-1
+          kubectl wait --for=condition=complete --timeout=180s job/k6-sample-initializer
           kubectl delete configmap crocodile-stress-test
           kubectl delete -f e2e/test.yaml
