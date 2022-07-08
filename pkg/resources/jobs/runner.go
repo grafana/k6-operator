@@ -65,10 +65,8 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 		command = append(command, "--paused")
 	}
 
-	// this is a cloud output run
-	if len(testRunId) > 0 {
-		command = append(command, "--tag", fmt.Sprintf("instance_id=%d", index))
-	}
+	// Add an instance tag: in case metrics are stored, they need to be distinguished by instance
+	command = append(command, "--tag", fmt.Sprintf("instance_id=%d", index))
 
 	command = script.UpdateCommand(command)
 
