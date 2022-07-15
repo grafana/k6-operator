@@ -988,13 +988,35 @@ spec:
                     type: object
                   serviceAccountName:
                     type: string
+                  envFrom:
+                    type: array
+                    items:
+                      description: K6EnvFrom represents the source of a set of ConfigMaps/Secrets
+                      default: {}
+                      properties:
+                        configMapRef:
+                          type: object
+                          description: The ConfigMap to select from
+                          properties:
+                            name:
+                              type: string
+                            optional:
+                              type: bool
+                        secretRef:
+                          type: object
+                          description: The Secret to select from
+                          properties:
+                            name:
+                              type: string
+                            optional:
+                              type: bool
                 type: object
               script:
                 description: K6Script describes where the script to execute the tests
                   is found
                 properties:
                   configMap:
-                    description: K6Configmap describes the config map script location
+                    description: K6ConfigMap describes the config map script location
                     properties:
                       file:
                         type: string
