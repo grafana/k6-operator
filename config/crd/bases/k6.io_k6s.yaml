@@ -988,6 +988,7 @@ spec:
                     type: object
                   serviceAccountName:
                     type: string
+                  # refs: https://github.com/kubernetes/kubernetes/blob/7e2c02d4c86d73051b6d4f47298d35a7ffb42b6a/api/openapi-spec/v3/apis__apps__v1_openapi.json#L1681
                   envFrom:
                     type: array
                     items:
