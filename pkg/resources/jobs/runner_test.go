@@ -294,6 +294,15 @@ func TestNewRunnerJob(t *testing.T) {
 						Resources:    corev1.ResourceRequirements{},
 						VolumeMounts: script.VolumeMount(),
 						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
+						EnvFrom: []corev1.EnvFromSource{
+							{
+								ConfigMapRef: &corev1.ConfigMapEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "env",
+									},
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -320,6 +329,15 @@ func TestNewRunnerJob(t *testing.T) {
 					},
 					Annotations: map[string]string{
 						"awesomeAnnotation": "dope",
+					},
+				},
+				EnvFrom: []corev1.EnvFromSource{
+					{
+						ConfigMapRef: &corev1.ConfigMapEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "env",
+							},
+						},
 					},
 				},
 			},

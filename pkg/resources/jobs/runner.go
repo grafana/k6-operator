@@ -153,6 +153,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 						Resources:    k6.Spec.Runner.Resources,
 						VolumeMounts: script.VolumeMount(),
 						Ports:        ports,
+						EnvFrom:      k6.Spec.Runner.EnvFrom,
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
