@@ -88,6 +88,7 @@ rules:
   resources:
   - k6s/finalizers
   - k6s/status
+  - k6s/finalizers
   verbs:
   - get
   - patch
