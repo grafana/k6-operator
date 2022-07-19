@@ -3,13 +3,13 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-controller-manager
   namespace: {{- include "operator.namespace" . }}
-  labels: &labels
+  labels:
     control-plane: {{ .Values.controlPlane }}
     {{- with .Values.customLabels }}
       {{- toYaml . | nindent 4 }}
     {{- end }}
-  annotations: &annotations
-    {{- include "operator.annotations" . | default "{}" | nindent 4 }}
+  annotations:
+    {{- include "operator.annotations" . | default "" | nindent 4 }}
 spec:
   replicas: 1
   selector:
@@ -18,9 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        <<: *labels
-      annotations:
-        <<: *annotations
+        control-plane: {{ .Values.controlPlane }}
     spec:
       containers:
         {{- if .Values.authProxy.enabled }}

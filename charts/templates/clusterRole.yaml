@@ -48,6 +48,7 @@ rules:
   - ""
   resources:
   - pods
+  - pods/log
   verbs:
   - get
   - list
@@ -68,10 +69,19 @@ rules:
   - k6.io
   resources:
   - k6s/status
+  - k6s/finalizers
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - list
+  - get
+  - watch
 {{- if .Values.authProxy.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -81,10 +91,12 @@ metadata:
   labels:
     {{- include "operator.labels" . }}
   annotations:
-    {{- include "operator.annotations" . | default "{}" | nindent 4 }}
+    {{- include "operator.annotations" . | default "" | nindent 4 }}
 rules:
-- nonResourceURLs: ["/metrics"]
-  verbs: ["get"]
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -93,7 +105,7 @@ metadata:
   labels:
     {{- include "operator.labels" . }}
   annotations:
-    {{- include "operator.annotations" . | default "{}" | nindent 4 }}
+    {{- include "operator.annotations" . | default "" | nindent 4 }}
 rules:
 - apiGroups:
   - authentication.k8s.io

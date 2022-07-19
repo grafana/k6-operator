@@ -6,20 +6,20 @@ metadata:
   labels:
     {{- include "operator.labels" . }}
   annotations:
-    {{- include "operator.annotations" . | default "{}" | nindent 4 }}
+    {{- include "operator.annotations" . | default "" | nindent 4 }}
 rules:
   - apiGroups:
-      - ""
+    - ""
     resources:
-      - configmaps
+    - configmaps
     verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
   - apiGroups:
       - ""
     resources:
