@@ -1,6 +1,5 @@
----
 resources:
-  - manager.yaml
+- manager.yaml
 images:
 - name: controller
   newName: ghcr.io/grafana/k6-operator
