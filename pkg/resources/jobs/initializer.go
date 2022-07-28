@@ -57,7 +57,8 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 		archiveName = fmt.Sprintf("./%s.archived.tar", script.Filename)
 	)
 	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, []string{"sh", "-c"})
-	command = append(command, fmt.Sprintf("k6 archive %s -O %s %s && k6 inspect --execution-requirements %s",
+	command = append(command, fmt.Sprintf(
+		"k6 archive --log-output=none %s -O %s %s && k6 inspect --execution-requirements --log-output=none %s",
 		scriptName, archiveName, argLine,
 		archiveName))
 
