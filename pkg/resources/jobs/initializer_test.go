@@ -57,7 +57,7 @@ func TestNewInitializerJob(t *testing.T) {
 							Name:  "k6",
 							Command: []string{
 								"sh", "-c",
-								"k6 archive /test/test.js -O ./test.js.archived.tar --out cloud && k6 inspect --execution-requirements ./test.js.archived.tar",
+								"k6 archive --log-output=none /test/test.js -O ./test.js.archived.tar --out cloud && k6 inspect --execution-requirements --log-output=none ./test.js.archived.tar",
 							},
 							Env:          []corev1.EnvVar{},
 							Resources:    corev1.ResourceRequirements{},
