@@ -1,4 +1,4 @@
-FROM grafana/k6:0.34.1
+FROM grafana/k6:0.39.0
 
 COPY --from=redboxoss/scuttle:latest scuttle /bin/scuttle
 ENTRYPOINT ["scuttle", "k6"]
