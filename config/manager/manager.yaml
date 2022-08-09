@@ -16,7 +16,7 @@ metadata:
     control-plane: controller-manager
     tags.datadoghq.com/env: "edge"
     tags.datadoghq.com/service: "laasie-k6-operator-controller"
-    tags.datadoghq.com/version: "v0.0.7rc2-202110131601"
+    tags.datadoghq.com/version: "v0.0.7-202208081725"
 spec:
   selector:
     matchLabels:
@@ -28,7 +28,7 @@ spec:
         control-plane: controller-manager
         tags.datadoghq.com/env: "edge"
         tags.datadoghq.com/service: "laasie-k6-operator-controller"
-        tags.datadoghq.com/version: "v0.0.7rc2-202110131601"
+        tags.datadoghq.com/version: "v0.0.7-202208081725"
     spec:
       serviceAccountName: k6-operator-controller
       containers:
@@ -51,5 +51,5 @@ spec:
           - name: DD_SERVICE
             value: "laasie-k6-operator-controller"
           - name: DD_VERSION
-            value: "v0.0.7rc2-202110131601"
+            value: "v0.0.7-202208081725"
       terminationGracePeriodSeconds: 10

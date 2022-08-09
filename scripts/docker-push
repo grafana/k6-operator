@@ -2,6 +2,8 @@
 
 set -ev
 
+aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 830473435438.dkr.ecr.us-west-2.amazonaws.com
+
 make docker-push-controller
 make docker-push-runner
 make docker-push-starter
