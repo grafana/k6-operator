@@ -61,6 +61,7 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 					ServiceAccountName:           serviceAccountName,
 					Affinity:                     k6.Spec.Starter.Affinity,
 					NodeSelector:                 k6.Spec.Starter.NodeSelector,
+					Tolerations:                  k6.Spec.Starter.Tolerations,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &k6.Spec.Starter.SecurityContext,
 					Containers: []corev1.Container{

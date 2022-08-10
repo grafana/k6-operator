@@ -144,6 +144,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Affinity:                     k6.Spec.Runner.Affinity,
 					NodeSelector:                 k6.Spec.Runner.NodeSelector,
+					Tolerations:                  k6.Spec.Runner.Tolerations,
 					SecurityContext:              &k6.Spec.Runner.SecurityContext,
 					Containers: []corev1.Container{{
 						Image:        image,
