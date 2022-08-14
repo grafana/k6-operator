@@ -52,6 +52,8 @@ spec:
       file: "test.js"
 ```
 
+***Note:*** the pods will expect to find script files in `/test/` folder. If `volumeClaim` fails, it's the first place to check: the latest initializer pod does not generate any logs and when it can't find the file, it will terminate with error. So missing file may not be that obvious and it makes sense to check it manually. See #143 for potential improvements.
+
 #### LocalFile
 
 There is a sample avaiable in `config/samples/k6_v1alpha1_k6_with_localfile.yaml` on how to configure to run a test script inside the docker image.
