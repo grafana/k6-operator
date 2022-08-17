@@ -21,6 +21,9 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 
 	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, postCommand)
 
+	var (
+		imagePullSecrets = k6.Spec.ImagePullSecrets
+	)
 	quiet := true
 	if k6.Spec.Quiet != "" {
 		quiet, _ = strconv.ParseBool(k6.Spec.Quiet)
@@ -145,6 +148,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 					Affinity:                     k6.Spec.Runner.Affinity,
 					NodeSelector:                 k6.Spec.Runner.NodeSelector,
 					SecurityContext:              &k6.Spec.Runner.SecurityContext,
+					ImagePullSecrets:             imagePullSecrets,
 					Containers: []corev1.Container{{
 						Image:        image,
 						Name:         "k6",

@@ -24,6 +24,7 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 		labels                       = newLabels(k6.Name)
 		serviceAccountName           = "default"
 		automountServiceAccountToken = true
+		imagePullSecrets             = k6.Spec.ImagePullSecrets
 		ports                        = append([]corev1.ContainerPort{{ContainerPort: 6565}}, k6.Spec.Ports...)
 	)
 
@@ -83,6 +84,7 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 					Affinity:                     k6.Spec.Runner.Affinity,
 					NodeSelector:                 k6.Spec.Runner.NodeSelector,
 					RestartPolicy:                corev1.RestartPolicyNever,
+					ImagePullSecrets:             imagePullSecrets,
 					Containers: []corev1.Container{
 						{
 							Image:        image,
