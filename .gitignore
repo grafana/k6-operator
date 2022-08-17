@@ -24,3 +24,5 @@ bin
 /manager
 
 kubebuilder-tools-*
+
+.vscode
