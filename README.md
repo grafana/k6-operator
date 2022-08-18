@@ -15,6 +15,15 @@ Install the operator by running the command below:
 $ make deploy
 ```
 
+_note:_ by default K6 assumes your kubernetes cluster domain is .cluster.local.
+If your Kubernetes cluster uses something else, e.g. `.cluster.example` you can
+override this with the environment variable `K6_CLUSTER_DOMAIN`. e.g.
+
+```bash
+export K6_CLUSTER_DOMAIN=.cluster.example
+make deploy
+```
+
 ### Installing the CRD
 
 The k6 operator includes one custom resource called `K6`. This will be automatically installed when you do a

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -17,7 +18,18 @@ import (
 )
 
 func isServiceReady(log logr.Logger, service *v1.Service) bool {
-	resp, err := http.Get(fmt.Sprintf("http://%v.%v.svc.cluster.local:6565/v1/status", service.ObjectMeta.Name, service.ObjectMeta.Namespace))
+	clusterDomain := ".cluster.local"
+	if envClusterDomain, ok := os.LookupEnv("K6_CLUSTER_DOMAIN"); ok {
+		clusterDomain = envClusterDomain
+	}
+	resp, err := http.Get(
+		fmt.Sprintf(
+			"http://%s.%s.svc%s:6565/v1/status",
+			service.ObjectMeta.Name,
+			service.ObjectMeta.Namespace,
+			clusterDomain,
+		),
+	)
 
 	if err != nil {
 		log.Error(err, fmt.Sprintf("failed to get status from %v", service.ObjectMeta.Name))

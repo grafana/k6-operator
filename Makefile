@@ -11,6 +11,8 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+# Kubernetes cluster domain
+K6_CLUSTER_DOMAIN ?= ".cluster.local"
 # Image to use for building Go
 GO_BUILDER_IMG ?= "golang:1.17"
 # Image URL to use all building/pushing image targets
@@ -78,7 +80,8 @@ uninstall: manifests kustomize
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	export K6_CLUSTER_DOMAIN=$(K6_CLUSTER_DOMAIN); \
+		$(KUSTOMIZE) build config/default | envsubst | kubectl apply -f -
 
 # Delete operator from a cluster
 delete: manifests kustomize
@@ -102,7 +105,8 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test
-	docker build . -t ${IMG} -f ${DOCKERFILE} --build-arg GO_BUILDER_IMG=${GO_BUILDER_IMG}
+	docker build . -t ${IMG} -f ${DOCKERFILE} \
+		--build-arg GO_BUILDER_IMG=${GO_BUILDER_IMG}
 
 # Push the docker image
 docker-push:

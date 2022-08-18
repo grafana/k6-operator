@@ -32,6 +32,9 @@ spec:
             - --enable-leader-election
           image: controller:latest
           name: manager
+          env:
+            - name: K6_CLUSTER_DOMAIN
+              value: $K6_CLUSTER_DOMAIN
           resources:
             limits:
               cpu: 100m
