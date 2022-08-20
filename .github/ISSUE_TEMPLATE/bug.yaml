@@ -1,3 +1,4 @@
+---
 name: Bug report
 description: Use this template for reporting bugs. Please search existing issues first.
 labels: bug
@@ -12,10 +13,10 @@ body:
       value: '## Environment'
   - type: input
     attributes:
-      label: k6-operator version
+      label: k6-operator version or image
     validations:
       required: true
-    - type: input
+  - type: input
     attributes:
       label: K6 YAML
     validations:
