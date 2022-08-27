@@ -14,10 +14,6 @@ import (
 // NewStarterJob builds a template used for creating a starter job
 func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 
-	var (
-		imagePullSecrets = k6.Spec.ImagePullSecrets
-	)
-
 	starterAnnotations := make(map[string]string)
 	if k6.Spec.Starter.Metadata.Annotations != nil {
 		starterAnnotations = k6.Spec.Starter.Metadata.Annotations
@@ -67,7 +63,7 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 					NodeSelector:                 k6.Spec.Starter.NodeSelector,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &k6.Spec.Starter.SecurityContext,
-					ImagePullSecrets:             imagePullSecrets,
+					ImagePullSecrets:             k6.Spec.Starter.ImagePullSecrets,
 					Containers: []corev1.Container{
 						containers.NewCurlContainer(hostname, starterImage, command, env),
 					},

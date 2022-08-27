@@ -53,18 +53,17 @@ type K6Scuttle struct {
 
 // K6Spec defines the desired state of K6
 type K6Spec struct {
-	Script           K6Script                      `json:"script"`
-	Parallelism      int32                         `json:"parallelism"`
-	Separate         bool                          `json:"separate,omitempty"`
-	Arguments        string                        `json:"arguments,omitempty"`
-	Ports            []corev1.ContainerPort        `json:"ports,omitempty"`
-	Starter          Pod                           `json:"starter,omitempty"`
-	Runner           Pod                           `json:"runner,omitempty"`
-	Quiet            string                        `json:"quiet,omitempty"`
-	Paused           string                        `json:"paused,omitempty"`
-	Scuttle          K6Scuttle                     `json:"scuttle,omitempty"`
-	Cleanup          Cleanup                       `json:"cleanup,omitempty"`
-	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	Script      K6Script               `json:"script"`
+	Parallelism int32                  `json:"parallelism"`
+	Separate    bool                   `json:"separate,omitempty"`
+	Arguments   string                 `json:"arguments,omitempty"`
+	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
+	Starter     Pod                    `json:"starter,omitempty"`
+	Runner      Pod                    `json:"runner,omitempty"`
+	Quiet       string                 `json:"quiet,omitempty"`
+	Paused      string                 `json:"paused,omitempty"`
+	Scuttle     K6Scuttle              `json:"scuttle,omitempty"`
+	Cleanup     Cleanup                `json:"cleanup,omitempty"`
 }
 
 // K6Script describes where the script to execute the tests is found

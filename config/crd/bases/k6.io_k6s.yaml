@@ -706,10 +706,6 @@ spec:
                     type: object
                   automountServiceAccountToken:
                     type: string
-                  imagePullSecrets:
-                    type: array
-                    items: 
-                      type: object
                   env:
                     items:
                       description: EnvVar represents an environment variable present
@@ -817,7 +813,6 @@ spec:
                       - name
                       type: object
                     type: array
-                  # ref: https://github.com/kubernetes/kubernetes/blob/7e2c02d4c86d73051b6d4f47298d35a7ffb42b6a/api/openapi-spec/v3/apis__apps__v1_openapi.json#L1681
                   envFrom:
                     items:
                       description: EnvFromSource represents the source of a set of
@@ -1711,10 +1706,6 @@ spec:
                     type: object
                   automountServiceAccountToken:
                     type: string
-                  imagePullSecrets:
-                    type: array
-                    items: 
-                      type: object
                   env:
                     items:
                       description: EnvVar represents an environment variable present
