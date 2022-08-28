@@ -41,18 +41,58 @@ $ kubectl create configmap my-test --from-file /path/to/my/test.js
 
 #### VolumeClaim
 
-If you have a PVC with the name `stress-test` containing your script and any other supporting file(s), you can pass it to the test like this:
+There is a sample avaiable in `config/samples/k6_v1alpha1_k6_with_volumeClaim.yaml` on how to configure to run a test script with a volumeClaim.
+
+If you have a PVC with the name `stress-test-volumeClaim` containing your script and any other supporting file(s), you can pass it to the test like this:
 
 ```
 spec:
   parallelism: 2
   script:
     volumeClaim:
-      name: "stress-test"
+      name: "stress-test-volumeClaim"
       file: "test.js"
 ```
 
 ***Note:*** the pods will expect to find script files in `/test/` folder. If `volumeClaim` fails, it's the first place to check: the latest initializer pod does not generate any logs and when it can't find the file, it will terminate with error. So missing file may not be that obvious and it makes sense to check it manually. See #143 for potential improvements.
+
+##### Example directory structure while using volumeClaim
+
+```
+├── test
+│   ├── requests
+│   │   ├── stress-test.js
+│   ├── test.js
+```
+In the above example, `test.js` imports a function from `stress-test.js` and, They would look like this:
+```js
+// stress-test.js
+import stress-test from "./requests/stress-test.js";
+
+export let options = {
+      vus: 50,
+      duration: '10s'
+    };
+
+export default function () {
+      stress-test();
+}
+```
+```js
+// stress-test.js
+import { sleep, check } from 'k6';
+import http from 'k6/http';
+
+
+export default () => {
+  const res = http.get('https://test-api.k6.io');
+  check(res, {
+    'status is 200': () => res.status === 200,
+  });
+  sleep(1);
+};
+
+```
 
 #### LocalFile
 
