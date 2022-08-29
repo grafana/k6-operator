@@ -12,5 +12,3 @@ spec:
       # And, All the js files and directories test.js
       # is importing from should be inside the same directory as well.
       file: test.js
-  runner:
-    image: <custom-image>

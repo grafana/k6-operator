@@ -64,7 +64,7 @@ spec:
 │   │   ├── stress-test.js
 │   ├── test.js
 ```
-In the above example, `test.js` imports a function from `stress-test.js` and, They would look like this:
+In the above example, `test.js` imports a function from `stress-test.js` and they would look like this:
 ```js
 // stress-test.js
 import stress-test from "./requests/stress-test.js";
