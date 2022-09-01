@@ -152,3 +152,18 @@ bundle: manifests
 .PHONY: bundle-build
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+.PHONY: api-clients
+api-clients:
+	mkdir -p k8s.io/code-generator/hack
+	echo "/* foo */" > k8s.io/code-generator/hack/boilerplate.go.txt
+	rm -rf apis/k6/v1alpha1/generated
+	go run k8s.io/code-generator/cmd/client-gen@v0.19.0 \
+	    --go-header-file .generator-boilerplate.txt \
+	    --input-base "github.com/grafana/k6-operator/apis" \
+	    --input "k6/v1alpha1" \
+	    --included-types-overrides "k6.io/v1alpha1/k6s" \
+	    --output-package "github.com/grafana/k6-operator/apis/k6/v1alpha1/generated" \
+	    --clientset-name clientset
+	mv github.com/grafana/k6-operator/apis/k6/v1alpha1/generated apis/k6/v1alpha1
+	rm -rf github.com k8s.io

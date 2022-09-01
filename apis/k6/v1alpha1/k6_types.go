@@ -102,6 +102,7 @@ type K6Status struct {
 // K6 is the Schema for the k6s API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +genclient
 type K6 struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

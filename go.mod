@@ -10,6 +10,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	go.k6.io/k6 v0.35.0
+	gopkg.in/guregu/null.v3 v3.3.0
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
 	k8s.io/client-go v0.18.6
@@ -72,7 +73,6 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.0.1 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/protobuf v1.25.1-0.20200805231151-a709e31e5d12 // indirect
-	gopkg.in/guregu/null.v3 v3.3.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
