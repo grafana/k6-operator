@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	deep "github.com/go-test/deep"
-	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/apis/k6/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"

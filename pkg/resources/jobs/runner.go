@@ -6,7 +6,7 @@ import (
 
 	"strings"
 
-	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/apis/k6/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/segmentation"
 	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"

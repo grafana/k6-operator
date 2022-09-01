@@ -29,7 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	k6v1alpha1 "github.com/grafana/k6-operator/api/v1alpha1"
+	k6v1alpha1 "github.com/grafana/k6-operator/apis/k6/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 

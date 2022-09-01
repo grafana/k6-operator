@@ -3,7 +3,7 @@ package types
 import (
 	"testing"
 
-	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/apis/k6/v1alpha1"
 	"github.com/stretchr/testify/assert"
 )
 
