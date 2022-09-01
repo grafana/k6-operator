@@ -153,11 +153,10 @@ bundle: manifests
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
+# Regenerate the clients in `apis/k6/v1alpha1/generated`.  This is so far a
+# manual step and not integrated with any CI.
 .PHONY: api-clients
 api-clients:
-	mkdir -p k8s.io/code-generator/hack
-	echo "/* foo */" > k8s.io/code-generator/hack/boilerplate.go.txt
-	rm -rf apis/k6/v1alpha1/generated
 	go run k8s.io/code-generator/cmd/client-gen@v0.19.0 \
 	    --go-header-file .generator-boilerplate.txt \
 	    --input-base "github.com/grafana/k6-operator/apis" \
@@ -165,5 +164,6 @@ api-clients:
 	    --included-types-overrides "k6.io/v1alpha1/k6s" \
 	    --output-package "github.com/grafana/k6-operator/apis/k6/v1alpha1/generated" \
 	    --clientset-name clientset
+	rm -rf apis/k6/v1alpha1/generated
 	mv github.com/grafana/k6-operator/apis/k6/v1alpha1/generated apis/k6/v1alpha1
-	rm -rf github.com k8s.io
+	rm -rf github.com
