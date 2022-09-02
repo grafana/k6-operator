@@ -16,7 +16,7 @@ body:
       label: k6-operator version or image
     validations:
       required: true
-  - type: input
+  - type: textarea
     attributes:
       label: K6 YAML
     validations:
