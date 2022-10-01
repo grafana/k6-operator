@@ -68,6 +68,9 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 	// Add an instance tag: in case metrics are stored, they need to be distinguished by instance
 	command = append(command, "--tag", fmt.Sprintf("instance_id=%d", index))
 
+	// Add an job tag: in case metrics are stored, they need to be distinguished by job
+	command = append(command, "--tag", fmt.Sprintf("job_name=%s", name))
+
 	command = script.UpdateCommand(command)
 
 	var (
@@ -144,6 +147,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Affinity:                     k6.Spec.Runner.Affinity,
 					NodeSelector:                 k6.Spec.Runner.NodeSelector,
+					Tolerations:                  k6.Spec.Runner.Tolerations,
 					SecurityContext:              &k6.Spec.Runner.SecurityContext,
 					ImagePullSecrets:             k6.Spec.Runner.ImagePullSecrets,
 					Containers: []corev1.Container{{

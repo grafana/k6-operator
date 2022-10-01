@@ -69,7 +69,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 		}
 
 		for _, service := range sl.Items {
-			hostnames = append(hostnames, service.ObjectMeta.Name)
+			hostnames = append(hostnames, service.Spec.ClusterIP)
 
 			if !isServiceReady(log, &service) {
 				log.Info(fmt.Sprintf("%v service is not ready, aborting", service.ObjectMeta.Name))

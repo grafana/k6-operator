@@ -38,6 +38,7 @@ func NewCurlContainer(hostnames []string, image string, command []string, env []
 				corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
 			},
 			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
 				corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
 			},
 		},

@@ -1,0 +1,44 @@
+---
+name: Bug report
+description: Use this template for reporting bugs. Please search existing issues first.
+labels: bug
+body:
+  - type: textarea
+    attributes:
+      label: Brief summary
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: '## Environment'
+  - type: input
+    attributes:
+      label: k6-operator version or image
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: K6 YAML
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Other environment details (if applicable)
+  - type: markdown
+    attributes:
+      value: '## Detailed issue description'
+  - type: textarea
+    attributes:
+      label: Steps to reproduce the problem
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true

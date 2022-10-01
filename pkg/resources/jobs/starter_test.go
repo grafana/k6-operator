@@ -45,6 +45,7 @@ func TestNewStarterJob(t *testing.T) {
 					ServiceAccountName:           "default",
 					Affinity:                     nil,
 					NodeSelector:                 nil,
+					Tolerations:                  nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
@@ -123,6 +124,7 @@ func TestNewStarterJobIstio(t *testing.T) {
 					ServiceAccountName:           "default",
 					Affinity:                     nil,
 					NodeSelector:                 nil,
+					Tolerations:                  nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
