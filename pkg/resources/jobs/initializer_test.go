@@ -53,8 +53,9 @@ func TestNewInitializerJob(t *testing.T) {
 					RestartPolicy:                corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
-							Image: "ghcr.io/grafana/operator:latest-runner",
-							Name:  "k6",
+							Image:           "ghcr.io/grafana/operator:latest-runner",
+							ImagePullPolicy: "",
+							Name:            "k6",
 							Command: []string{
 								"sh", "-c",
 								"k6 archive --log-output=none /test/test.js -O ./test.js.archived.tar --out cloud && k6 inspect --execution-requirements --log-output=none ./test.js.archived.tar",

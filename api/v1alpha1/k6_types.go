@@ -30,6 +30,7 @@ type Pod struct {
 	Env                          []corev1.EnvVar               `json:"env,omitempty"`
 	Image                        string                        `json:"image,omitempty"`
 	ImagePullSecrets             []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ImagePullPolicy              corev1.PullPolicy             `json:"imagePullPolicy,omitempty"`
 	Metadata                     PodMetadata                   `json:"metadata,omitempty"`
 	NodeSelector                 map[string]string             `json:"nodeselector,omitempty"`
 	Tolerations                  []corev1.Toleration           `json:"tolerations,omitempty"`
