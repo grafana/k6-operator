@@ -64,6 +64,7 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 					Tolerations:                  k6.Spec.Starter.Tolerations,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &k6.Spec.Starter.SecurityContext,
+					ImagePullSecrets:             k6.Spec.Starter.ImagePullSecrets,
 					Containers: []corev1.Container{
 						containers.NewCurlContainer(hostname, starterImage, command, env),
 					},

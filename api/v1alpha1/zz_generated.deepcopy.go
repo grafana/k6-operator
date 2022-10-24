@@ -201,6 +201,11 @@ func (in *Pod) DeepCopyInto(out *Pod) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
+	}
 	in.Metadata.DeepCopyInto(&out.Metadata)
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector

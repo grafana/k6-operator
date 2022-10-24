@@ -25,17 +25,18 @@ type PodMetadata struct {
 }
 
 type Pod struct {
-	Affinity                     *corev1.Affinity            `json:"affinity,omitempty"`
-	AutomountServiceAccountToken string                      `json:"automountServiceAccountToken,omitempty"`
-	Env                          []corev1.EnvVar             `json:"env,omitempty"`
-	Image                        string                      `json:"image,omitempty"`
-	Metadata                     PodMetadata                 `json:"metadata,omitempty"`
-	NodeSelector                 map[string]string           `json:"nodeselector,omitempty"`
-	Tolerations                  []corev1.Toleration         `json:"tolerations,omitempty"`
-	Resources                    corev1.ResourceRequirements `json:"resources,omitempty"`
-	ServiceAccountName           string                      `json:"serviceAccountName,omitempty"`
-	SecurityContext              corev1.PodSecurityContext   `json:"securityContext,omitempty"`
-	EnvFrom                      []corev1.EnvFromSource      `json:"envFrom,omitempty"`
+	Affinity                     *corev1.Affinity              `json:"affinity,omitempty"`
+	AutomountServiceAccountToken string                        `json:"automountServiceAccountToken,omitempty"`
+	Env                          []corev1.EnvVar               `json:"env,omitempty"`
+	Image                        string                        `json:"image,omitempty"`
+	ImagePullSecrets             []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	Metadata                     PodMetadata                   `json:"metadata,omitempty"`
+	NodeSelector                 map[string]string             `json:"nodeselector,omitempty"`
+	Tolerations                  []corev1.Toleration           `json:"tolerations,omitempty"`
+	Resources                    corev1.ResourceRequirements   `json:"resources,omitempty"`
+	ServiceAccountName           string                        `json:"serviceAccountName,omitempty"`
+	SecurityContext              corev1.PodSecurityContext     `json:"securityContext,omitempty"`
+	EnvFrom                      []corev1.EnvFromSource        `json:"envFrom,omitempty"`
 }
 
 type K6Scuttle struct {
