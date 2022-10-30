@@ -31,7 +31,7 @@ func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 
 	testDuration := inspectOutput.TotalDuration.TimeDuration()
 
-	err := wait.PollImmediate(time.Second*30, testDuration+time.Minute*2, func() (done bool, err error) {
+	err := wait.PollImmediate(time.Second*30, testDuration+time.Minute*5, func() (done bool, err error) {
 		selector := labels.SelectorFromSet(map[string]string{
 			"app":    "k6",
 			"k6_cr":  k6.Name,

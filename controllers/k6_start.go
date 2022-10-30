@@ -31,7 +31,7 @@ func isServiceReady(log logr.Logger, service *v1.Service) bool {
 func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
 	log.Info("Waiting for pods to get ready")
 
-	err := wait.PollImmediate(time.Second*5, time.Second*60, func() (done bool, err error) {
+	err := wait.PollImmediate(time.Second*5, time.Second*180, func() (done bool, err error) {
 		selector := labels.SelectorFromSet(map[string]string{
 			"app":    "k6",
 			"k6_cr":  k6.Name,

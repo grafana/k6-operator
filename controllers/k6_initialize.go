@@ -61,7 +61,7 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 		log.Error(err, "Failed to launch k6 test initializer")
 		return
 	}
-	err = wait.PollImmediate(time.Second*5, time.Second*60, func() (done bool, err error) {
+	err = wait.PollImmediate(time.Second*5, time.Second*180, func() (done bool, err error) {
 		var (
 			listOpts = &client.ListOptions{
 				Namespace: k6.Namespace,
