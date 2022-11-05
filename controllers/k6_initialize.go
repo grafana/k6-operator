@@ -93,7 +93,6 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 		// recommended to use REST client instead:
 		// https://github.com/kubernetes-sigs/controller-runtime/issues/1229
 
-		var opts corev1.PodLogOptions
 		config, err := rest.InClusterConfig()
 		if err != nil {
 			log.Error(err, "unable to fetch in-cluster REST config")
@@ -107,7 +106,9 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 			// don't return here
 			return false, nil
 		}
-		req := clientset.CoreV1().Pods(k6.Namespace).GetLogs(podList.Items[0].Name, &opts)
+		req := clientset.CoreV1().Pods(k6.Namespace).GetLogs(podList.Items[0].Name, &corev1.PodLogOptions{
+			Container: "k6",
+		})
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 		defer cancel()
 
