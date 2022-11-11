@@ -49,7 +49,7 @@ func TestNewStarterJob(t *testing.T) {
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
-						containers.NewCurlContainer([]string{"testing"}, "image", []string{"sh", "-c"},
+						containers.NewCurlContainer([]string{"testing"}, "image", corev1.PullNever, []string{"sh", "-c"},
 							[]corev1.EnvVar{}),
 					},
 				},
@@ -78,7 +78,8 @@ func TestNewStarterJob(t *testing.T) {
 						"awesomeAnnotation": "dope",
 					},
 				},
-				Image: "image",
+				Image:           "image",
+				ImagePullPolicy: corev1.PullNever,
 			},
 		},
 	}
@@ -128,7 +129,7 @@ func TestNewStarterJobIstio(t *testing.T) {
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
-						containers.NewCurlContainer([]string{"testing"}, "image", []string{"scuttle", "sh", "-c"}, []corev1.EnvVar{
+						containers.NewCurlContainer([]string{"testing"}, "image", "", []string{"scuttle", "sh", "-c"}, []corev1.EnvVar{
 							{
 								Name:  "ENVOY_ADMIN_API",
 								Value: "http://127.0.0.1:15000",
