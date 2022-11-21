@@ -458,6 +458,32 @@ $ make delete
 
 ## Developing Locally
 
+### Setup local environment with Okteto
+
+- (Optional) Create your k8s cluster with minikube or any another option.
+- Run `okteto deploy` to configure `k6-operator` permissions.
+- Run `okteto up` to enable your development container.
+
+```
+☁  k6-operator [main] ⚡  okteto up
+ i  Using default @ minikube as context
+ i  'k6-operator' was already deployed. To redeploy run 'okteto deploy' or 'okteto up --deploy'
+ i  Images were already built. To rebuild your images run 'okteto build' or 'okteto deploy --build'
+ ✓  Images successfully pulled
+ ✓  Files synchronized
+    Context:   minikube
+    Namespace: default
+    Name:      k6-operator
+    Forward:   2345 -> 2345
+
+Welcome to your development container. Happy coding!
+```
+
+### Enabling go remote debug with Delve
+
+- `dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient debug github.com/grafana/k6-operator`
+- Now you can configure your IDE in order to debug the code.
+
 ### Run Tests
 
 #### Pre-Requisites

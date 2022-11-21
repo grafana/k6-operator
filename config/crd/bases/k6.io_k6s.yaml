@@ -16,7 +16,15 @@ spec:
     singular: k6
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: Stage
+      jsonPath: .status.stage
+      name: Stage
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: K6 is the Schema for the k6s API
@@ -847,6 +855,10 @@ spec:
                       type: object
                     type: array
                   image:
+                    type: string
+                  imagePullPolicy:
+                    description: PullPolicy describes a policy for if/when to pull
+                      a container image
                     type: string
                   imagePullSecrets:
                     items:
@@ -1888,6 +1900,10 @@ spec:
                     type: array
                   image:
                     type: string
+                  imagePullPolicy:
+                    description: PullPolicy describes a policy for if/when to pull
+                      a container image
+                    type: string
                   imagePullSecrets:
                     items:
                       description: LocalObjectReference contains enough information
@@ -2129,6 +2145,7 @@ spec:
                 - created
                 - started
                 - finished
+                - error
                 type: string
             type: object
         type: object
