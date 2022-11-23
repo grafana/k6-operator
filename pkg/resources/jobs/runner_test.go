@@ -174,6 +174,13 @@ func TestNewAntiAffinity(t *testing.T) {
 									"k6",
 								},
 							},
+							{
+								Key:      "runner",
+								Operator: "In",
+								Values: []string{
+									"true",
+								},
+							},
 						},
 					},
 					TopologyKey: "kubernetes.io/hostname",

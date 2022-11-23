@@ -231,6 +231,13 @@ func newAntiAffinity() *corev1.Affinity {
 									"k6",
 								},
 							},
+							{
+								Key:      "runner",
+								Operator: "In",
+								Values: []string{
+									"true",
+								},
+							},
 						},
 					},
 					TopologyKey: "kubernetes.io/hostname",
