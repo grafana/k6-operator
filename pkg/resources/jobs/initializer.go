@@ -20,6 +20,7 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 
 	var (
 		image                        = "ghcr.io/grafana/operator:latest-runner"
+		annotations                  = make(map[string]string)
 		labels                       = newLabels(k6.Name)
 		serviceAccountName           = "default"
 		automountServiceAccountToken = true
@@ -28,6 +29,10 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 
 	if k6.Spec.Runner.Image != "" {
 		image = k6.Spec.Runner.Image
+	}
+
+	if k6.Spec.Runner.Metadata.Annotations != nil {
+		annotations = k6.Spec.Runner.Metadata.Annotations
 	}
 
 	if k6.Spec.Runner.Metadata.Labels != nil {
@@ -61,14 +66,16 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-initializer", k6.Name),
-			Namespace: k6.Namespace,
-			Labels:    labels,
+			Name:        fmt.Sprintf("%s-initializer", k6.Name),
+			Namespace:   k6.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Labels:      labels,
+					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
 					AutomountServiceAccountToken: &automountServiceAccountToken,
