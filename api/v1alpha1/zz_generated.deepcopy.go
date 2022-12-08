@@ -141,6 +141,7 @@ func (in *K6Spec) DeepCopyInto(out *K6Spec) {
 		*out = make([]v1.ContainerPort, len(*in))
 		copy(*out, *in)
 	}
+	in.Initializer.DeepCopyInto(&out.Initializer)
 	in.Starter.DeepCopyInto(&out.Starter)
 	in.Runner.DeepCopyInto(&out.Runner)
 	out.Scuttle = in.Scuttle

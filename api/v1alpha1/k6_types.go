@@ -60,6 +60,7 @@ type K6Spec struct {
 	Separate    bool                   `json:"separate,omitempty"`
 	Arguments   string                 `json:"arguments,omitempty"`
 	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
+	Initializer Pod                    `json:"initializer,omitempty"`
 	Starter     Pod                    `json:"starter,omitempty"`
 	Runner      Pod                    `json:"runner,omitempty"`
 	Quiet       string                 `json:"quiet,omitempty"`

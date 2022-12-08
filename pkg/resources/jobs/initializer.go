@@ -35,6 +35,10 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 		annotations = k6.Spec.Runner.Metadata.Annotations
 	}
 
+	if k6.Spec.Initializer.Metadata.Annotations != nil {
+		annotations = k6.Spec.Initializer.Metadata.Annotations
+	}
+
 	if k6.Spec.Runner.Metadata.Labels != nil {
 		for k, v := range k6.Spec.Runner.Metadata.Labels { // Order not specified
 			if _, ok := labels[k]; !ok {
