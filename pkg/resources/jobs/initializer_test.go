@@ -19,6 +19,7 @@ func TestNewInitializerJob(t *testing.T) {
 	}
 
 	automountServiceAccountToken := true
+	zero := int32(0)
 
 	expectedOutcome := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -34,6 +35,7 @@ func TestNewInitializerJob(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: &zero,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -58,7 +60,7 @@ func TestNewInitializerJob(t *testing.T) {
 							Name:            "k6",
 							Command: []string{
 								"sh", "-c",
-								"k6 archive --log-output=none /test/test.js -O ./test.js.archived.tar --out cloud && k6 inspect --execution-requirements --log-output=none ./test.js.archived.tar",
+								"k6 archive /test/test.js -O ./test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements ./test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
 							},
 							Env:          []corev1.EnvVar{},
 							Resources:    corev1.ResourceRequirements{},

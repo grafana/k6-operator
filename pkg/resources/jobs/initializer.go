@@ -58,12 +58,13 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 	)
 	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, []string{"sh", "-c"})
 	command = append(command, fmt.Sprintf(
-		"k6 archive %s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; cat /tmp/k6logs | grep 'level=error' || true",
+		"k6 archive %s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
 		scriptName, archiveName, argLine,
 		archiveName))
 
 	env := append(newIstioEnvVar(k6.Spec.Scuttle, istioEnabled), k6.Spec.Runner.Env...)
 
+	var zero32 int32
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fmt.Sprintf("%s-initializer", k6.Name),
@@ -72,6 +73,7 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 			Annotations: annotations,
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: &zero32,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
