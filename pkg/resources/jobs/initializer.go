@@ -58,7 +58,7 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 	)
 	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, []string{"sh", "-c"})
 	command = append(command, fmt.Sprintf(
-		"k6 archive --log-output=none %s -O %s %s && k6 inspect --execution-requirements --log-output=none %s",
+		"k6 archive %s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; cat /tmp/k6logs | grep 'level=error' || true",
 		scriptName, archiveName, argLine,
 		archiveName))
 
