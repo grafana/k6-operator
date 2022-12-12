@@ -2,7 +2,7 @@ resources:
 - manager.yaml
 images:
 - name: controller
-  newName: ghcr.io/grafana/operator
-  newTag: latest
+  newName: docker-local.jfrog.prodigygame.org/grafana/k6/controller-patch
+  newTag: v0.0.9-alpha
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
