@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"errors"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"reflect"
 	"testing"
 
@@ -305,6 +306,15 @@ func TestNewRunnerJob(t *testing.T) {
 								},
 							},
 						},
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -409,6 +419,15 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -504,6 +523,15 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -599,6 +627,15 @@ func TestNewRunnerJobArguments(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -695,6 +732,15 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -805,6 +851,15 @@ func TestNewRunnerJobIstio(t *testing.T) {
 						Resources:    corev1.ResourceRequirements{},
 						VolumeMounts: script.VolumeMount(),
 						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -910,6 +965,15 @@ func TestNewRunnerJobCloud(t *testing.T) {
 						Resources:    corev1.ResourceRequirements{},
 						VolumeMounts: script.VolumeMount(),
 						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -1001,6 +1065,15 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
