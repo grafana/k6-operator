@@ -11,6 +11,7 @@ import (
 	"go.k6.io/k6/lib"
 	"go.k6.io/k6/lib/consts"
 	"go.k6.io/k6/lib/types"
+	"go.k6.io/k6/stats"
 	"gopkg.in/guregu/null.v3"
 )
 
@@ -23,9 +24,9 @@ type InspectOutput struct {
 			ProjectID int64  `json:"projectID"`
 		} `json:"loadimpact"`
 	} `json:"ext"`
-	TotalDuration types.NullDuration  `json:"totalDuration"`
-	MaxVUs        uint64              `json:"maxVUs"`
-	Thresholds    map[string][]string `json:"thresholds,omitempty"`
+	TotalDuration types.NullDuration           `json:"totalDuration"`
+	MaxVUs        uint64                       `json:"maxVUs"`
+	Thresholds    map[string]*stats.Thresholds `json:"thresholds,omitempty"`
 }
 
 type TestRun struct {
@@ -56,8 +57,11 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 		Level:     logrus.InfoLevel,
 	}
 
-	if opts.Thresholds == nil {
-		opts.Thresholds = make(map[string][]string)
+	thresholds := make(map[string][]string, len(opts.Thresholds))
+	for name, t := range opts.Thresholds {
+		for _, threshold := range t.Thresholds {
+			thresholds[name] = append(thresholds[name], threshold.Source)
+		}
 	}
 
 	if len(host) == 0 {
@@ -69,7 +73,7 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 		Name:              opts.External.Loadimpact.Name,
 		ProjectID:         cloudConfig.ProjectID.Int64,
 		VUsMax:            int64(opts.MaxVUs),
-		Thresholds:        opts.Thresholds,
+		Thresholds:        thresholds,
 		Duration:          int64(opts.TotalDuration.TimeDuration().Seconds()),
 		ProcessThresholds: true,
 		Instances:         instances,
