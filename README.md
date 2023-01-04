@@ -326,7 +326,7 @@ spec:
     configMap:
       name: crocodile-stress-test
       file: test.js
-  arguments: -o output-prometheus-remote
+  arguments: -o xk6-prometheus-rw
   runner:
     image: k6-prometheus:local
     env:
@@ -335,7 +335,7 @@ spec:
 ```
 
 Note that we are replacing the test job image (`k6-prometheus:latest`), passing required arguments to `k6`
-(`-o output-prometheus-remote`), and also setting the environment variable to the runner (`K6_PROMETHEUS_REMOTE_URL`).
+(`-o xk6-prometheus-rw`), and also setting the environment variable to the runner (`K6_PROMETHEUS_REMOTE_URL`).
 
 <!-- If using the Prometheus Operator, you'll also need to create a pod monitor:
 
