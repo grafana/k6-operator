@@ -45,7 +45,7 @@ type K6Scuttle struct {
 	EnvoyAdminApi           string `json:"envoyAdminApi,omitempty"`
 	NeverKillIstio          bool   `json:"neverKillIstio,omitempty"`
 	NeverKillIstioOnFailure bool   `json:"neverKillIstioOnFailure,omitempty"`
-	ScuttleLogging          bool   `json:"scuttleLogging,omitempty"`
+	DisableLogging          bool   `json:"disableLogging,omitempty"`
 	StartWithoutEnvoy       bool   `json:"startWithoutEnvoy,omitempty"`
 	WaitForEnvoyTimeout     string `json:"waitForEnvoyTimeout,omitempty"`
 	IstioQuitApi            string `json:"istioQuitApi,omitempty"`

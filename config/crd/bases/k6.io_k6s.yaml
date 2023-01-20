@@ -1114,6 +1114,8 @@ spec:
                 type: object
               scuttle:
                 properties:
+                  disableLogging:
+                    type: boolean
                   enabled:
                     type: string
                   envoyAdminApi:
@@ -1128,8 +1130,6 @@ spec:
                     type: boolean
                   quitWithoutEnvoyTimeout:
                     type: string
-                  scuttleLogging:
-                    type: boolean
                   startWithoutEnvoy:
                     type: boolean
                   waitForEnvoyTimeout:

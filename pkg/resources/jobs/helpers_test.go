@@ -110,7 +110,7 @@ func TestNewIstioEnvVarTrueValues(t *testing.T) {
 		},
 		{
 			Name:  "SCUTTLE_LOGGING",
-			Value: "true",
+			Value: "false",
 		},
 	}
 
@@ -118,7 +118,7 @@ func TestNewIstioEnvVarTrueValues(t *testing.T) {
 		EnvoyAdminApi:       "",
 		IstioQuitApi:        "",
 		WaitForEnvoyTimeout: "",
-		ScuttleLogging:      true,
+		DisableLogging:      true,
 	}, true)
 
 	if !reflect.DeepEqual(envVars, expectedOutcome) {
@@ -146,7 +146,7 @@ func TestNewIstioEnvVarFalseValues(t *testing.T) {
 		EnvoyAdminApi:       "",
 		IstioQuitApi:        "",
 		WaitForEnvoyTimeout: "",
-		ScuttleLogging:      false,
+		DisableLogging:      false,
 	}, true)
 
 	if !reflect.DeepEqual(envVars, expectedOutcome) {
