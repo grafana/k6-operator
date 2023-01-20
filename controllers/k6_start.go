@@ -11,14 +11,7 @@ import (
 	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
-
-var backoffSchedule = []time.Duration{
-	1 * time.Second,
-	3 * time.Second,
-	5 * time.Second,
-}
 
 func isServiceReady(log logr.Logger, service *v1.Service) bool {
 	resp, err := http.Get(fmt.Sprintf("http://%v.%v.svc.cluster.local:6565/v1/status", service.ObjectMeta.Name, service.ObjectMeta.Namespace))
@@ -82,13 +75,6 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 		}
 	}
 
-	log.Info("Changing stage of K6 status to started")
-	k6.Status.Stage = "started"
-	if err = r.Client.Status().Update(ctx, k6); err != nil {
-		log.Error(err, "Could not update status of custom resource")
-		return ctrl.Result{}, err
-	}
-
 	starter := jobs.NewStarterJob(k6, hostnames)
 
 	if err = ctrl.SetControllerReference(k6, starter, r.Scheme); err != nil {
@@ -104,6 +90,13 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 
 	if err != nil {
 		log.Error(err, "Failed to start all jobs")
+		return ctrl.Result{}, err
+	}
+
+	log.Info("Changing stage of K6 status to started")
+	k6.Status.Stage = "started"
+	if err = r.Client.Status().Update(ctx, k6); err != nil {
+		log.Error(err, "Could not update status of custom resource")
 		return ctrl.Result{}, err
 	}
 
