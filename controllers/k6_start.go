@@ -130,7 +130,7 @@ func allK6RunnerPodsAreReadyToStart(ctx context.Context, log logr.Logger, k6 *v1
 		count++
 	}
 
-	log.Info(fmt.Sprintf("%d/%d k6-runner pods ready", count, k6.Spec.Parallelism))
+	log.Info(fmt.Sprintf("%d/%d runner pods ready", count, k6.Spec.Parallelism))
 
 	if count != int(k6.Spec.Parallelism) {
 		return false, nil
