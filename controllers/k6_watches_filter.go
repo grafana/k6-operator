@@ -16,8 +16,8 @@ type K6PodsWatchMap struct {
 	log logr.Logger
 }
 
-// Map Watch map function used above.
-// Obj is a Pod that just got an event, map it back to any matching Migrators.
+// Map is implementing `handler.Mapper` interface, to be able to enqueue requests.
+// This mapper is to be used for watching pods; so `object` is a Pod that just got an event.
 func (m *K6PodsWatchMap) Map(object handler.MapObject) []reconcile.Request {
 	pod := object.Object.(*v1.Pod)
 	k6CrName, _ := pod.GetLabels()[k6CrLabelName]
