@@ -46,7 +46,7 @@ type K6Reconciler struct {
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("k6", req.NamespacedName, "cr_name", req.Name)
+	log := r.Log.WithValues("namespace", req.Namespace, "name", req.Name)
 
 	// Fetch the CRD
 	k6 := &v1alpha1.K6{}
