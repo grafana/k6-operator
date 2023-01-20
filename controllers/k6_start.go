@@ -136,7 +136,6 @@ func allK6RunnerPodsAreReadyToStart(ctx context.Context, log logr.Logger, k6 *v1
 		return false, nil
 	}
 
-	log.Info("all k6-runner pods are ready to start")
 
 	return true, err
 }
