@@ -848,6 +848,10 @@ spec:
                     type: array
                   image:
                     type: string
+                  imagePullPolicy:
+                    description: PullPolicy describes a policy for if/when to pull
+                      a container image
+                    type: string
                   imagePullSecrets:
                     items:
                       description: LocalObjectReference contains enough information
@@ -1102,6 +1106,8 @@ spec:
                 type: object
               scuttle:
                 properties:
+                  disableLogging:
+                    type: boolean
                   enabled:
                     type: string
                   envoyAdminApi:
@@ -1116,8 +1122,6 @@ spec:
                     type: boolean
                   quitWithoutEnvoyTimeout:
                     type: string
-                  scuttleLogging:
-                    type: boolean
                   startWithoutEnvoy:
                     type: boolean
                   waitForEnvoyTimeout:
@@ -1887,6 +1891,10 @@ spec:
                       type: object
                     type: array
                   image:
+                    type: string
+                  imagePullPolicy:
+                    description: PullPolicy describes a policy for if/when to pull
+                      a container image
                     type: string
                   imagePullSecrets:
                     items:
