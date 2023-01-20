@@ -16,17 +16,39 @@ import (
 
 // FinishJobs waits for the pods to finish, performs finishing call for cloud output and moves state to "finished".
 func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
-	log.Info("Waiting for pods to finish")
+	log.Info("Checking if all runner pods are finished")
 
-	allK6PodsAreFinalized, err := allk6RunnerPodsAreFinished(ctx, log, k6, r)
+	var err error
+	selector := labels.SelectorFromSet(map[string]string{
+		"app":    "k6",
+		"k6_cr":  k6.Name,
+		"runner": "true",
+	})
 
-	if !allK6PodsAreFinalized {
-		if err != nil {
-			log.Error(err, "Waiting for pods to finish ended with error")
-		}
+	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
+	jl := &batchv1.JobList{}
 
-		return ctrl.Result{}, err
+	if err := r.List(ctx, jl, opts); err != nil {
+		log.Error(err, "Could not list jobs")
+		return ctrl.Result{}, nil
 	}
+
+	// TODO: We should distinguish between Suceeded/Failed/Unknown
+	var finished int32
+	for _, job := range jl.Items {
+		if job.Status.Active != 0 {
+			continue
+		}
+		finished++
+	}
+
+	log.Info(fmt.Sprintf("%d/%d jobs complete", finished, k6.Spec.Parallelism))
+
+	if finished < k6.Spec.Parallelism {
+		return ctrl.Result{}, nil
+	}
+
+	log.Info("All runner pods are finished")
 
 	// If this is a test run with cloud output, try to finalize it regardless.
 	if cli := types.ParseCLI(&k6.Spec); cli.HasCloudOut {
@@ -45,37 +67,4 @@ func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func allk6RunnerPodsAreFinished(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (bool, error) {
-	selector := labels.SelectorFromSet(map[string]string{
-		"app":    "k6",
-		"k6_cr":  k6.Name,
-		"runner": "true",
-	})
-
-	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
-	jl := &batchv1.JobList{}
-
-	if err := r.List(ctx, jl, opts); err != nil {
-		log.Error(err, "Could not list jobs")
-		return false, nil
-	}
-
-	// TODO: We should distinguish between Suceeded/Failed/Unknown
-	var finished int32
-	for _, job := range jl.Items {
-		if job.Status.Active != 0 {
-			continue
-		}
-		finished++
-	}
-
-	log.Info(fmt.Sprintf("%d/%d jobs complete", finished, k6.Spec.Parallelism))
-
-	if finished >= k6.Spec.Parallelism {
-		return true, nil
-	}
-
-	return false, nil
 }

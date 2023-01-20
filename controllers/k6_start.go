@@ -21,39 +21,20 @@ var backoffSchedule = []time.Duration{
 }
 
 func isServiceReady(log logr.Logger, service *v1.Service) bool {
-	var resp *http.Response
-	var err error
-	for _, backoff := range backoffSchedule {
-		resp, err = http.Get(fmt.Sprintf("http://%v.%v.svc.cluster.local:6565/v1/status", service.ObjectMeta.Name, service.ObjectMeta.Namespace))
-
-		if err == nil && resp.StatusCode < 299 {
-			break
-		}
-
-		time.Sleep(backoff)
-	}
+	resp, err := http.Get(fmt.Sprintf("http://%v.%v.svc.cluster.local:6565/v1/status", service.ObjectMeta.Name, service.ObjectMeta.Namespace))
 
 	if err != nil {
 		log.Error(err, fmt.Sprintf("failed to get status from %v", service.ObjectMeta.Name))
 		return false
 	}
 
-	return true
+	return resp.StatusCode < 400
 }
 
 // StartJobs in the Ready phase using a curl container
 func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
 	log.Info("Waiting for pods to get ready")
 
-	allK6PodsAreReady, err := allK6RunnerPodsAreReadyToStart(ctx, log, k6, r)
-
-	if !allK6PodsAreReady {
-		return ctrl.Result{}, err
-	}
-
-	var hostnames []string
-
-	sl := &v1.ServiceList{}
 	selector := labels.SelectorFromSet(map[string]string{
 		"app":    "k6",
 		"k6_cr":  k6.Name,
@@ -61,6 +42,29 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 	})
 
 	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
+	pl := &v1.PodList{}
+	if e := r.List(ctx, pl, opts); e != nil {
+		log.Error(e, "Could not list pods")
+		return ctrl.Result{}, e
+	}
+
+	var count int
+	for _, pod := range pl.Items {
+		if pod.Status.Phase != "Running" {
+			continue
+		}
+		count++
+	}
+
+	log.Info(fmt.Sprintf("%d/%d runner pods ready", count, k6.Spec.Parallelism))
+
+	if count != int(k6.Spec.Parallelism) {
+		return ctrl.Result{}, nil
+	}
+
+	var hostnames []string
+	var err error
+	sl := &v1.ServiceList{}
 
 	if e := r.List(ctx, sl, opts); e != nil {
 		log.Error(e, "Could not list services")
@@ -104,38 +108,4 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func allK6RunnerPodsAreReadyToStart(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (bool, error) {
-	var err error
-
-	selector := labels.SelectorFromSet(map[string]string{
-		"app":    "k6",
-		"k6_cr":  k6.Name,
-		"runner": "true",
-	})
-
-	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
-	pl := &v1.PodList{}
-	if e := r.List(ctx, pl, opts); e != nil {
-		log.Error(e, "Could not list pods")
-		return false, e
-	}
-
-	var count int
-	for _, pod := range pl.Items {
-		if pod.Status.Phase != "Running" {
-			continue
-		}
-		count++
-	}
-
-	log.Info(fmt.Sprintf("%d/%d runner pods ready", count, k6.Spec.Parallelism))
-
-	if count != int(k6.Spec.Parallelism) {
-		return false, nil
-	}
-
-
-	return true, err
 }

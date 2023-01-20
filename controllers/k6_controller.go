@@ -18,8 +18,12 @@ import (
 	"context"
 	"fmt"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
@@ -30,6 +34,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const k6CrLabelName = "k6_cr"
 
 // K6Reconciler reconciles a K6 object
 type K6Reconciler struct {
@@ -63,8 +69,10 @@ func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	log.Info(fmt.Sprintf("Reconcile(); stage = %s", k6.Status.Stage))
 
 	switch k6.Status.Stage {
-	case "", "initialization":
+	case "":
 		return InitializeJobs(ctx, log, k6, r)
+	case "initialization":
+		return RunValidations(ctx, log, k6, r)
 	case "initialized":
 		return CreateJobs(ctx, log, k6, r)
 	case "created":
@@ -93,7 +101,26 @@ func (r *K6Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&v1alpha1.K6{}).
 		Owns(&batchv1.Job{}).
 		Watches(&source.Kind{Type: &v1.Pod{}},
-			&handler.EnqueueRequestsFromMapFunc{ToRequests: &K6PodsWatchMap{log: mgr.GetLogger()}},
-			builder.WithPredicates(filterK6Pods())).
+			&handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(
+				func(object handler.MapObject) []reconcile.Request {
+					pod := object.Object.(*v1.Pod)
+					k6CrName, ok := pod.GetLabels()[k6CrLabelName]
+					if !ok {
+						return nil
+					}
+					return []reconcile.Request{
+						{NamespacedName: types.NamespacedName{
+							Name:      k6CrName,
+							Namespace: object.Meta.GetNamespace(),
+						}}}
+				})},
+			builder.WithPredicates(predicate.NewPredicateFuncs(func(meta metav1.Object, object runtime.Object) bool {
+				pod := object.(*v1.Pod)
+				_, ok := pod.GetLabels()[k6CrLabelName]
+				if !ok {
+					return false
+				}
+				return true
+			}))).
 		Complete(r)
 }
