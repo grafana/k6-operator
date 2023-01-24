@@ -69,7 +69,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 
 		if !isServiceReady(log, &service) {
 			log.Info(fmt.Sprintf("%v service is not ready, aborting", service.ObjectMeta.Name))
-			return ctrl.Result{}, nil
+			return ctrl.Result{RequeueAfter: time.Second}, nil
 		} else {
 			log.Info(fmt.Sprintf("%v service is ready", service.ObjectMeta.Name))
 		}
