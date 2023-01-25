@@ -11,6 +11,7 @@ import (
 	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 func isServiceReady(log logr.Logger, service *v1.Service) bool {

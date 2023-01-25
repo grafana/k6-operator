@@ -1,0 +1,12 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: k6-sample
+spec:
+  parallelism: 3
+  script:
+    configMap:
+      name: "crocodile-stress-test"
+      file: "test.js"
+  arguments: -v
