@@ -293,7 +293,7 @@ spec:
 In other words, `file` option must be the correct entrypoint for `k6 run`.
 
 ### Using extensions
-By default, the operator will use `loadimpact/k6:latest` as the container image for the test jobs. If you want to use
+By default, the operator will use `grafana/k6:latest` as the container image for the test jobs. If you want to use
 extensions built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image`
 property on the `K6` kubernetes resource. For example, the following Dockerfile can be used to create a container
 image using `https://github.com/grafana/xk6-output-prometheus-remote` as an extension:
@@ -307,7 +307,7 @@ RUN go install go.k6.io/xk6/cmd/xk6@latest
 RUN xk6 build --output /k6 --with github.com/grafana/xk6-output-prometheus-remote@latest
 
 # Use the operator's base image and override the k6 binary
-FROM loadimpact/k6:latest
+FROM grafana/k6:latest
 COPY --from=builder /k6 /usr/bin/k6
 ```
 
@@ -326,16 +326,16 @@ spec:
     configMap:
       name: crocodile-stress-test
       file: test.js
-  arguments: -o output-prometheus-remote
+  arguments: -o xk6-prometheus-rw
   runner:
     image: k6-prometheus:local
     env:
-      - name: K6_PROMETHEUS_REMOTE_URL
+      - name: K6_PROMETHEUS_RW_SERVER_URL
         value: http://prometheus.somewhere:9090/api/v1/write
 ```
 
 Note that we are replacing the test job image (`k6-prometheus:latest`), passing required arguments to `k6`
-(`-o output-prometheus-remote`), and also setting the environment variable to the runner (`K6_PROMETHEUS_REMOTE_URL`).
+(`-o xk6-prometheus-rw`), and also setting the environment variable to the runner (`K6_PROMETHEUS_RW_SERVER_URL`).
 
 <!-- If using the Prometheus Operator, you'll also need to create a pod monitor:
 
