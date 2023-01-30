@@ -9,4 +9,3 @@ spec:
     configMap:
       name: "crocodile-stress-test"
       file: "test.js"
-  arguments: -v
