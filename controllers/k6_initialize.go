@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/grafana/k6-operator/pkg/types"
 	"io"
 	"time"
 
@@ -12,11 +13,9 @@ import (
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
-	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -54,100 +53,109 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 
 	if err = ctrl.SetControllerReference(k6, initializer, r.Scheme); err != nil {
 		log.Error(err, "Failed to set controller reference for the initialize job")
-		return
+		return res, err
 	}
 
 	if err = r.Create(ctx, initializer); err != nil {
 		log.Error(err, "Failed to launch k6 test initializer")
-		return
+		return res, err
 	}
-	err = wait.PollImmediate(time.Second*5, time.Second*60, func() (done bool, err error) {
-		var (
-			listOpts = &client.ListOptions{
-				Namespace: k6.Namespace,
-				LabelSelector: labels.SelectorFromSet(map[string]string{
-					"app":      "k6",
-					"k6_cr":    k6.Name,
-					"job-name": fmt.Sprintf("%s-initializer", k6.Name),
-				}),
-			}
-			podList = &corev1.PodList{}
-		)
-		if err := r.List(ctx, podList, listOpts); err != nil {
-			log.Error(err, "Could not list pods")
-			return false, err
+
+	return res, nil
+}
+
+func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (res ctrl.Result, err error) {
+	cli := types.ParseCLI(&k6.Spec)
+
+	var (
+		listOpts = &client.ListOptions{
+			Namespace: k6.Namespace,
+			LabelSelector: labels.SelectorFromSet(map[string]string{
+				"app":      "k6",
+				"k6_cr":    k6.Name,
+				"job-name": fmt.Sprintf("%s-initializer", k6.Name),
+			}),
 		}
-		if len(podList.Items) < 1 {
-			log.Info("No initializing pod found yet")
-			return false, nil
-		}
+		podList = &corev1.PodList{}
+	)
+	if err = r.List(ctx, podList, listOpts); err != nil {
+		log.Error(err, "Could not list pods")
+		return ctrl.Result{}, err
+	}
+	if len(podList.Items) < 1 {
+		log.Info("No initializing pod found yet")
+		return ctrl.Result{}, err
+	}
 
-		// there should be only 1 initializer pod
-		if podList.Items[0].Status.Phase != "Succeeded" {
-			log.Info("Waiting for initializing pod to finish")
-			return false, nil
-		}
+	// there should be only 1 initializer pod
+	if podList.Items[0].Status.Phase != "Succeeded" {
+		log.Info("Waiting for initializing pod to finish")
+		return ctrl.Result{}, err
+	}
 
-		// Here we need to get the output of the pod
-		// pods/log is not currently supported by controller-runtime client and it is officially
-		// recommended to use REST client instead:
-		// https://github.com/kubernetes-sigs/controller-runtime/issues/1229
+	// Here we need to get the output of the pod
+	// pods/log is not currently supported by controller-runtime client and it is officially
+	// recommended to use REST client instead:
+	// https://github.com/kubernetes-sigs/controller-runtime/issues/1229
 
-		config, err := rest.InClusterConfig()
-		if err != nil {
-			log.Error(err, "unable to fetch in-cluster REST config")
-			// don't return here
-			return false, nil
-		}
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Error(err, "unable to fetch in-cluster REST config")
+		// don't return here
+		return ctrl.Result{}, err
+	}
 
-		clientset, err := kubernetes.NewForConfig(config)
-		if err != nil {
-			log.Error(err, "unable to get access to clientset")
-			// don't return here
-			return false, nil
-		}
-		req := clientset.CoreV1().Pods(k6.Namespace).GetLogs(podList.Items[0].Name, &corev1.PodLogOptions{
-			Container: "k6",
-		})
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-		defer cancel()
-
-		podLogs, err := req.Stream(ctx)
-		if err != nil {
-			log.Error(err, "unable to stream logs from the pod")
-			// don't return here
-			return false, nil
-		}
-		defer podLogs.Close()
-
-		buf := new(bytes.Buffer)
-		_, err = io.Copy(buf, podLogs)
-		if err != nil {
-			log.Error(err, "unable to copy logs from the pod")
-			return false, err
-		}
-
-		if err := json.Unmarshal(buf.Bytes(), &inspectOutput); err != nil {
-			// this shouldn't normally happen but if it does, let's log output by default
-			log.Error(err, fmt.Sprintf("unable to marshal: `%s`", buf.String()))
-			return true, err
-		}
-
-		log.Info(fmt.Sprintf("k6 inspect: %+v", inspectOutput))
-
-		if int32(inspectOutput.MaxVUs) < k6.Spec.Parallelism {
-			err = fmt.Errorf("number of instances > number of VUs")
-			// TODO maybe change this to a warning and simply set parallelism = maxVUs and proceed with execution?
-			// But logr doesn't seem to have warning level by default, only with V() method...
-			// It makes sense to return to this after / during logr VS logrus issue https://github.com/grafana/k6-operator/issues/84
-			log.Error(err, "Parallelism argument cannot be larger than maximum VUs in the script",
-				"maxVUs", inspectOutput.MaxVUs,
-				"parallelism", k6.Spec.Parallelism)
-			return false, err
-		}
-
-		return true, nil
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Error(err, "unable to get access to clientset")
+		// don't return here
+		return ctrl.Result{}, err
+	}
+	req := clientset.CoreV1().Pods(k6.Namespace).GetLogs(podList.Items[0].Name, &corev1.PodLogOptions{
+		Container: "k6",
 	})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+
+	podLogs, err := req.Stream(ctx)
+	if err != nil {
+		log.Error(err, "unable to stream logs from the pod")
+		// don't return here
+		return ctrl.Result{}, err
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		log.Error(err, "unable to copy logs from the pod")
+		return ctrl.Result{}, err
+	}
+
+	if err := json.Unmarshal(buf.Bytes(), &inspectOutput); err != nil {
+		// this shouldn't normally happen but if it does, let's log output by default
+		log.Error(err, fmt.Sprintf("unable to marshal: `%s`", buf.String()))
+		return ctrl.Result{}, err
+	}
+
+	log.Info(fmt.Sprintf("k6 inspect: %+v", inspectOutput))
+
+	if int32(inspectOutput.MaxVUs) < k6.Spec.Parallelism {
+		err = fmt.Errorf("number of instances > number of VUs")
+		// TODO maybe change this to a warning and simply set parallelism = maxVUs and proceed with execution?
+		// But logr doesn't seem to have warning level by default, only with V() method...
+		// It makes sense to return to this after / during logr VS logrus issue https://github.com/grafana/k6-operator/issues/84
+		log.Error(err, "Parallelism argument cannot be larger than maximum VUs in the script",
+			"maxVUs", inspectOutput.MaxVUs,
+			"parallelism", k6.Spec.Parallelism)
+
+		k6.Status.Stage = "error"
+		if err = r.Client.Status().Update(ctx, k6); err != nil {
+			log.Error(err, "Could not update status of custom resource")
+			return
+		}
+		return ctrl.Result{}, err
+	}
 
 	if err != nil {
 		log.Error(err, "Failed to initialize the script")

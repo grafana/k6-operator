@@ -17,6 +17,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -26,6 +34,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const k6CrLabelName = "k6_cr"
 
 // K6Reconciler reconciles a K6 object
 type K6Reconciler struct {
@@ -42,7 +52,7 @@ type K6Reconciler struct {
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("k6", req.NamespacedName)
+	log := r.Log.WithValues("namespace", req.Namespace, "name", req.Name)
 
 	// Fetch the CRD
 	k6 := &v1alpha1.K6{}
@@ -62,10 +72,7 @@ func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	case "":
 		return InitializeJobs(ctx, log, k6, r)
 	case "initialization":
-		// here we're just waiting until initialize is done
-		// Note: it is present as a separate stage to ensure there's only one
-		// initialization job at a time
-		return ctrl.Result{}, nil
+		return RunValidations(ctx, log, k6, r)
 	case "initialized":
 		return CreateJobs(ctx, log, k6, r)
 	case "created":
@@ -73,7 +80,7 @@ func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	case "started":
 		// wait for test to finish and then mark as finished
 		return FinishJobs(ctx, log, k6, r)
-	case "finished":
+	case "error", "finished":
 		// delete if configured
 		if k6.Spec.Cleanup == "post" {
 			log.Info("Cleaning up all resources")
@@ -93,5 +100,27 @@ func (r *K6Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.K6{}).
 		Owns(&batchv1.Job{}).
+		Watches(&source.Kind{Type: &v1.Pod{}},
+			&handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(
+				func(object handler.MapObject) []reconcile.Request {
+					pod := object.Object.(*v1.Pod)
+					k6CrName, ok := pod.GetLabels()[k6CrLabelName]
+					if !ok {
+						return nil
+					}
+					return []reconcile.Request{
+						{NamespacedName: types.NamespacedName{
+							Name:      k6CrName,
+							Namespace: object.Meta.GetNamespace(),
+						}}}
+				})},
+			builder.WithPredicates(predicate.NewPredicateFuncs(func(meta metav1.Object, object runtime.Object) bool {
+				pod := object.(*v1.Pod)
+				_, ok := pod.GetLabels()[k6CrLabelName]
+				if !ok {
+					return false
+				}
+				return true
+			}))).
 		Complete(r)
 }

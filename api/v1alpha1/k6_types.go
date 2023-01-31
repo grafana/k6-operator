@@ -94,7 +94,7 @@ type K6Configmap struct {
 type Cleanup string
 
 // Stage describes which stage of the test execution lifecycle our runners are in
-// +kubebuilder:validation:Enum=initialization;initialized;created;started;finished
+// +kubebuilder:validation:Enum=initialization;initialized;created;started;finished;error
 type Stage string
 
 // K6Status defines the observed state of K6
@@ -105,6 +105,8 @@ type K6Status struct {
 // K6 is the Schema for the k6s API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Stage",type="string",JSONPath=".status.stage",description="Stage"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type K6 struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
