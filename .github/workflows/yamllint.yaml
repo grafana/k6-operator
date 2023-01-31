@@ -11,6 +11,7 @@ jobs:
       - name: yaml-lint
         uses: ibiqlik/action-yamllint@v3
         with:
-          extends: default
-          rules:
-            indentation: disable # kustomize can rewrite yaml files and break this rule
+          config_data: |
+            extends: default
+            rules:
+              indentation: disable # kustomize can rewrite yaml files and break this rule
