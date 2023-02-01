@@ -1,6 +1,8 @@
 package jobs
 
 import (
+	"fmt"
+	"github.com/grafana/k6-operator/pkg/types"
 	"strconv"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -113,4 +115,38 @@ func newIstioEnvVar(istio v1alpha1.K6Scuttle, istioEnabled bool) []corev1.EnvVar
 		}
 	}
 	return env
+}
+
+func getInitContainers(k6InitContainerList []v1alpha1.InitContainer, script *types.Script) []corev1.Container {
+	var initContainers []corev1.Container
+
+	for i, k6InitContainer := range k6InitContainerList {
+		initContainer := corev1.Container{
+			Name:                     fmt.Sprintf("k6-init-%d", i),
+			Image:                    k6InitContainer.Image,
+			Command:                  k6InitContainer.Command,
+			Args:                     k6InitContainer.Args,
+			WorkingDir:               k6InitContainer.WorkingDir,
+			Ports:                    nil,
+			EnvFrom:                  k6InitContainer.EnvFrom,
+			Env:                      k6InitContainer.Env,
+			Resources:                corev1.ResourceRequirements{},
+			VolumeMounts:             script.VolumeMount(),
+			VolumeDevices:            nil,
+			LivenessProbe:            nil,
+			ReadinessProbe:           nil,
+			StartupProbe:             nil,
+			Lifecycle:                nil,
+			TerminationMessagePath:   "",
+			TerminationMessagePolicy: "",
+			ImagePullPolicy:          k6InitContainer.ImagePullPolicy,
+			SecurityContext:          nil,
+			Stdin:                    false,
+			StdinOnce:                false,
+			TTY:                      false,
+		}
+		initContainers = append(initContainers, initContainer)
+	}
+
+	return initContainers
 }
