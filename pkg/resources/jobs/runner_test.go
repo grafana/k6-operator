@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	deep "github.com/go-test/deep"
+	"github.com/go-test/deep"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
@@ -100,7 +100,7 @@ func TestNewScriptNoScript(t *testing.T) {
 
 func TestNewVolumeSpecVolumeClaim(t *testing.T) {
 	expectedOutcome := []corev1.Volume{
-		corev1.Volume{
+		{
 			Name: "k6-test-volume",
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
@@ -123,7 +123,7 @@ func TestNewVolumeSpecVolumeClaim(t *testing.T) {
 
 func TestNewVolumeSpecConfigMap(t *testing.T) {
 	expectedOutcome := []corev1.Volume{
-		corev1.Volume{
+		{
 			Name: "k6-test-volume",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -1034,6 +1034,133 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 					},
 					Annotations: map[string]string{
 						"awesomeAnnotation": "dope",
+					},
+				},
+			},
+		},
+	}
+
+	job, err := NewRunnerJob(k6, 1, "", "")
+	if err != nil {
+		t.Errorf("NewRunnerJob errored, got: %v", err)
+	}
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Errorf("NewRunnerJob returned unexpected data, diff: %s", diff)
+	}
+}
+
+func TestNewRunnerJobWithInitContainer(t *testing.T) {
+	script := &types.Script{
+		Name:     "test",
+		Filename: "thing.js",
+		Type:     "ConfigMap",
+	}
+
+	var zero int64 = 0
+	automountServiceAccountToken := true
+
+	expectedLabels := map[string]string{
+		"app":    "k6",
+		"k6_cr":  "test",
+		"runner": "true",
+		"label1": "awesome",
+	}
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-1",
+			Namespace: "test",
+			Labels:    expectedLabels,
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: expectedLabels,
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Hostname:                     "test-1",
+					RestartPolicy:                corev1.RestartPolicyNever,
+					SecurityContext:              &corev1.PodSecurityContext{},
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					Tolerations:                  nil,
+					ServiceAccountName:           "default",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					InitContainers: []corev1.Container{
+						{
+							Name:         "k6-init-0",
+							Image:        "busybox:1.28",
+							Command:      []string{"sh", "-c", "cat /test/test.js"},
+							VolumeMounts: script.VolumeMount(),
+						},
+					},
+					Containers: []corev1.Container{{
+						Image:           "ghcr.io/grafana/operator:latest-runner",
+						ImagePullPolicy: corev1.PullNever,
+						Name:            "k6",
+						Command:         []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused", "--tag", "instance_id=1", "--tag", "job_name=test-1"},
+						Env:             []corev1.EnvVar{},
+						Resources:       corev1.ResourceRequirements{},
+						VolumeMounts:    script.VolumeMount(),
+						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						EnvFrom: []corev1.EnvFromSource{
+							{
+								ConfigMapRef: &corev1.ConfigMapEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "env",
+									},
+								},
+							},
+						},
+					}},
+					TerminationGracePeriodSeconds: &zero,
+					Volumes:                       script.Volume(),
+				},
+			},
+		},
+	}
+	k6 := &v1alpha1.K6{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.K6Spec{
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Runner: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				EnvFrom: []corev1.EnvFromSource{
+					{
+						ConfigMapRef: &corev1.ConfigMapEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "env",
+							},
+						},
+					},
+				},
+				ImagePullPolicy: corev1.PullNever,
+				InitContainers: []v1alpha1.InitContainer{
+					{
+						Image:   "busybox:1.28",
+						Command: []string{"sh", "-c", "cat /test/test.js"},
 					},
 				},
 			},
