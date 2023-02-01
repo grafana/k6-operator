@@ -1099,6 +1099,15 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 							Image:        "busybox:1.28",
 							Command:      []string{"sh", "-c", "cat /test/test.js"},
 							VolumeMounts: script.VolumeMount(),
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "env",
+										},
+									},
+								},
+							},
 						},
 					},
 					Containers: []corev1.Container{{
@@ -1161,6 +1170,15 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 					{
 						Image:   "busybox:1.28",
 						Command: []string{"sh", "-c", "cat /test/test.js"},
+						EnvFrom: []corev1.EnvFromSource{
+							{
+								ConfigMapRef: &corev1.ConfigMapEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "env",
+									},
+								},
+							},
+						},
 					},
 				},
 			},
