@@ -2,6 +2,11 @@
 name: "push"
 
 on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag name.'
+        required: true
   release:
     types:
       - published
