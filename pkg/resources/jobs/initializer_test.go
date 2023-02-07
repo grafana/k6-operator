@@ -60,7 +60,7 @@ func TestNewInitializerJob(t *testing.T) {
 							Name:            "k6",
 							Command: []string{
 								"sh", "-c",
-								"k6 archive /test/test.js -O ./test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements ./test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
+								"k6 archive /test/test.js -O /tmp/test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements /tmp/test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
 							},
 							Env:          []corev1.EnvVar{},
 							Resources:    corev1.ResourceRequirements{},
