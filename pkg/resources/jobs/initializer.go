@@ -54,7 +54,7 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 	var (
 		// k6 allows to run archive command on archives too so type of file here doesn't matter
 		scriptName  = script.FullName()
-		archiveName = fmt.Sprintf("./%s.archived.tar", script.Filename)
+		archiveName = fmt.Sprintf("/tmp/%s.archived.tar", script.Filename)
 	)
 	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, []string{"sh", "-c"})
 	command = append(command, fmt.Sprintf(
