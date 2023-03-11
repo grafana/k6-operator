@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-controller-manager
-  namespace: {{- include "operator.namespace" . }}
+  name: {{ include "k6-operator.fullname" . }}-controller-manager
+  namespace: {{- include "k6-operator.namespace" . }}
   labels:
     control-plane: {{ .Values.controlPlane }}
-    {{- with .Values.customLabels }}
-      {{- toYaml . | nindent 4 }}
-    {{- end }}
+    app.kubernetes.io/component: controller
+    {{- include "k6-operator.labels" . | nindent 4 }}
+    {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
   annotations:
-    {{- include "operator.annotations" . | default "" | nindent 4 }}
+    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      control-plane: {{ .Values.controlPlane }}
+      {{- include "k6-operator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        control-plane: {{ .Values.controlPlane }}
+        {{- include "k6-operator.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         {{- if .Values.authProxy.enabled }}
@@ -42,7 +42,7 @@ spec:
             - --upstream=http://127.0.0.1:8080/
             - --logtostderr=true
             - --v=10
-          {{- include "operator.readinessProbe" . }}
+          {{- include "k6-operator.readinessProbe" . }}
           ports:
             - containerPort: 8443
               name: https
@@ -73,5 +73,17 @@ spec:
             {{- if .Values.authProxy.enabled }}
             - --metrics-addr=127.0.0.1:8080
             {{- end }}
-      serviceAccount: {{ .Values.manager.serviceAccount }}
+      serviceAccount: {{ include "k6-operator.serviceAccountName" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       terminationGracePeriodSeconds: 10

@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
+  name: {{ include "k6-operator.fullname" . }}-controller-manager-metrics-service
+  namespace: {{- include "k6-operator.namespace" . }}
   labels:
     control-plane: {{ .Values.controlPlane }}
-    {{- with .Values.customLabels }}
-      {{- toYaml . | nindent 4 }}
-    {{- end }}
+    app.kubernetes.io/component: controller
+    {{- include "k6-operator.labels" . | nindent 4 }}
+    {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
   annotations:
-    {{- include "operator.annotations" . | default "{}" | nindent 4 }}
-  name: {{ .Release.Name }}-controller-manager-metrics-service
-  namespace: {{- include "operator.namespace" . }}
+    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 spec:
   ports:
   - name: https

@@ -1,35 +1,37 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ .Release.Name }}-manager-rolebinding
+  name: {{ include "k6-operator.fullname" . }}-manager-rolebinding
   labels:
-    {{- include "operator.labels" . }}
+    app.kubernetes.io/component: controller
+    {{- include "k6-operator.labels" . | nindent 4 }}
+    {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
   annotations:
-    {{- include "operator.annotations" . | default "" | nindent 4 }}
+    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ .Release.Name }}-manager-role
+  name: {{ include "k6-operator.fullname" . }}-manager-role
 subjects:
   - kind: ServiceAccount
-    name: {{ .Values.manager.serviceAccount }}
-    namespace: {{- include "operator.namespace" . -}}
+    name: {{- include "k6-operator.serviceAccountName" . -}}
+    namespace: {{- include "k6-operator.namespace" . -}}
 {{- if .Values.authProxy.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ .Release.Name }}-proxy-rolebinding
+  name: {{ include "k6-operator.fullname" . }}-proxy-rolebinding
   labels:
-    {{- include "operator.labels" . }}
+    {{- include "k6-operator.customLabels" . }}
   annotations:
-    {{- include "operator.annotations" . | default "" | nindent 4 }}
+    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ .Release.Name }}-proxy-role
+  name: {{ include "k6-operator.fullname" . }}-proxy-role
 subjects:
   - kind: ServiceAccount
-    name: {{ .Values.manager.serviceAccount }}
-    namespace: {{- include "operator.namespace" . -}}
+    name: {{- include "k6-operator.serviceAccountName" . -}}
+    namespace: {{- include "k6-operator.namespace" . -}}
 {{- end }}
