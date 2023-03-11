@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ .Release.Name }}-system
+  name: {{ include "k6-operator.fullname" . }}-system
   labels:
-    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ include "k6-operator.fullname" . }}
     control-plane: {{ .Values.controlPlane }}
     {{- with .Values.customLabels }}
       {{- toYaml . | nindent 4 }}
     {{- end }}
   annotations:
-    {{- include "operator.annotations" . | default "{}" | nindent 4 }}
+    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 {{- end }}

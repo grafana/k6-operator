@@ -4,6 +4,15 @@ customAnnotations: {}
 # customLabels -- Custom Label to be applied on all resources
 customLabels: {}
 
+# nodeSelector -- Node Selector to be applied on all containers
+nodeSelector: {}
+
+# affinity -- Affinity to be applied on all containers
+affinity: {}
+
+# tolerations -- Tolerations to be applied on all containers
+tolerations: {}
+
 namespace:
   # namespace.create -- create the namespace (default: true)
   create: true
@@ -32,8 +41,11 @@ authProxy:
 controlPlane: "controller-manager"
 
 manager:
-  # manager.serviceAccount -- kubernetes service account for the manager
-  serviceAccount: k6-operator-controller
+  serviceAccount:
+    # manager.serviceAccount.name -- kubernetes service account for the k6 manager
+    name: k6-operator-controller
+    # manager.serviceAccount.create -- create the service account (default: true)
+    create: true
   image:
     # manager.image.name -- controller-manager image name
     name: ghcr.io/grafana/operator
