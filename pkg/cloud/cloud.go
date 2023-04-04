@@ -68,7 +68,10 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 		host = cloudConfig.Host.String
 	}
 
-	client = cloudapi.NewClient(logger, token, host, consts.Version, time.Duration(time.Minute))
+	if client == nil {
+		client = cloudapi.NewClient(logger, token, host, consts.Version, time.Duration(time.Minute))
+	}
+
 	resp, err := createTestRun(client, host, &TestRun{
 		Name:              opts.External.Loadimpact.Name,
 		ProjectID:         cloudConfig.ProjectID.Int64,

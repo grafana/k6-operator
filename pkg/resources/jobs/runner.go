@@ -2,8 +2,9 @@ package jobs
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"strconv"
+
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"strings"
 
@@ -16,7 +17,7 @@ import (
 )
 
 // NewRunnerJob creates a new k6 job from a CRD
-func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1.Job, error) {
+func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.Name, index)
 	postCommand := []string{"k6", "run"}
 
@@ -115,10 +116,10 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 	env := newIstioEnvVar(k6.Spec.Scuttle, istioEnabled)
 
 	// this is a cloud output run
-	if len(testRunId) > 0 {
+	if len(k6.Status.TestRunID) > 0 {
 		env = append(env, corev1.EnvVar{
 			Name:  "K6_CLOUD_PUSH_REF_ID",
-			Value: testRunId,
+			Value: k6.Status.TestRunID,
 		}, corev1.EnvVar{
 			Name:  "K6_CLOUD_TOKEN",
 			Value: token,

@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/grafana/k6-operator/pkg/types"
 	"io"
 	"time"
+
+	"github.com/grafana/k6-operator/pkg/types"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -20,14 +21,6 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// k6 Cloud related vars
-// Right now operator works with one test at a time so these should be safe.
-var (
-	testRunId     string
-	token         string
-	inspectOutput cloud.InspectOutput
 )
 
 // InitializeJobs creates jobs that will run initial checks for distributed test if any are necessary
@@ -132,6 +125,12 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 		return ctrl.Result{}, err
 	}
 
+	var (
+		testRunId     string
+		token         string
+		inspectOutput cloud.InspectOutput
+	)
+
 	if err := json.Unmarshal(buf.Bytes(), &inspectOutput); err != nil {
 		// this shouldn't normally happen but if it does, let's log output by default
 		log.Error(err, fmt.Sprintf("unable to marshal: `%s`", buf.String()))
@@ -199,12 +198,16 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 			return res, err
 		} else {
 			testRunId = refID
+			log = log.WithValues("testRunId", k6.Status.TestRunID)
 			log.Info(fmt.Sprintf("Created cloud test run: %s", testRunId))
 		}
 	}
 
 	log.Info("Changing stage of K6 status to initialized")
+
 	k6.Status.Stage = "initialized"
+	k6.Status.TestRunID = testRunId
+
 	if err = r.Client.Status().Update(ctx, k6); err != nil {
 		log.Error(err, "Could not update status of custom resource")
 		return
