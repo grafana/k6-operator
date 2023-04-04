@@ -16,6 +16,10 @@ import (
 
 // FinishJobs waits for the pods to finish, performs finishing call for cloud output and moves state to "finished".
 func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
+	if len(k6.Status.TestRunID) > 0 {
+		log = log.WithValues("testRunId", k6.Status.TestRunID)
+	}
+
 	log.Info("Checking if all runner pods are finished")
 
 	var err error
@@ -52,10 +56,10 @@ func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 
 	// If this is a test run with cloud output, try to finalize it regardless.
 	if cli := types.ParseCLI(&k6.Spec); cli.HasCloudOut {
-		if err = cloud.FinishTestRun(testRunId); err != nil {
+		if err = cloud.FinishTestRun(k6.Status.TestRunID); err != nil {
 			log.Error(err, "Could not finalize the test run with cloud output")
 		} else {
-			log.Info(fmt.Sprintf("Cloud test run %s was finalized succesfully", testRunId))
+			log.Info(fmt.Sprintf("Cloud test run %s was finalized succesfully", k6.Status.TestRunID))
 		}
 	}
 

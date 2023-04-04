@@ -100,7 +100,8 @@ type Stage string
 
 // K6Status defines the observed state of K6
 type K6Status struct {
-	Stage Stage `json:"stage,omitempty"`
+	Stage     Stage  `json:"stage,omitempty"`
+	TestRunID string `json:"testRunId,omitempty"`
 }
 
 // K6 is the Schema for the k6s API
@@ -108,6 +109,7 @@ type K6Status struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Stage",type="string",JSONPath=".status.stage",description="Stage"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="TestRunID",type="string",JSONPath=".status.testRunId"
 type K6 struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
