@@ -3,15 +3,16 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 func isServiceReady(log logr.Logger, service *v1.Service) bool {
@@ -27,6 +28,10 @@ func isServiceReady(log logr.Logger, service *v1.Service) bool {
 
 // StartJobs in the Ready phase using a curl container
 func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
+	if len(k6.Status.TestRunID) > 0 {
+		log = log.WithValues("testRunId", k6.Status.TestRunID)
+	}
+
 	log.Info("Waiting for pods to get ready")
 
 	selector := labels.SelectorFromSet(map[string]string{

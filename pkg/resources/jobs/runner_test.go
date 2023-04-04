@@ -374,7 +374,7 @@ func TestNewRunnerJob(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -487,7 +487,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -600,7 +600,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -714,7 +714,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -829,7 +829,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -957,7 +957,7 @@ func TestNewRunnerJobIstio(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -1073,9 +1073,14 @@ func TestNewRunnerJobCloud(t *testing.T) {
 				},
 			},
 		},
+		// Since this test only creates a runner's spec so
+		// testrunid has to be set hard-coded here.
+		Status: v1alpha1.K6Status{
+			TestRunID: "testrunid",
+		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "testrunid", "token")
+	job, err := NewRunnerJob(k6, 1, "token")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -1186,7 +1191,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
