@@ -8,10 +8,9 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	"go.k6.io/k6/cloudapi"
-	"go.k6.io/k6/lib"
 	"go.k6.io/k6/lib/consts"
 	"go.k6.io/k6/lib/types"
-	"go.k6.io/k6/stats"
+	"go.k6.io/k6/metrics"
 	"gopkg.in/guregu/null.v3"
 )
 
@@ -24,9 +23,9 @@ type InspectOutput struct {
 			ProjectID int64  `json:"projectID"`
 		} `json:"loadimpact"`
 	} `json:"ext"`
-	TotalDuration types.NullDuration           `json:"totalDuration"`
-	MaxVUs        uint64                       `json:"maxVUs"`
-	Thresholds    map[string]*stats.Thresholds `json:"thresholds,omitempty"`
+	TotalDuration types.NullDuration             `json:"totalDuration"`
+	MaxVUs        uint64                         `json:"maxVUs"`
+	Thresholds    map[string]*metrics.Thresholds `json:"thresholds,omitempty"`
 }
 
 type TestRun struct {
@@ -111,5 +110,5 @@ func createTestRun(client *cloudapi.Client, host string, testRun *TestRun) (*clo
 func FinishTestRun(refID string) error {
 	return client.TestFinished(refID, cloudapi.ThresholdResult(
 		map[string]map[string]bool{},
-	), false, lib.RunStatusFinished)
+	), false, cloudapi.RunStatusFinished)
 }

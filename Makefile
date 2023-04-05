@@ -12,7 +12,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image to use for building Go
-GO_BUILDER_IMG ?= "golang:1.17"
+GO_BUILDER_IMG ?= "golang:1.18"
 # Image URL to use all building/pushing image targets
 IMG ?= ghcr.io/grafana/operator:latest
 # Default dockerfile to build

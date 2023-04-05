@@ -7,15 +7,12 @@ import (
 	"github.com/grafana/k6-operator/pkg/segmentation"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 )
 
 func TestSegmentation(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Segmentation Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Segmentation Suite")
 }
 
 var _ = Describe("the execution segmentation string generator", func() {

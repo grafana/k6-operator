@@ -17,8 +17,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -50,7 +50,8 @@ type K6Reconciler struct {
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
-func (r *K6Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
+func (r *K6Reconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("namespace", req.Namespace, "name", req.Name)
 
@@ -101,9 +102,9 @@ func (r *K6Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&v1alpha1.K6{}).
 		Owns(&batchv1.Job{}).
 		Watches(&source.Kind{Type: &v1.Pod{}},
-			&handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(
-				func(object handler.MapObject) []reconcile.Request {
-					pod := object.Object.(*v1.Pod)
+			handler.EnqueueRequestsFromMapFunc(
+				func(object client.Object) []reconcile.Request {
+					pod := object.(*v1.Pod)
 					k6CrName, ok := pod.GetLabels()[k6CrLabelName]
 					if !ok {
 						return nil
@@ -111,16 +112,17 @@ func (r *K6Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 					return []reconcile.Request{
 						{NamespacedName: types.NamespacedName{
 							Name:      k6CrName,
-							Namespace: object.Meta.GetNamespace(),
+							Namespace: object.GetNamespace(),
 						}}}
-				})},
-			builder.WithPredicates(predicate.NewPredicateFuncs(func(meta metav1.Object, object runtime.Object) bool {
-				pod := object.(*v1.Pod)
-				_, ok := pod.GetLabels()[k6CrLabelName]
-				if !ok {
-					return false
-				}
-				return true
-			}))).
+				}),
+			builder.WithPredicates(predicate.NewPredicateFuncs(
+				func(object client.Object) bool {
+					pod := object.(*v1.Pod)
+					_, ok := pod.GetLabels()[k6CrLabelName]
+					if !ok {
+						return false
+					}
+					return true
+				}))).
 		Complete(r)
 }
