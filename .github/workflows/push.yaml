@@ -45,7 +45,7 @@ jobs:
           push: true
           file: Dockerfile.controller
           build-args: |
-            GO_BUILDER_IMG=golang:1.17
+            GO_BUILDER_IMG=golang:1.18
           tags: ghcr.io/grafana/operator:latest,ghcr.io/grafana/operator:controller-${{env.IMAGETAG}}
       - name: "Build:dockerimage"
         uses: docker/build-push-action@v2
