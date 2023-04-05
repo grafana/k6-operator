@@ -2,9 +2,10 @@ package jobs
 
 import (
 	"errors"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"reflect"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	deep "github.com/go-test/deep"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -314,7 +315,7 @@ func TestNewRunnerJob(t *testing.T) {
 							},
 						},
 						LivenessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -323,7 +324,7 @@ func TestNewRunnerJob(t *testing.T) {
 							},
 						},
 						ReadinessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -436,7 +437,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
 						LivenessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -445,7 +446,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 							},
 						},
 						ReadinessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -549,7 +550,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
 						LivenessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -558,7 +559,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 							},
 						},
 						ReadinessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -662,7 +663,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
 						LivenessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -671,7 +672,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 							},
 						},
 						ReadinessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -776,7 +777,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
 						LivenessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -785,7 +786,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 							},
 						},
 						ReadinessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -904,7 +905,7 @@ func TestNewRunnerJobIstio(t *testing.T) {
 						VolumeMounts: script.VolumeMount(),
 						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 						LivenessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -913,7 +914,7 @@ func TestNewRunnerJobIstio(t *testing.T) {
 							},
 						},
 						ReadinessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -1027,7 +1028,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 						VolumeMounts: script.VolumeMount(),
 						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
 						LivenessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -1036,7 +1037,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 							},
 						},
 						ReadinessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -1136,7 +1137,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
 						LivenessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
@@ -1145,7 +1146,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 							},
 						},
 						ReadinessProbe: &corev1.Probe{
-							Handler: corev1.Handler{
+							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path:   "/v1/status",
 									Port:   intstr.IntOrString{IntVal: 6565},
