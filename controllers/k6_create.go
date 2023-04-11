@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -10,10 +11,8 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CreateJobs creates jobs that will spawn k6 pods for distributed test
@@ -24,38 +23,20 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 		token string // only for cloud output tests
 	)
 
-	if len(k6.Status.TestRunID) > 0 {
+	if k6.IsTrue(v1alpha1.CloudTestRun) && k6.IsTrue(v1alpha1.CloudTestRunCreated) {
 		log = log.WithValues("testRunId", k6.Status.TestRunID)
 
-		var (
-			secrets    corev1.SecretList
-			secretOpts = &client.ListOptions{
-				// TODO: find out a better way to get namespace here
-				Namespace: "k6-operator-system",
-				LabelSelector: labels.SelectorFromSet(map[string]string{
-					"k6cloud": "token",
-				}),
-			}
-		)
-		if err := r.List(ctx, &secrets, secretOpts); err != nil {
-			log.Error(err, "Failed to load k6 Cloud token")
-			return res, err
+		var tokenReady bool
+		token, tokenReady, err = loadToken(ctx, log, r)
+		if err != nil {
+			// An error here means a very likely mis-configuration of the token.
+			// Consider updating status to error to let a user know quicker?
+			log.Error(err, "A problem while getting token.")
+			return ctrl.Result{}, nil
 		}
-
-		if len(secrets.Items) < 1 {
-			err := fmt.Errorf("There are no secrets to hold k6 Cloud token")
-			log.Error(err, err.Error())
-			return res, err
+		if !tokenReady {
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
-
-		if t, ok := secrets.Items[0].Data["token"]; !ok {
-			err := fmt.Errorf("The secret doesn't have a field token for k6 Cloud")
-			log.Error(err, err.Error())
-			return res, err
-		} else {
-			token = string(t)
-		}
-		log.Info("Token for k6 Cloud was loaded.")
 	}
 
 	log.Info("Creating test jobs")
@@ -66,11 +47,12 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 
 	log.Info("Changing stage of K6 status to created")
 	k6.Status.Stage = "created"
-	if err = r.Client.Status().Update(ctx, k6); err != nil {
-		log.Error(err, "Could not update status of custom resource")
-		return ctrl.Result{}, nil
-	}
 
+	if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
+		return ctrl.Result{}, err
+	} else if updateHappened {
+		return ctrl.Result{Requeue: true}, nil
+	}
 	return ctrl.Result{}, nil
 }
 
