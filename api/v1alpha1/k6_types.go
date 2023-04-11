@@ -102,6 +102,8 @@ type Stage string
 type K6Status struct {
 	Stage     Stage  `json:"stage,omitempty"`
 	TestRunID string `json:"testRunId,omitempty"`
+
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // K6 is the Schema for the k6s API
