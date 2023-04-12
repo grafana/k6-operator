@@ -69,8 +69,6 @@ Create the name of the service account to use
     {{- with .Values.customLabels }}
       {{- toYaml . }}
     {{- end }}
-  {{- else}}
-    {{ print "{}" }}
   {{- end }}
 {{- end -}}
 
