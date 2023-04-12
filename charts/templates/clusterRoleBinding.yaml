@@ -14,7 +14,7 @@ roleRef:
   name: {{ include "k6-operator.fullname" . }}-manager-role
 subjects:
   - kind: ServiceAccount
-    name: {{- include "k6-operator.serviceAccountName" . -}}
+    name: {{ include "k6-operator.serviceAccountName" . }}
     namespace: {{- include "k6-operator.namespace" . -}}
 {{- if .Values.authProxy.enabled }}
 ---
@@ -32,6 +32,6 @@ roleRef:
   name: {{ include "k6-operator.fullname" . }}-proxy-role
 subjects:
   - kind: ServiceAccount
-    name: {{- include "k6-operator.serviceAccountName" . -}}
+    name: {{ include "k6-operator.serviceAccountName" . }}
     namespace: {{- include "k6-operator.namespace" . -}}
 {{- end }}
