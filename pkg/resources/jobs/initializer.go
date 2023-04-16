@@ -27,6 +27,10 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 		ports                        = append([]corev1.ContainerPort{{ContainerPort: 6565}}, k6.Spec.Ports...)
 	)
 
+	if k6.Spec.Initializer == nil {
+		k6.Spec.Initializer = k6.Spec.Runner.DeepCopy()
+	}
+
 	if k6.Spec.Initializer.Image != "" {
 		image = k6.Spec.Initializer.Image
 	}
