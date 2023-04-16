@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
-
 	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,19 +33,6 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 
 	if k6.Spec.Initializer.Image != "" {
 		image = k6.Spec.Initializer.Image
-	}
-
-	if k6.Spec.Runner.Metadata.Annotations != nil {
-		annotations = k6.Spec.Runner.Metadata.Annotations
-	}
-
-	// Order not specified
-	if k6.Spec.Runner.Metadata.Labels != nil {
-		for k, v := range k6.Spec.Runner.Metadata.Labels { // Order not specified
-			if _, ok := labels[k]; !ok {
-				labels[k] = v
-			}
-		}
 	}
 
 	if k6.Spec.Initializer.Metadata.Annotations != nil {
