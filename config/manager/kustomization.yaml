@@ -1,4 +1,3 @@
----
 resources:
 - manager.yaml
 images:
