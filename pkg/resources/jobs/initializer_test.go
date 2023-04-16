@@ -30,6 +30,9 @@ func TestNewInitializerJob(t *testing.T) {
 				"k6_cr":  "test",
 				"label1": "awesome",
 			},
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
 		},
 		Spec: batchv1.JobSpec{
 			BackoffLimit: &zero,
@@ -39,6 +42,9 @@ func TestNewInitializerJob(t *testing.T) {
 						"app":    "k6",
 						"k6_cr":  "test",
 						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -81,7 +87,7 @@ func TestNewInitializerJob(t *testing.T) {
 				},
 			},
 			Arguments: "--out cloud",
-			Initializer: v1alpha1.Pod{
+			Initializer: &v1alpha1.Pod{
 				Metadata: v1alpha1.PodMetadata{
 					Labels: map[string]string{
 						"label1": "awesome",
