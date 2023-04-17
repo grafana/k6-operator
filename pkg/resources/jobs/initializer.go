@@ -104,6 +104,7 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 					Affinity:                     k6.Spec.Initializer.Affinity,
 					NodeSelector:                 k6.Spec.Initializer.NodeSelector,
 					Tolerations:                  k6.Spec.Initializer.Tolerations,
+					SecurityContext:              &k6.Spec.Initializer.SecurityContext,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					ImagePullSecrets:             k6.Spec.Initializer.ImagePullSecrets,
 					Containers: []corev1.Container{
