@@ -53,6 +53,7 @@ func TestNewInitializerJob(t *testing.T) {
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
+					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
 						{
 							Image:           "ghcr.io/grafana/operator:latest-runner",
