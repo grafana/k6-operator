@@ -87,7 +87,7 @@ func TestNewInitializerJob(t *testing.T) {
 				},
 			},
 			Arguments: "--out cloud",
-			Runner: v1alpha1.Pod{
+			Initializer: &v1alpha1.Pod{
 				Metadata: v1alpha1.PodMetadata{
 					Labels: map[string]string{
 						"label1": "awesome",

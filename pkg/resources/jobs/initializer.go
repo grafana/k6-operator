@@ -27,28 +27,32 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 		ports                        = append([]corev1.ContainerPort{{ContainerPort: 6565}}, k6.Spec.Ports...)
 	)
 
-	if k6.Spec.Runner.Image != "" {
-		image = k6.Spec.Runner.Image
+	if k6.Spec.Initializer == nil {
+		k6.Spec.Initializer = k6.Spec.Runner.DeepCopy()
 	}
 
-	if k6.Spec.Runner.Metadata.Annotations != nil {
-		annotations = k6.Spec.Runner.Metadata.Annotations
+	if k6.Spec.Initializer.Image != "" {
+		image = k6.Spec.Initializer.Image
 	}
 
-	if k6.Spec.Runner.Metadata.Labels != nil {
-		for k, v := range k6.Spec.Runner.Metadata.Labels { // Order not specified
+	if k6.Spec.Initializer.Metadata.Annotations != nil {
+		annotations = k6.Spec.Initializer.Metadata.Annotations
+	}
+
+	if k6.Spec.Initializer.Metadata.Labels != nil {
+		for k, v := range k6.Spec.Initializer.Metadata.Labels {
 			if _, ok := labels[k]; !ok {
 				labels[k] = v
 			}
 		}
 	}
 
-	if k6.Spec.Runner.ServiceAccountName != "" {
-		serviceAccountName = k6.Spec.Runner.ServiceAccountName
+	if k6.Spec.Initializer.ServiceAccountName != "" {
+		serviceAccountName = k6.Spec.Initializer.ServiceAccountName
 	}
 
-	if k6.Spec.Runner.AutomountServiceAccountToken != "" {
-		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Runner.AutomountServiceAccountToken)
+	if k6.Spec.Initializer.AutomountServiceAccountToken != "" {
+		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Initializer.AutomountServiceAccountToken)
 	}
 
 	var (
@@ -77,7 +81,7 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 		scriptName, archiveName, argLine,
 		archiveName))
 
-	env := append(newIstioEnvVar(k6.Spec.Scuttle, istioEnabled), k6.Spec.Runner.Env...)
+	env := append(newIstioEnvVar(k6.Spec.Scuttle, istioEnabled), k6.Spec.Initializer.Env...)
 
 	var zero32 int32
 	return &batchv1.Job{
@@ -97,19 +101,19 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 				Spec: corev1.PodSpec{
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					ServiceAccountName:           serviceAccountName,
-					Affinity:                     k6.Spec.Runner.Affinity,
-					NodeSelector:                 k6.Spec.Runner.NodeSelector,
-					Tolerations:                  k6.Spec.Runner.Tolerations,
+					Affinity:                     k6.Spec.Initializer.Affinity,
+					NodeSelector:                 k6.Spec.Initializer.NodeSelector,
+					Tolerations:                  k6.Spec.Initializer.Tolerations,
 					RestartPolicy:                corev1.RestartPolicyNever,
-					ImagePullSecrets:             k6.Spec.Runner.ImagePullSecrets,
+					ImagePullSecrets:             k6.Spec.Initializer.ImagePullSecrets,
 					Containers: []corev1.Container{
 						{
 							Image:           image,
-							ImagePullPolicy: k6.Spec.Runner.ImagePullPolicy,
+							ImagePullPolicy: k6.Spec.Initializer.ImagePullPolicy,
 							Name:            "k6",
 							Command:         command,
 							Env:             env,
-							Resources:       k6.Spec.Runner.Resources,
+							Resources:       k6.Spec.Initializer.Resources,
 							VolumeMounts:    script.VolumeMount(),
 							Ports:           ports,
 						},
