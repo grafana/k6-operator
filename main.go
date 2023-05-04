@@ -56,6 +56,8 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
+	watchNamespace := getWatchNamespace()
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                     scheme,
 		MetricsBindAddress:         metricsAddr,
@@ -63,6 +65,7 @@ func main() {
 		LeaderElection:             enableLeaderElection,
 		LeaderElectionID:           "fcdfce80.io",
 		LeaderElectionResourceLock: "configmapsleases",
+		Namespace:                  watchNamespace,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -84,4 +87,14 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func getWatchNamespace() string {
+	var watchNamespaceEnvVar = "WATCH_NAMESPACE"
+
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		return ""
+	}
+	return ns
 }
