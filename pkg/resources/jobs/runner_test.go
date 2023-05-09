@@ -15,6 +15,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var aggregationEnvVars = []corev1.EnvVar{
+	corev1.EnvVar{
+		Name:  "K6_CLOUD_AGGREGATION_MIN_SAMPLES",
+		Value: "50",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_AGGREGATION_PERIOD",
+		Value: "3s",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_AGGREGATION_WAIT_PERIOD",
+		Value: "8s",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_METRIC_PUSH_INTERVAL",
+		Value: "6s",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_MAX_METRIC_SAMPLES_PER_PACKAGE",
+		Value: "10000",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_MAX_METRIC_PUSH_CONCURRENCY",
+		Value: "10",
+	},
+}
+
 func TestNewScriptVolumeClaim(t *testing.T) {
 	expectedOutcome := &types.Script{
 		Name:     "Test",
@@ -1014,16 +1036,16 @@ func TestNewRunnerJobCloud(t *testing.T) {
 						ImagePullPolicy: "",
 						Name:            "k6",
 						Command:         []string{"k6", "run", "--quiet", "--out", "cloud", "/test/test.js", "--address=0.0.0.0:6565", "--paused", "--tag", "instance_id=1", "--tag", "job_name=test-1"},
-						Env: []corev1.EnvVar{
-							{
+						Env: append(aggregationEnvVars,
+							corev1.EnvVar{
 								Name:  "K6_CLOUD_PUSH_REF_ID",
 								Value: "testrunid",
 							},
-							{
+							corev1.EnvVar{
 								Name:  "K6_CLOUD_TOKEN",
 								Value: "token",
 							},
-						},
+						),
 						Resources:    corev1.ResourceRequirements{},
 						VolumeMounts: script.VolumeMount(),
 						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
