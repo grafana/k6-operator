@@ -31,7 +31,7 @@ all: manager
 
 # Run tests
 ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
-ENVTEST_K8S_VERSION ?= 1.19.2
+ENVTEST_K8S_VERSION ?= 1.24.1
 GOOS=$(shell go env GOOS)
 GOARCH=$(shell go env GOARCH)
 KUBEBUILDER_ASSETS_ROOT=/tmp
