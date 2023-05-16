@@ -24,7 +24,7 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
-      serviceAccount: k6-operator-controller
+      serviceAccountName: k6-operator-controller
       containers:
         - command:
             - /manager

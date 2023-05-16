@@ -1,6 +1,6 @@
 domain: io
 layout: go.kubebuilder.io/v2
-projectName: operator
+projectName: k6-operator
 repo: github.com/grafana/k6-operator
 resources:
 -
