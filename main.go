@@ -80,6 +80,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "K6")
 		os.Exit(1)
 	}
+	if err = (&controllers.PrivateLoadZoneReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("PrivateLoadZone"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "PrivateLoadZone")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
