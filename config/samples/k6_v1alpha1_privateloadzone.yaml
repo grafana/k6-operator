@@ -1,0 +1,6 @@
+apiVersion: k6.io/v1alpha1
+kind: PrivateLoadZone
+metadata:
+  name: privateloadzone-sample
+spec:
+  # TODO(user): Add fields here
