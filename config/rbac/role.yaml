@@ -88,3 +88,31 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - k6.io
+  resources:
+  - privateloadzones
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - k6.io
+  resources:
+  - privateloadzones/finalizers
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - k6.io
+  resources:
+  - privateloadzones/status
+  verbs:
+  - get
+  - patch
+  - update
