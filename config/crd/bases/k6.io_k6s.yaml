@@ -5467,6 +5467,10 @@ spec:
                       type: object
                     type: array
                 type: object
+              testRunId:
+                type: string
+              token:
+                type: string
             required:
             - parallelism
             - script

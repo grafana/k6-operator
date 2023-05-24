@@ -82,7 +82,7 @@ func (r *K6Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 	case "":
 		log.Info("Initialize test")
 
-		k6.InitializeConditions()
+		k6.Initialize()
 
 		if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
 			return ctrl.Result{}, err
@@ -122,7 +122,7 @@ func (r *K6Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 
 		if k6.IsTrue(v1alpha1.CloudTestRun) {
 
-			if k6.IsFalse(v1alpha1.CloudTestRunCreated) {
+			if k6.IsFalse(v1alpha1.CloudTestRunCreated) && k6.IsFalse(v1alpha1.CloudPLZTestRun) {
 				return SetupCloudTest(ctx, log, k6, r)
 
 			} else {
@@ -173,7 +173,9 @@ func (r *K6Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 			k6.Status.Stage = "finished"
 
 			// If this is a test run with cloud output, try to finalize it.
-			if k6.IsTrue(v1alpha1.CloudTestRun) && k6.IsFalse(v1alpha1.CloudTestRunFinalized) {
+			if k6.IsTrue(v1alpha1.CloudTestRun) &&
+				k6.IsFalse(v1alpha1.CloudPLZTestRun) &&
+				k6.IsFalse(v1alpha1.CloudTestRunFinalized) {
 				if err = cloud.FinishTestRun(k6.Status.TestRunID); err != nil {
 					log.Error(err, "Failed to finalize the test run with cloud output")
 					return ctrl.Result{}, nil

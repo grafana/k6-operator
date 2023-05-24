@@ -2,5 +2,9 @@ apiVersion: k6.io/v1alpha1
 kind: PrivateLoadZone
 metadata:
   name: privateloadzone-sample
+  namespace: foo
 spec:
-  # TODO(user): Add fields here
+  token: grafana-k6-token
+  resources:
+    cpu: 200m
+    memory: 512Mi

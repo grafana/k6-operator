@@ -79,6 +79,9 @@ type K6Spec struct {
 	Paused      string                 `json:"paused,omitempty"`
 	Scuttle     K6Scuttle              `json:"scuttle,omitempty"`
 	Cleanup     Cleanup                `json:"cleanup,omitempty"`
+
+	TestRunID string `json:"testRunId,omitempty"` // PLZ reserved field
+	Token     string `json:"token,omitempty"`     // PLZ reserved field (for now)
 }
 
 // K6Script describes where the script to execute the tests is found

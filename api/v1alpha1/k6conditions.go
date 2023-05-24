@@ -35,6 +35,13 @@ const (
 	// - if False, it's a cloud test run and it is yet to be finalized
 	// - if True, it's a cloud test run that has been finalized already
 	CloudTestRunFinalized = "CloudTestRunFinalized"
+
+	// CloudPLZTestRun indicates if this k6 Cloud test run is a PLZ test run.
+	// This condition is valid only if CloudTestRun is True as well.
+	// - if empty / Unknown, it's either a non-PLZ test run or it's unknown yet.
+	// - if False, it's not a PLZ test run.
+	// - if True, it is a PLZ test run.
+	CloudPLZTestRun = "CloudPLZTestRun"
 )
 
 var reasons = map[string]string{
@@ -53,10 +60,18 @@ var reasons = map[string]string{
 	"CloudTestRunFinalizedUnknown": "CloudTestRunFinalizedUnknown",
 	"CloudTestRunFinalizedTrue":    "CloudTestRunFinalizedTrue",
 	"CloudTestRunFinalizedFalse":   "CloudTestRunFinalizedFalse",
+
+	"CloudPLZTestRunUnknown": "CloudPLZTestRunUnknown",
+	"CloudPLZTestRunTrue":    "CloudPLZTestRunTrue",
+	"CloudPLZTestRunFalse":   "CloudPLZTestRunFalse",
+
+	"PLZRegisteredUnknown": "PLZRegisteredUnknown",
+	"PLZRegisteredTrue":    "PLZRegisteredTrue",
+	"PLZRegisteredFalse":   "PLZRegisteredFalse",
 }
 
-// InitializeConditions defines only conditions common to all test runs.
-func (k6 *K6) InitializeConditions() {
+// Initialize defines only conditions common to all test runs.
+func (k6 *K6) Initialize() {
 	t := metav1.Now()
 	k6.Status.Conditions = []metav1.Condition{
 		metav1.Condition{
@@ -74,20 +89,37 @@ func (k6 *K6) InitializeConditions() {
 			Message:            "",
 		},
 	}
+
+	// PLZ test run case
+	if len(k6.Spec.TestRunID) > 0 {
+		k6.UpdateCondition(CloudTestRun, metav1.ConditionTrue)
+		k6.UpdateCondition(CloudPLZTestRun, metav1.ConditionTrue)
+		k6.UpdateCondition(CloudTestRunCreated, metav1.ConditionTrue)
+
+		k6.Status.TestRunID = k6.Spec.TestRunID
+	} else {
+		k6.UpdateCondition(CloudPLZTestRun, metav1.ConditionFalse)
+		// PLZ test run can be defined only via spec.testRunId;
+		// otherwise it's not a PLZ test run.
+	}
 }
 
-func (k6 *K6) UpdateCondition(conditionType string, conditionStatus metav1.ConditionStatus) {
+func updateCondition(conditions *[]metav1.Condition, conditionType string, conditionStatus metav1.ConditionStatus) {
 	reason, ok := reasons[conditionType+string(conditionStatus)]
 	if !ok {
 		panic(fmt.Sprintf("Invalid condition type and status! `%s` - this should never happen!", conditionType+string(conditionStatus)))
 	}
-	meta.SetStatusCondition(&k6.Status.Conditions, metav1.Condition{
+	meta.SetStatusCondition(conditions, metav1.Condition{
 		Type:               conditionType,
 		Status:             conditionStatus,
 		LastTransitionTime: metav1.Now(),
 		Reason:             reason,
 		Message:            "",
 	})
+}
+
+func (k6 *K6) UpdateCondition(conditionType string, conditionStatus metav1.ConditionStatus) {
+	updateCondition(&k6.Status.Conditions, conditionType, conditionStatus)
 }
 
 func (k6 K6) IsTrue(conditionType string) bool {
