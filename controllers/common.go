@@ -127,20 +127,17 @@ func loadToken(ctx context.Context, log logr.Logger, c client.Client, secretName
 		secretOpts = sOpts
 	}
 
-	// It might be that sOpts has namespace set but not the selector.
-	if sOpts.LabelSelector == nil {
-		sOpts.LabelSelector = labels.SelectorFromSet(map[string]string{
-			"k6cloud": "token",
-		})
-	}
-
 	if len(secretName) > 0 {
+		log.Info("Loading token by name.", "name", secretName, "secretNamespace", sOpts.Namespace)
+
 		if err := c.Get(ctx, types.NamespacedName{Namespace: sOpts.Namespace, Name: secretName}, &secret); err != nil {
 			log.Error(err, "Failed to load k6 Cloud token")
 			// This may be a networking issue, etc. so just retry.
 			return
 		}
 	} else {
+		log.Info("Loading token by label pair.", "labelset", secretOpts.LabelSelector.String(), "secretNamespace", secretOpts.Namespace)
+
 		if err = c.List(ctx, &secrets, secretOpts); err != nil {
 			log.Error(err, "Failed to load k6 Cloud token")
 			// This may be a networking issue, etc. so just retry.

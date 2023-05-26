@@ -15,6 +15,10 @@ import (
 
 func (r *PrivateLoadZoneReconciler) startFactory(plz *v1alpha1.PrivateLoadZone, testRunCh chan string) {
 	go func() {
+		logger := r.Log.WithValues("namespace", plz.Namespace, "name", plz.Name)
+
+		logger.Info("Started factory for PLZ test runs.")
+
 		for testRunId := range testRunCh {
 			// First check if such a test already exists
 			namespacedName := types.NamespacedName{
@@ -24,7 +28,7 @@ func (r *PrivateLoadZoneReconciler) startFactory(plz *v1alpha1.PrivateLoadZone, 
 
 			k6 := &v1alpha1.K6{}
 			if err := r.Get(context.Background(), namespacedName, k6); err == nil || !errors.IsNotFound(err) {
-				r.Log.Info(fmt.Sprintf("Test run `%s` has already been started.", testRunId))
+				logger.Info(fmt.Sprintf("Test run `%s` has already been started.", testRunId))
 				// fmt.Println(k6)
 				continue
 			}
@@ -40,18 +44,18 @@ func (r *PrivateLoadZoneReconciler) startFactory(plz *v1alpha1.PrivateLoadZone, 
 
 			k6 = testrun.NewPLZTestRun(plz, trData)
 
-			r.Log.Info(fmt.Sprintf("PLZ test run has been prepared with image `%s` and `%d` instances",
+			logger.Info(fmt.Sprintf("PLZ test run has been prepared with image `%s` and `%d` instances",
 				k6.Spec.Runner.Image, k6.Spec.Parallelism), "testRunId", testRunId)
 
 			if err := ctrl.SetControllerReference(plz, k6, r.Scheme); err != nil {
-				r.Log.Error(err, "Failed to set controller reference for the PLZ test run", "testRunId", testRunId)
+				logger.Error(err, "Failed to set controller reference for the PLZ test run", "testRunId", testRunId)
 			}
 
 			if err := r.Create(context.Background(), k6); err != nil {
-				r.Log.Error(err, "Failed to create PLZ test run", "testRunId", testRunId)
+				logger.Error(err, "Failed to create PLZ test run", "testRunId", testRunId)
 			}
 
-			r.Log.Info("Created new test run", "testRunId", testRunId)
+			logger.Info("Created new test run", "testRunId", testRunId)
 		}
 	}()
 }

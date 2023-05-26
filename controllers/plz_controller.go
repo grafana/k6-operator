@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -89,6 +90,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		plz.Initialize()
 
 		plz.Register(ctx, logger, r.poller.Client)
+		logger.Info(fmt.Sprintf("PLZ %s is registered.", plz.Name))
 
 		controllerutil.AddFinalizer(plz, plzFinalizer)
 		// fmt.Println("register call and adding finalizers", plz.GetFinalizers())
@@ -103,6 +105,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			r.poller.Stop()
 
 			plz.Deregister(ctx, logger, r.poller.Client)
+			logger.Info(fmt.Sprintf("PLZ %s is deregistered.", plz.Name))
 
 			controllerutil.RemoveFinalizer(plz, plzFinalizer)
 
@@ -116,8 +119,8 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	if plz.IsTrue(v1alpha1.PLZRegistered) {
 		if r.poller != nil && !r.poller.IsPolling() {
-			testRunsCh := r.poller.Start()
-			r.startFactory(plz, testRunsCh)
+			r.poller.Start()
+			r.startFactory(plz, r.poller.GetTestRuns())
 			logger.Info("Started polling k6 Cloud for new test runs.")
 		}
 	}
