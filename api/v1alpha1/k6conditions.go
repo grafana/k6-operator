@@ -1,10 +1,10 @@
 package v1alpha1
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
+	"github.com/grafana/k6-operator/pkg/types"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -44,32 +44,6 @@ const (
 	CloudPLZTestRun = "CloudPLZTestRun"
 )
 
-var reasons = map[string]string{
-	"TestRunRunningUnknown": "TestRunPreparation",
-	"TestRunRunningTrue":    "TestRunRunningTrue",
-	"TestRunRunningFalse":   "TestRunRunningFalse",
-
-	"CloudTestRunUnknown": "TestRunTypeUnknown",
-	"CloudTestRunTrue":    "CloudTestRunTrue",
-	"CloudTestRunFalse":   "CloudTestRunFalse",
-
-	"CloudTestRunCreatedUnknown": "CloudTestRunCreatedUnknown",
-	"CloudTestRunCreatedTrue":    "CloudTestRunCreatedTrue",
-	"CloudTestRunCreatedFalse":   "CloudTestRunCreatedFalse",
-
-	"CloudTestRunFinalizedUnknown": "CloudTestRunFinalizedUnknown",
-	"CloudTestRunFinalizedTrue":    "CloudTestRunFinalizedTrue",
-	"CloudTestRunFinalizedFalse":   "CloudTestRunFinalizedFalse",
-
-	"CloudPLZTestRunUnknown": "CloudPLZTestRunUnknown",
-	"CloudPLZTestRunTrue":    "CloudPLZTestRunTrue",
-	"CloudPLZTestRunFalse":   "CloudPLZTestRunFalse",
-
-	"PLZRegisteredUnknown": "PLZRegisteredUnknown",
-	"PLZRegisteredTrue":    "PLZRegisteredTrue",
-	"PLZRegisteredFalse":   "PLZRegisteredFalse",
-}
-
 // Initialize defines only conditions common to all test runs.
 func (k6 *K6) Initialize() {
 	t := metav1.Now()
@@ -104,22 +78,8 @@ func (k6 *K6) Initialize() {
 	}
 }
 
-func updateCondition(conditions *[]metav1.Condition, conditionType string, conditionStatus metav1.ConditionStatus) {
-	reason, ok := reasons[conditionType+string(conditionStatus)]
-	if !ok {
-		panic(fmt.Sprintf("Invalid condition type and status! `%s` - this should never happen!", conditionType+string(conditionStatus)))
-	}
-	meta.SetStatusCondition(conditions, metav1.Condition{
-		Type:               conditionType,
-		Status:             conditionStatus,
-		LastTransitionTime: metav1.Now(),
-		Reason:             reason,
-		Message:            "",
-	})
-}
-
 func (k6 *K6) UpdateCondition(conditionType string, conditionStatus metav1.ConditionStatus) {
-	updateCondition(&k6.Status.Conditions, conditionType, conditionStatus)
+	types.UpdateCondition(&k6.Status.Conditions, conditionType, conditionStatus)
 }
 
 func (k6 K6) IsTrue(conditionType string) bool {
@@ -146,46 +106,25 @@ func (k6 K6) LastUpdate(conditionType string) (time.Time, bool) {
 // with the expected progression of a test run. If there were any acceptable
 // changes proposed, it returns true.
 func (k6status *K6Status) SetIfNewer(proposedStatus K6Status) (isNewer bool) {
-	existingConditions := map[string]metav1.Condition{}
-	for i := range k6status.Conditions {
-		existingConditions[k6status.Conditions[i].Type] = k6status.Conditions[i]
-	}
-
-	for _, proposedCondition := range proposedStatus.Conditions {
-		// If a new condition is being proposed, just add it to the list.
-		if existingCondition, ok := existingConditions[proposedCondition.Type]; !ok {
-			k6status.Conditions = append(k6status.Conditions, proposedCondition)
-			isNewer = true
-		} else {
-			// If a change in existing condition is being proposed, check if
-			// its timestamp is later than the one in existing condition.
-			//
-			// Additionally: condition should never return to Unknown status
-			// unless it's newly created.
-
-			if proposedCondition.Status != metav1.ConditionUnknown {
-				if existingCondition.LastTransitionTime.UnixNano() < proposedCondition.LastTransitionTime.UnixNano() {
-					meta.SetStatusCondition(&k6status.Conditions, proposedCondition)
-					isNewer = true
-				}
+	isNewer = types.SetIfNewer(&k6status.Conditions, proposedStatus.Conditions,
+		func(proposedCondition metav1.Condition) (isNewer bool) {
+			// Accept change of test run ID only if it's not set yet and together with
+			// corresponding condition.
+			if proposedCondition.Type == CloudTestRunCreated &&
+				len(k6status.TestRunID) == 0 &&
+				len(proposedStatus.TestRunID) > 0 {
+				k6status.TestRunID = proposedStatus.TestRunID
+				isNewer = true
 			}
-		}
+			// log if proposedStatus.TestRunID is empty here?
 
-		// Accept change of test run ID only if it's not set yet and together with
-		// corresponding condition.
-		if proposedCondition.Type == CloudTestRunCreated &&
-			len(k6status.TestRunID) == 0 &&
-			len(proposedStatus.TestRunID) > 0 {
-			k6status.TestRunID = proposedStatus.TestRunID
-			isNewer = true
-		}
-		// log if proposedStatus.TestRunID is empty here?
+			// similarly with aggregation vars
+			if len(proposedStatus.AggregationVars) > 0 && len(k6status.AggregationVars) == 0 {
+				k6status.AggregationVars = proposedStatus.AggregationVars
+			}
 
-		// similarly with aggregation vars
-		if len(proposedStatus.AggregationVars) > 0 && len(k6status.AggregationVars) == 0 {
-			k6status.AggregationVars = proposedStatus.AggregationVars
-		}
-	}
+			return
+		})
 
 	// If a change in stage is proposed, confirm that it is consistent with
 	// expected flow of any test run.

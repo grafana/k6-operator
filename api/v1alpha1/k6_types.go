@@ -15,6 +15,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"errors"
+	"path/filepath"
+
+	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -146,4 +150,42 @@ type K6List struct {
 
 func init() {
 	SchemeBuilder.Register(&K6{}, &K6List{})
+}
+
+// Parse extracts Script data bits from K6 spec and performs basic validation
+func (spec K6Script) Parse() (*types.Script, error) {
+	s := &types.Script{
+		Filename: "test.js",
+		Path:     "/test/",
+	}
+
+	if spec.VolumeClaim.Name != "" {
+		s.Name = spec.VolumeClaim.Name
+		if spec.VolumeClaim.File != "" {
+			s.Filename = spec.VolumeClaim.File
+		}
+
+		s.Type = "VolumeClaim"
+		return s, nil
+	}
+
+	if spec.ConfigMap.Name != "" {
+		s.Name = spec.ConfigMap.Name
+
+		if spec.ConfigMap.File != "" {
+			s.Filename = spec.ConfigMap.File
+		}
+
+		s.Type = "ConfigMap"
+		return s, nil
+	}
+
+	if spec.LocalFile != "" {
+		s.Name = "LocalFile"
+		s.Type = "LocalFile"
+		s.Path, s.Filename = filepath.Split(spec.LocalFile)
+		return s, nil
+	}
+
+	return nil, errors.New("Script definition should contain one of: ConfigMap, VolumeClaim, LocalFile")
 }

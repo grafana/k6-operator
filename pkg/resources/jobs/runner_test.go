@@ -55,7 +55,7 @@ func TestNewScriptVolumeClaim(t *testing.T) {
 		},
 	}
 
-	script, err := types.ParseScript(&k6)
+	script, err := k6.Script.Parse()
 	if err != nil {
 		t.Errorf("NewScript with ConfigMap errored, got: %v, want: %v", err, expectedOutcome)
 	}
@@ -81,7 +81,7 @@ func TestNewScriptConfigMap(t *testing.T) {
 		},
 	}
 
-	script, err := types.ParseScript(&k6)
+	script, err := k6.Script.Parse()
 	if err != nil {
 		t.Errorf("NewScript with ConfigMap errored, got: %v, want: %v", err, expectedOutcome)
 	}
@@ -105,7 +105,7 @@ func TestNewScriptLocalFile(t *testing.T) {
 		},
 	}
 
-	script, err := types.ParseScript(&k6)
+	script, err := k6.Script.Parse()
 	if err != nil {
 		t.Errorf("NewScript with LocalFile errored, got: %v, want: %v", err, expectedOutcome)
 	}
@@ -117,7 +117,7 @@ func TestNewScriptLocalFile(t *testing.T) {
 func TestNewScriptNoScript(t *testing.T) {
 	k6 := v1alpha1.K6Spec{}
 
-	script, err := types.ParseScript(&k6)
+	script, err := k6.Script.Parse()
 	if err == nil && script != nil {
 		t.Errorf("Expected Error from NewScript, got: %v, want: %v", err, errors.New("configMap, VolumeClaim or LocalFile not provided in script definition"))
 	}
