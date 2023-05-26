@@ -9,24 +9,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.k6.io/k6/cloudapi"
 	"go.k6.io/k6/lib/consts"
-	"go.k6.io/k6/lib/types"
-	"go.k6.io/k6/metrics"
 	"gopkg.in/guregu/null.v3"
 )
 
 var client *cloudapi.Client
-
-type InspectOutput struct {
-	External struct {
-		Loadimpact struct {
-			Name      string `json:"name"`
-			ProjectID int64  `json:"projectID"`
-		} `json:"loadimpact"`
-	} `json:"ext"`
-	TotalDuration types.NullDuration             `json:"totalDuration"`
-	MaxVUs        uint64                         `json:"maxVUs"`
-	Thresholds    map[string]*metrics.Thresholds `json:"thresholds,omitempty"`
-}
 
 type TestRun struct {
 	Name              string              `json:"name"`

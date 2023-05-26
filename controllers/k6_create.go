@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CreateJobs creates jobs that will spawn k6 pods for distributed test
@@ -28,7 +27,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 		log = log.WithValues("testRunId", k6.Status.TestRunID)
 
 		var tokenReady bool
-		token, tokenReady, err = loadToken(ctx, log, r.Client, k6.Spec.Token, &client.ListOptions{Namespace: k6.Namespace})
+		token, tokenReady, err = loadToken(ctx, log, r.Client, k6.Spec.Token, nil)
 		if err != nil {
 			// An error here means a very likely mis-configuration of the token.
 			// Consider updating status to error to let a user know quicker?
