@@ -21,7 +21,7 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 	// initializer is a quick job so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
-	cli := types.ParseCLI(&k6.Spec)
+	cli := types.ParseCLI(k6.Spec.Arguments)
 
 	var initializer *batchv1.Job
 	if initializer, err = jobs.NewInitializerJob(k6, cli.ArchiveArgs); err != nil {
@@ -48,7 +48,7 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 	// initializer is a quick job so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
-	cli := types.ParseCLI(&k6.Spec)
+	cli := types.ParseCLI(k6.Spec.Arguments)
 
 	inspectOutput, inspectReady, err := inspectTestRun(ctx, log, *k6, r.Client)
 	if err != nil {

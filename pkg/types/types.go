@@ -1,12 +1,9 @@
 package types
 
 import (
-	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 
-	"github.com/grafana/k6-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -16,44 +13,6 @@ type Script struct {
 	Filename string
 	Path     string
 	Type     string // ConfigMap | VolumeClaim | LocalFile
-}
-
-// ParseScript extracts Script data bits from K6 spec and performs basic validation
-func ParseScript(spec *v1alpha1.K6Spec) (*Script, error) {
-	s := &Script{
-		Filename: "test.js",
-		Path:     "/test/",
-	}
-
-	if spec.Script.VolumeClaim.Name != "" {
-		s.Name = spec.Script.VolumeClaim.Name
-		if spec.Script.VolumeClaim.File != "" {
-			s.Filename = spec.Script.VolumeClaim.File
-		}
-
-		s.Type = "VolumeClaim"
-		return s, nil
-	}
-
-	if spec.Script.ConfigMap.Name != "" {
-		s.Name = spec.Script.ConfigMap.Name
-
-		if spec.Script.ConfigMap.File != "" {
-			s.Filename = spec.Script.ConfigMap.File
-		}
-
-		s.Type = "ConfigMap"
-		return s, nil
-	}
-
-	if spec.Script.LocalFile != "" {
-		s.Name = "LocalFile"
-		s.Type = "LocalFile"
-		s.Path, s.Filename = filepath.Split(spec.Script.LocalFile)
-		return s, nil
-	}
-
-	return nil, errors.New("Script definition should contain one of: ConfigMap, VolumeClaim, LocalFile")
 }
 
 func (s *Script) FullName() string {
@@ -127,7 +86,7 @@ type CLI struct {
 	HasCloudOut bool
 }
 
-func ParseCLI(spec *v1alpha1.K6Spec) *CLI {
+func ParseCLI(arguments string) *CLI {
 	lastArgV := func(start int, args []string) (end int) {
 		var nextArg bool
 		end = start
@@ -144,7 +103,7 @@ func ParseCLI(spec *v1alpha1.K6Spec) *CLI {
 
 	var cli CLI
 
-	args := strings.Split(spec.Arguments, " ")
+	args := strings.Split(arguments, " ")
 	i := 0
 	for i < len(args) {
 		args[i] = strings.TrimSpace(args[i])

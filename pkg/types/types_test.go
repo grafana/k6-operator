@@ -3,7 +3,6 @@ package types
 import (
 	"testing"
 
-	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,10 +75,7 @@ func Test_ParseCLI(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			spec := v1alpha1.K6Spec{
-				Arguments: test.argLine,
-			}
-			cli := ParseCLI(&spec)
+			cli := ParseCLI(test.argLine)
 
 			assert.Equal(t, test.cli.ArchiveArgs, cli.ArchiveArgs)
 			assert.Equal(t, test.cli.HasCloudOut, cli.HasCloudOut)

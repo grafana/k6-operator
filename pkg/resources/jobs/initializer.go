@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
-	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +12,7 @@ import (
 
 // NewInitializerJob builds a template used to initializefor creating a starter job
 func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
-	script, err := types.ParseScript(&k6.Spec)
+	script, err := k6.Spec.Script.Parse()
 	if err != nil {
 		return nil, err
 	}
