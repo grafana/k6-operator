@@ -9,7 +9,7 @@ import (
 
 // Internal type created to support Spec.script options
 type Script struct {
-	Name     string // name of ConfigMap or VolumeClaim or "LocalFile"
+	Name     string // Name of ConfigMap or VolumeClaim or "LocalFile"
 	Filename string
 	Path     string
 	Type     string // ConfigMap | VolumeClaim | LocalFile
@@ -47,6 +47,7 @@ func (s *Script) Volume() []corev1.Volume {
 				},
 			},
 		}
+
 	default:
 		return []corev1.Volume{}
 	}
@@ -57,6 +58,7 @@ func (s *Script) VolumeMount() []corev1.VolumeMount {
 	if s.Type == "LocalFile" {
 		return []corev1.VolumeMount{}
 	}
+
 	return []corev1.VolumeMount{
 		corev1.VolumeMount{
 			Name:      "k6-test-volume",

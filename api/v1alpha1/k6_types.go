@@ -157,7 +157,8 @@ func init() {
 }
 
 // Parse extracts Script data bits from K6 spec and performs basic validation
-func (spec K6Script) Parse() (*types.Script, error) {
+func (k6 K6Spec) ParseScript() (*types.Script, error) {
+	spec := k6.Script
 	s := &types.Script{
 		Filename: "test.js",
 		Path:     "/test/",

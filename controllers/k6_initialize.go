@@ -135,7 +135,7 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 		if len(inspectOutput.External.Loadimpact.Name) < 1 {
 			// script has already been parsed for initializer job definition,
 			// so this is safe
-			script, _ := k6.Spec.Script.Parse()
+			script, _ := k6.Spec.ParseScript()
 			inspectOutput.External.Loadimpact.Name = script.Filename
 		}
 
