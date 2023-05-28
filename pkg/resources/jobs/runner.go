@@ -43,7 +43,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 		command = append(command, args...)
 	}
 
-	script, err := k6.Spec.Script.Parse()
+	script, err := k6.Spec.ParseScript()
 	if err != nil {
 		return nil, err
 	}
@@ -188,6 +188,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 	if k6.Spec.Separate {
 		job.Spec.Template.Spec.Affinity = newAntiAffinity()
 	}
+
 	return job, nil
 }
 
