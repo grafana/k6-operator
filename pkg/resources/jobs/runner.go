@@ -162,8 +162,8 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           ports,
 						EnvFrom:         k6.Spec.Runner.EnvFrom,
-						LivenessProbe: defaultProbe(k6.Spec.Runner.LivenessProbe),
-						ReadinessProbe: defaultProbe(k6.Spec.Runner.ReadinessProbe),
+						LivenessProbe: generateProbe(k6.Spec.Runner.LivenessProbe),
+						ReadinessProbe: generateProbe(k6.Spec.Runner.ReadinessProbe),
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -251,9 +251,9 @@ func newAntiAffinity() *corev1.Affinity {
 	}
 }
 
-func defaultProbe(probe *corev1.Probe) *corev1.Probe {
-	if probe != nil {
-		return probe
+func generateProbe(configuredProbe *corev1.Probe) *corev1.Probe {
+	if configuredProbe != nil {
+		return configuredProbe
 	}
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
