@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -82,4 +83,41 @@ func (poller *TestRunPoller) getTestRuns() ([]string, error) {
 	}
 
 	return list.List, nil
+}
+
+func getTestRun(client *cloudapi.Client, url string) (*TestRunData, error) {
+	req, err := client.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var trData TestRunData
+	if err = client.Do(req, &trData); err != nil {
+		return nil, err
+	}
+
+	return &trData, nil
+}
+
+func GetTestRunData(client *cloudapi.Client, refID string) (*TestRunData, error) {
+	// url := fmt.Sprintf("https://%s/loadtests/v4/test_runs(%s)?select=id,run_status,k8s_load_zones_config", client.Host, refID)
+	// return getTestRun(client, url)
+	return &TestRunData{
+		TestRunId: refID,
+		LZConfig: LZConfig{
+			RunnerImage:   "grafana/k6:latest",
+			InstanceCount: 1,
+		},
+	}, nil
+}
+
+func GetTestRunState(client *cloudapi.Client, refID string, log logr.Logger) (TestRunStatus, error) {
+	// url := fmt.Sprintf("https://%s/loadtests/v4/test_runs(%s)?select=id,run_status", client.Host, refID)
+	// trData, err := getTestRun(client, url)
+	// return TestRunStatus(trData.RunStatus), err
+
+	if rand.Intn(2) > 0 {
+		return TestRunStatus(5), nil // mimic aborted
+	}
+	return TestRunStatus(2), nil
 }

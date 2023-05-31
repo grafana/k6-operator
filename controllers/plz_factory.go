@@ -35,11 +35,10 @@ func (r *PrivateLoadZoneReconciler) startFactory(plz *v1alpha1.PrivateLoadZone, 
 
 			// Test does not exist so get its data and create it.
 
-			// TODO get test run data
-
-			trData := cloud.TestRunData{
-				TestRunId: testRunId,
-				Instances: 1,
+			trData, err := cloud.GetTestRunData(r.poller.Client, testRunId)
+			if err != nil {
+				logger.Error(err, fmt.Sprintf("Failed to retrieve test run data for `%s`", testRunId))
+				continue
 			}
 
 			k6 = testrun.NewPLZTestRun(plz, trData)

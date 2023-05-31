@@ -11,13 +11,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestNewStarterJob(t *testing.T) {
-
+func TestNewStopperJob(t *testing.T) {
 	automountServiceAccountToken := true
 
 	expectedOutcome := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-starter",
+			Name:      "test-stopper",
 			Namespace: "test",
 			Labels: map[string]string{
 				"app":    "k6",
@@ -49,7 +48,7 @@ func TestNewStarterJob(t *testing.T) {
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
-						containers.NewStartContainer([]string{"testing"}, "image", corev1.PullNever, []string{"sh", "-c"},
+						containers.NewStopContainer([]string{"testing"}, "image", corev1.PullNever, []string{"sh", "-c"},
 							[]corev1.EnvVar{}),
 					},
 				},
@@ -84,20 +83,19 @@ func TestNewStarterJob(t *testing.T) {
 		},
 	}
 
-	job := NewStarterJob(k6, []string{"testing"})
+	job := NewStopJob(k6, []string{"testing"})
 	if diff := deep.Equal(job, expectedOutcome); diff != nil {
 		t.Error(diff)
 	}
 
 }
 
-func TestNewStarterJobIstio(t *testing.T) {
-
+func TestNewStopJobIstio(t *testing.T) {
 	automountServiceAccountToken := true
 
 	expectedOutcome := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-starter",
+			Name:      "test-stopper",
 			Namespace: "test",
 			Labels: map[string]string{
 				"app":    "k6",
@@ -129,7 +127,7 @@ func TestNewStarterJobIstio(t *testing.T) {
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
-						containers.NewStartContainer([]string{"testing"}, "image", "", []string{"scuttle", "sh", "-c"}, []corev1.EnvVar{
+						containers.NewStopContainer([]string{"testing"}, "image", "", []string{"scuttle", "sh", "-c"}, []corev1.EnvVar{
 							{
 								Name:  "ENVOY_ADMIN_API",
 								Value: "http://127.0.0.1:15000",
@@ -177,9 +175,8 @@ func TestNewStarterJobIstio(t *testing.T) {
 		},
 	}
 
-	job := NewStarterJob(k6, []string{"testing"})
+	job := NewStopJob(k6, []string{"testing"})
 	if diff := deep.Equal(job, expectedOutcome); diff != nil {
 		t.Error(diff)
 	}
-
 }

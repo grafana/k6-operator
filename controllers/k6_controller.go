@@ -16,9 +16,11 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"go.k6.io/k6/cloudapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -46,6 +48,10 @@ type K6Reconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+
+	// Note: here we assume that all users of the operator are allowed to use
+	// the same token / cloud client.
+	k6CloudClient *cloudapi.Client
 }
 
 // Reconcile takes a K6 object and takes the appropriate action in the cluster
@@ -71,6 +77,19 @@ func (r *K6Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 		}
 		log.Error(err, "Could not fetch request")
 		return ctrl.Result{Requeue: true}, err
+	}
+
+	if k6.IsTrue(v1alpha1.CloudPLZTestRun) {
+		// bootstrap the client
+		found, err := r.createClient(ctx, k6, log)
+		if err != nil {
+			log.Error(err, "A problem while getting token.")
+			return ctrl.Result{}, err
+		}
+		if !found {
+			log.Info(fmt.Sprintf("Token `%s` is not found yet.", k6.Spec.Token))
+			return ctrl.Result{RequeueAfter: time.Second}, nil
+		}
 	}
 
 	log.Info(fmt.Sprintf("Reconcile(); stage = %s", k6.Status.Stage))
@@ -116,13 +135,9 @@ func (r *K6Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 			}
 		}
 
-		// log.Info(fmt.Sprintf("Debug \"initialization\" %v %v",
-		// 	k6.IsTrue(v1alpha1.CloudTestRun),
-		// 	k6.IsTrue(v1alpha1.CloudTestRunCreated)))
-
 		if k6.IsTrue(v1alpha1.CloudTestRun) {
 
-			if k6.IsFalse(v1alpha1.CloudTestRunCreated) && k6.IsFalse(v1alpha1.CloudPLZTestRun) {
+			if k6.IsFalse(v1alpha1.CloudTestRunCreated) {
 				return SetupCloudTest(ctx, log, k6, r)
 
 			} else {
@@ -146,17 +161,29 @@ func (r *K6Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 		return StartJobs(ctx, log, k6, r)
 
 	case "started":
-		// log.Info(fmt.Sprintf("Debug \"started\" %v %v",
-		// 	k6.IsTrue(v1alpha1.CloudTestRun),
-		// 	k6.IsTrue(v1alpha1.CloudTestRunFinalized)))
-
 		if k6.IsTrue(v1alpha1.CloudTestRun) && k6.IsTrue(v1alpha1.CloudTestRunFinalized) {
+			// a fluke - nothing to do
+			return ctrl.Result{}, nil
+		}
+
+		if k6.IsTrue(v1alpha1.CloudTestRunAborted) {
 			// a fluke - nothing to do
 			return ctrl.Result{}, nil
 		}
 
 		// wait for the test to finish
 		if !FinishJobs(ctx, log, k6, r) {
+
+			if k6.IsTrue(v1alpha1.CloudPLZTestRun) && k6.IsFalse(v1alpha1.CloudTestRunAborted) {
+				// check in with the BE for status
+				if r.ShouldAbort(ctx, k6, log) {
+					log.Info("Received an abort signal from the k6 Cloud: stopping the test.")
+					return StopJobs(ctx, log, k6, r)
+				}
+			}
+
+			// The test continues to execute.
+
 			// Test runs can take a long time and usually they aren't supposed
 			// to be too quick. So check in only periodically.
 			return ctrl.Result{RequeueAfter: time.Second * 15}, nil
@@ -164,27 +191,13 @@ func (r *K6Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 
 		log.Info("All runner pods are finished")
 
-		// now mark it as finished
+		// now mark it as stopped
 
 		if k6.IsTrue(v1alpha1.TestRunRunning) {
 			k6.UpdateCondition(v1alpha1.TestRunRunning, metav1.ConditionFalse)
 
-			log.Info("Changing stage of K6 status to finished")
-			k6.Status.Stage = "finished"
-
-			// If this is a test run with cloud output, try to finalize it.
-			if k6.IsTrue(v1alpha1.CloudTestRun) &&
-				k6.IsFalse(v1alpha1.CloudPLZTestRun) &&
-				k6.IsFalse(v1alpha1.CloudTestRunFinalized) {
-				if err = cloud.FinishTestRun(k6.Status.TestRunID); err != nil {
-					log.Error(err, "Failed to finalize the test run with cloud output")
-					return ctrl.Result{}, nil
-				} else {
-					log.Info(fmt.Sprintf("Cloud test run %s was finalized succesfully", k6.Status.TestRunID))
-
-					k6.UpdateCondition(v1alpha1.CloudTestRunFinalized, metav1.ConditionTrue)
-				}
-			}
+			log.Info("Changing stage of K6 status to stopped")
+			k6.Status.Stage = "stopped"
 
 			_, err := r.UpdateStatus(ctx, k6, log)
 			if err != nil {
@@ -194,6 +207,49 @@ func (r *K6Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 		}
 
 		return ctrl.Result{}, nil
+
+	case "stopped":
+		if k6.IsTrue(v1alpha1.CloudPLZTestRun) && k6.IsTrue(v1alpha1.CloudTestRunAborted) {
+			// This is a "forced" abort of the PLZ test run.
+			// Wait until all the test runs are stopped, kill jobs and proceed.
+			if StoppedJobs(ctx, log, k6, r) {
+				if allDeleted, err := KillJobs(ctx, log, k6, r); err != nil {
+					return ctrl.Result{RequeueAfter: time.Second}, err
+				} else {
+					// if we just have deleted all jobs, update status and go for reconcile
+					if allDeleted {
+						k6.UpdateCondition(v1alpha1.CloudTestRunAborted, metav1.ConditionTrue)
+						_, err := r.UpdateStatus(ctx, k6, log)
+						if err != nil {
+							return ctrl.Result{}, err
+						}
+					}
+				}
+			}
+		}
+
+		// If this is a cloud test run in any mode, try to finalize it.
+		if k6.IsTrue(v1alpha1.CloudTestRun) &&
+			k6.IsFalse(v1alpha1.CloudTestRunFinalized) {
+			if err = cloud.FinishTestRun(r.k6CloudClient, k6.Status.TestRunID); err != nil {
+				log.Error(err, "Failed to finalize the test run with cloud output")
+				return ctrl.Result{}, nil
+			} else {
+				log.Info(fmt.Sprintf("Cloud test run %s was finalized succesfully", k6.Status.TestRunID))
+
+				k6.UpdateCondition(v1alpha1.CloudTestRunFinalized, metav1.ConditionTrue)
+			}
+		}
+
+		log.Info("Changing stage of K6 status to finished")
+		k6.Status.Stage = "finished"
+
+		_, err := r.UpdateStatus(ctx, k6, log)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{RequeueAfter: time.Second}, nil
 
 	case "error", "finished":
 		// delete if configured
@@ -280,6 +336,49 @@ func (r *K6Reconciler) UpdateStatus(ctx context.Context, k6 *v1alpha1.K6, log lo
 	if err != nil {
 		log.Error(err, "Could not update status of custom resource")
 		return false, err
+	}
+
+	return true, nil
+}
+
+// ShouldAbort retrieves the status of test run from the Cloud and whether it should
+// cause a forced stop. It is meant to be used only by PLZ test runs.
+func (r *K6Reconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.K6, log logr.Logger) bool {
+	// sanity check
+	if len(k6.Status.TestRunID) == 0 {
+		log.Error(errors.New("empty test run ID"), "Trying to get state of test run with empty test run ID")
+		return false
+	}
+
+	status, err := cloud.GetTestRunState(r.k6CloudClient, k6.Status.TestRunID, log)
+	if err != nil {
+		log.Error(err, "Failed to get test run state.")
+		return false
+	}
+
+	isAborted := status.Aborted()
+
+	// if isAborted {
+	log.Info(fmt.Sprintf("Received test run status %v", status))
+	// }
+
+	return isAborted
+}
+
+func (r *K6Reconciler) createClient(ctx context.Context, k6 *v1alpha1.K6, log logr.Logger) (bool, error) {
+	if r.k6CloudClient == nil {
+		token, tokenReady, err := loadToken(ctx, log, r.Client, k6.Spec.Token, &client.ListOptions{Namespace: k6.Namespace})
+		if err != nil {
+			log.Error(err, "A problem while getting token.")
+			return false, err
+		}
+		if !tokenReady {
+			return false, nil
+		}
+
+		host := getEnvVar(k6.Spec.Runner.Env, "K6_CLOUD_HOST")
+
+		r.k6CloudClient = cloud.NewClient(log, token, host)
 	}
 
 	return true, nil

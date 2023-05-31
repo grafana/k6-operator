@@ -16,7 +16,8 @@ const (
 	// - if True, it's after successful starter but before all runners have finished
 	TestRunRunning = "TestRunRunning"
 
-	// CloudTestRun indicates if this test run is supposed to be a cloud test run.
+	// CloudTestRun indicates if this test run is supposed to be a cloud test run
+	// (i.e. with `--out cloud` option).
 	// - if empty / Unknown, the type of test is unknown yet
 	// - if False, it is not a cloud test run
 	// - if True, it is a cloud test run
@@ -42,6 +43,14 @@ const (
 	// - if False, it's not a PLZ test run.
 	// - if True, it is a PLZ test run.
 	CloudPLZTestRun = "CloudPLZTestRun"
+
+	// CloudTestRunAborted indicates if this k6 Cloud test run was aborted externally,
+	// for any reason.
+	// This condition is valid only if CloudPLZTestRun is True as well.
+	// - if empty / Unknown, it's either a non-PLZ test run or it's unknown yet.
+	// - if False, it's a PLZ test run and it wasn't aborted.
+	// - if True, it is a PLZ test run and it was aborted.
+	CloudTestRunAborted = "CloudTestRunAborted"
 )
 
 // Initialize defines only conditions common to all test runs.
@@ -69,6 +78,8 @@ func (k6 *K6) Initialize() {
 		k6.UpdateCondition(CloudTestRun, metav1.ConditionTrue)
 		k6.UpdateCondition(CloudPLZTestRun, metav1.ConditionTrue)
 		k6.UpdateCondition(CloudTestRunCreated, metav1.ConditionTrue)
+		k6.UpdateCondition(CloudTestRunFinalized, metav1.ConditionFalse)
+		k6.UpdateCondition(CloudTestRunAborted, metav1.ConditionFalse)
 
 		k6.Status.TestRunID = k6.Spec.TestRunID
 	} else {
@@ -145,6 +156,11 @@ func (k6status *K6Status) SetIfNewer(proposedStatus K6Status) (isNewer bool) {
 				isNewer = true
 			}
 		case "started":
+			if proposedStatus.Stage == "stopped" || proposedStatus.Stage == "finished" || proposedStatus.Stage == "error" {
+				k6status.Stage = proposedStatus.Stage
+				isNewer = true
+			}
+		case "stopped":
 			if proposedStatus.Stage == "finished" || proposedStatus.Stage == "error" {
 				k6status.Stage = proposedStatus.Stage
 				isNewer = true

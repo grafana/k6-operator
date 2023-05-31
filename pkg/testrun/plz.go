@@ -40,6 +40,7 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData) *v1
 		},
 		Spec: v1alpha1.K6Spec{
 			Runner: v1alpha1.Pod{
+				Image:              trData.RunnerImage,
 				ServiceAccountName: plz.Spec.ServiceAccountName,
 				NodeSelector:       plz.Spec.NodeSelector,
 				Resources: corev1.ResourceRequirements{

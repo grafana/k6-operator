@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
 
 	resource "k8s.io/apimachinery/pkg/api/resource"
 )
 
-// NewCurlContainer is used to get a template for a new k6 starting curl container.
-func NewCurlContainer(hostnames []string, image string, imagePullPolicy corev1.PullPolicy, command []string, env []corev1.EnvVar) corev1.Container {
+// NewStartContainer is used to get a template for a new k6 starting curl container.
+func NewStartContainer(hostnames []string, image string, imagePullPolicy corev1.PullPolicy, command []string, env []corev1.EnvVar) corev1.Container {
 	req, _ := json.Marshal(
-		statusAPIRequest{
-			Data: statusAPIRequestData{
-				Attributes: statusAPIRequestDataAttributes{
+		types.StatusAPIRequest{
+			Data: types.StatusAPIRequestData{
+				Attributes: types.StatusAPIRequestDataAttributes{
 					Paused: false,
 				},
 				ID:   "default",
@@ -48,18 +49,4 @@ func NewCurlContainer(hostnames []string, image string, imagePullPolicy corev1.P
 			strings.Join(parts, ";"),
 		),
 	}
-}
-
-type statusAPIRequest struct {
-	Data statusAPIRequestData `json:"data"`
-}
-
-type statusAPIRequestData struct {
-	Attributes statusAPIRequestDataAttributes `json:"attributes"`
-	ID         string                         `json:"id"`
-	Type       string                         `json:"type"`
-}
-
-type statusAPIRequestDataAttributes struct {
-	Paused bool `json:"paused"`
 }

@@ -21,7 +21,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 	var (
 		err   error
 		res   ctrl.Result
-		token string // only for cloud output tests
+		token string // only for cloud tests
 	)
 
 	if k6.IsTrue(v1alpha1.CloudTestRun) && k6.IsTrue(v1alpha1.CloudTestRunCreated) {
