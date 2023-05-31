@@ -4880,6 +4880,7 @@ spec:
                 - initialized
                 - created
                 - started
+                - stopped
                 - finished
                 - error
                 type: string

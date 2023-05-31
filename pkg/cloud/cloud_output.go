@@ -12,6 +12,7 @@ import (
 	null "gopkg.in/guregu/null.v3"
 )
 
+// TODO: refactor this!
 var client *cloudapi.Client
 
 type TestRun struct {
@@ -24,18 +25,32 @@ type TestRun struct {
 	Instances         int32               `json:"instances"`
 }
 
-func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*cloudapi.CreateTestRunResponse, error) {
-	cloudConfig := cloudapi.NewConfig()
-
-	if opts.External.Loadimpact.ProjectID > 0 {
-		cloudConfig.ProjectID = null.NewInt(opts.External.Loadimpact.ProjectID, true)
-	}
-
+func NewClient(log logr.Logger, token, host string) *cloudapi.Client {
 	logger := &logrus.Logger{
 		Out:       os.Stdout,
 		Formatter: new(logrus.TextFormatter),
 		Hooks:     make(logrus.LevelHooks),
 		Level:     logrus.InfoLevel,
+	}
+
+	cloudConfig := cloudapi.NewConfig()
+
+	if len(host) == 0 {
+		host = cloudConfig.Host.String
+	}
+
+	return cloudapi.NewClient(logger, token, host, consts.Version, time.Duration(time.Minute))
+}
+
+func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*cloudapi.CreateTestRunResponse, error) {
+	if client == nil {
+		client = NewClient(log, token, host)
+	}
+
+	cloudConfig := cloudapi.NewConfig()
+
+	if opts.External.Loadimpact.ProjectID > 0 {
+		cloudConfig.ProjectID = null.NewInt(opts.External.Loadimpact.ProjectID, true)
 	}
 
 	thresholds := make(map[string][]string, len(opts.Thresholds))
@@ -50,7 +65,7 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 	}
 
 	if client == nil {
-		client = cloudapi.NewClient(logger, token, host, consts.Version, time.Duration(time.Minute))
+		client = NewClient(log, token, host)
 	}
 
 	tr := TestRun{
@@ -87,7 +102,13 @@ func createTestRun(client *cloudapi.Client, host string, testRun *TestRun) (*clo
 	return &ctrr, nil
 }
 
-func FinishTestRun(refID string) error {
+func FinishTestRun(c *cloudapi.Client, refID string) error {
+	if c != nil {
+		return c.TestFinished(refID, cloudapi.ThresholdResult(
+			map[string]map[string]bool{},
+		), false, cloudapi.RunStatusFinished)
+	}
+
 	return client.TestFinished(refID, cloudapi.ThresholdResult(
 		map[string]map[string]bool{},
 	), false, cloudapi.RunStatusFinished)

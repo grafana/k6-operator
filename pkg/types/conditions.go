@@ -89,4 +89,8 @@ var reasons = map[string]string{
 	"PLZRegisteredUnknown": "PLZRegisteredUnknown",
 	"PLZRegisteredTrue":    "PLZRegisteredTrue",
 	"PLZRegisteredFalse":   "PLZRegisteredFalse",
+
+	"CloudTestRunAbortedUnknown": "CloudTestRunAbortedUnknown",
+	"CloudTestRunAbortedTrue":    "CloudTestRunAbortedTrue",
+	"CloudTestRunAbortedFalse":   "CloudTestRunAbortedFalse",
 }

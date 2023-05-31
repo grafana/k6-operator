@@ -118,7 +118,7 @@ type K6Configmap struct {
 type Cleanup string
 
 // Stage describes which stage of the test execution lifecycle our runners are in
-// +kubebuilder:validation:Enum=initialization;initialized;created;started;finished;error
+// +kubebuilder:validation:Enum=initialization;initialized;created;started;stopped;finished;error
 type Stage string
 
 // K6Status defines the observed state of K6

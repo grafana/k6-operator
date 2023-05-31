@@ -82,7 +82,12 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 
 	if cli.HasCloudOut {
 		k6.UpdateCondition(v1alpha1.CloudTestRun, metav1.ConditionTrue)
-		k6.UpdateCondition(v1alpha1.CloudTestRunCreated, metav1.ConditionFalse)
+
+		if k6.IsUnknown(v1alpha1.CloudTestRunCreated) {
+			// In case of PLZ test run, this is already set to true
+			k6.UpdateCondition(v1alpha1.CloudTestRunCreated, metav1.ConditionFalse)
+		}
+
 		k6.UpdateCondition(v1alpha1.CloudTestRunFinalized, metav1.ConditionFalse)
 	} else {
 		k6.UpdateCondition(v1alpha1.CloudTestRun, metav1.ConditionFalse)
