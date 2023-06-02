@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/segmentation"
 	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
@@ -117,32 +118,18 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 
 	// this is a cloud output run
 	if len(k6.Status.TestRunID) > 0 {
-		env = append(env,
-			corev1.EnvVar{
-				Name:  "K6_CLOUD_AGGREGATION_MIN_SAMPLES",
-				Value: "50",
-			}, corev1.EnvVar{
-				Name:  "K6_CLOUD_AGGREGATION_PERIOD",
-				Value: "3s",
-			}, corev1.EnvVar{
-				Name:  "K6_CLOUD_AGGREGATION_WAIT_PERIOD",
-				Value: "8s",
-			}, corev1.EnvVar{
-				Name:  "K6_CLOUD_METRIC_PUSH_INTERVAL",
-				Value: "6s",
-			}, corev1.EnvVar{
-				Name:  "K6_CLOUD_MAX_METRIC_SAMPLES_PER_PACKAGE",
-				Value: "10000",
-			}, corev1.EnvVar{
-				Name:  "K6_CLOUD_MAX_METRIC_PUSH_CONCURRENCY",
-				Value: "10",
-			}, corev1.EnvVar{
-				Name:  "K6_CLOUD_PUSH_REF_ID",
-				Value: k6.Status.TestRunID,
-			}, corev1.EnvVar{
-				Name:  "K6_CLOUD_TOKEN",
-				Value: token,
-			},
+		aggregationVars, err := cloud.DecodeAggregationConfig(k6.Status.AggregationVars)
+		if err != nil {
+			return nil, err
+		}
+		env = append(env, aggregationVars...)
+		env = append(env, corev1.EnvVar{
+			Name:  "K6_CLOUD_PUSH_REF_ID",
+			Value: k6.Status.TestRunID,
+		}, corev1.EnvVar{
+			Name:  "K6_CLOUD_TOKEN",
+			Value: token,
+		},
 		)
 	}
 

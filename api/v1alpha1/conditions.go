@@ -148,6 +148,11 @@ func (k6status *K6Status) SetIfNewer(proposedStatus K6Status) (isNewer bool) {
 			isNewer = true
 		}
 		// log if proposedStatus.TestRunID is empty here?
+
+		// similarly with aggregation vars
+		if len(proposedStatus.AggregationVars) > 0 && len(k6status.AggregationVars) == 0 {
+			k6status.AggregationVars = proposedStatus.AggregationVars
+		}
 	}
 
 	// If a change in stage is proposed, confirm that it is consistent with
