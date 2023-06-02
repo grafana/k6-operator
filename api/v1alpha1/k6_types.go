@@ -100,8 +100,9 @@ type Stage string
 
 // K6Status defines the observed state of K6
 type K6Status struct {
-	Stage     Stage  `json:"stage,omitempty"`
-	TestRunID string `json:"testRunId,omitempty"`
+	Stage           Stage  `json:"stage,omitempty"`
+	TestRunID       string `json:"testRunId,omitempty"`
+	AggregationVars string `json:"aggregationVars,omitempty"`
 
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }

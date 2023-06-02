@@ -38,7 +38,7 @@ type TestRun struct {
 	Instances         int32               `json:"instances"`
 }
 
-func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (string, error) {
+func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*cloudapi.CreateTestRunResponse, error) {
 	if len(opts.External.Loadimpact.Name) < 1 {
 		opts.External.Loadimpact.Name = "k6-operator-test"
 	}
@@ -71,7 +71,7 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 		client = cloudapi.NewClient(logger, token, host, consts.Version, time.Duration(time.Minute))
 	}
 
-	resp, err := createTestRun(client, host, &TestRun{
+	return createTestRun(client, host, &TestRun{
 		Name:              opts.External.Loadimpact.Name,
 		ProjectID:         cloudConfig.ProjectID.Int64,
 		VUsMax:            int64(opts.MaxVUs),
@@ -80,12 +80,6 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 		ProcessThresholds: true,
 		Instances:         instances,
 	})
-
-	if err != nil {
-		return "", err
-	}
-
-	return resp.ReferenceID, nil
 }
 
 // We cannot use cloudapi.TestRun struct and cloudapi.Client.CreateTestRun call because they're not aware of

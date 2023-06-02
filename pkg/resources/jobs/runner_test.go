@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// these are default values hard-coded in k6
 var aggregationEnvVars = []corev1.EnvVar{
 	corev1.EnvVar{
 		Name:  "K6_CLOUD_AGGREGATION_MIN_SAMPLES",
@@ -1098,7 +1099,8 @@ func TestNewRunnerJobCloud(t *testing.T) {
 		// Since this test only creates a runner's spec so
 		// testrunid has to be set hard-coded here.
 		Status: v1alpha1.K6Status{
-			TestRunID: "testrunid",
+			TestRunID:       "testrunid",
+			AggregationVars: "50|3s|8s|6s|10000|10",
 		},
 	}
 

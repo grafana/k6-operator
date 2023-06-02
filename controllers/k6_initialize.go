@@ -138,15 +138,17 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 			return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 		}
 
-		if refID, err := cloud.CreateTestRun(inspectOutput, k6.Spec.Parallelism, host, token, log); err != nil {
+		if testRunData, err := cloud.CreateTestRun(inspectOutput, k6.Spec.Parallelism, host, token, log); err != nil {
 			log.Error(err, "Failed to create a new cloud test run.")
 			return res, nil
 		} else {
-			log = log.WithValues("testRunId", refID)
-			log.Info(fmt.Sprintf("Created cloud test run: %s", refID))
+			log = log.WithValues("testRunId", testRunData.ReferenceID)
+			log.Info(fmt.Sprintf("Created cloud test run: %s", testRunData.ReferenceID))
 
-			k6.Status.TestRunID = refID
+			k6.Status.TestRunID = testRunData.ReferenceID
 			k6.UpdateCondition(v1alpha1.CloudTestRunCreated, metav1.ConditionTrue)
+
+			k6.Status.AggregationVars = cloud.EncodeAggregationConfig(testRunData)
 
 			_, err := r.UpdateStatus(ctx, k6, log)
 			// log.Info(fmt.Sprintf("Debug updating status after create %v", updateHappened))
