@@ -15,7 +15,8 @@ func TestName(testRunId string) string {
 	return fmt.Sprintf("plz-test-%s", testRunId)
 }
 
-func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData) *v1alpha1.K6 {
+// ingestURL is a temp hack
+func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ingestUrl string) *v1alpha1.K6 {
 	volume := corev1.Volume{
 		Name: "archive-volume",
 		VolumeSource: corev1.VolumeSource{
@@ -35,7 +36,7 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData) *v1
 
 	return &v1alpha1.K6{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      TestName(trData.TestRunId),
+			Name:      TestName(trData.TestRunID()),
 			Namespace: plz.Namespace,
 		},
 		Spec: v1alpha1.K6Spec{
@@ -56,6 +57,10 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData) *v1
 				InitContainers: []v1alpha1.InitContainer{
 					initContainer,
 				},
+				Env: []corev1.EnvVar{{
+					Name:  "K6_CLOUD_HOST",
+					Value: ingestUrl,
+				}},
 			},
 			Starter: v1alpha1.Pod{
 				ServiceAccountName: plz.Spec.ServiceAccountName,
@@ -66,10 +71,10 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData) *v1
 			},
 			Parallelism: int32(trData.InstanceCount),
 			Separate:    true,
-			// Arguments: "--out cloud",
-			Cleanup: v1alpha1.Cleanup("post"),
+			Arguments:   "--out cloud --no-thresholds",
+			Cleanup:     v1alpha1.Cleanup("post"),
 
-			TestRunID: trData.TestRunId,
+			TestRunID: trData.TestRunID(),
 			Token:     plz.Spec.Token,
 		},
 	}

@@ -27,8 +27,16 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 	if k6.IsTrue(v1alpha1.CloudTestRun) && k6.IsTrue(v1alpha1.CloudTestRunCreated) {
 		log = log.WithValues("testRunId", k6.Status.TestRunID)
 
-		var tokenReady bool
-		token, tokenReady, err = loadToken(ctx, log, r.Client, k6.Spec.Token, &client.ListOptions{Namespace: k6.Namespace})
+		var (
+			tokenReady bool
+			sOpts      *client.ListOptions
+		)
+
+		if k6.IsTrue(v1alpha1.CloudPLZTestRun) {
+			sOpts = &client.ListOptions{Namespace: k6.Namespace}
+		}
+
+		token, tokenReady, err = loadToken(ctx, log, r.Client, k6.Spec.Token, sOpts)
 		if err != nil {
 			// An error here means a very likely mis-configuration of the token.
 			// Consider updating status to error to let a user know quicker?

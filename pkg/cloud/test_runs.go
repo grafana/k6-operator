@@ -2,8 +2,8 @@ package cloud
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -24,7 +24,7 @@ type TestRunPoller struct {
 	Client *cloudapi.Client
 }
 
-func NewTestRunPoller(host, token string, logger logr.Logger) *TestRunPoller {
+func NewTestRunPoller(host, token, plzName string, logger logr.Logger) *TestRunPoller {
 	logrusLogger := &logrus.Logger{
 		Out:       os.Stdout,
 		Formatter: new(logrus.TextFormatter),
@@ -51,7 +51,7 @@ func NewTestRunPoller(host, token string, logger logr.Logger) *TestRunPoller {
 	}
 
 	testRunPoller.Poller.OnInterval = func() {
-		list, err := testRunPoller.getTestRuns()
+		list, err := testRunPoller.getTestRuns(plzName)
 		if err != nil {
 			logger.Error(err, "Failed to get test runs from k6 Cloud.")
 		} else {
@@ -70,8 +70,8 @@ func (poller *TestRunPoller) GetTestRuns() chan string {
 	return poller.testRunCh
 }
 
-func (poller *TestRunPoller) getTestRuns() ([]string, error) {
-	url := poller.host + "/get-tests" // TODO
+func (poller *TestRunPoller) getTestRuns(plzName string) ([]string, error) {
+	url := fmt.Sprintf("%s/v4/plz-test-runs?plz_name=%s", poller.host, plzName)
 	req, err := poller.Client.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,12 @@ func (poller *TestRunPoller) getTestRuns() ([]string, error) {
 		return nil, err
 	}
 
-	return list.List, nil
+	simplifiedList := make([]string, len(list.List))
+	for i, item := range list.List {
+		simplifiedList[i] = fmt.Sprintf("%d", item.ID)
+	}
+
+	return simplifiedList, nil
 }
 
 func getTestRun(client *cloudapi.Client, url string) (*TestRunData, error) {
@@ -99,25 +104,19 @@ func getTestRun(client *cloudapi.Client, url string) (*TestRunData, error) {
 	return &trData, nil
 }
 
+// called by PLZ controller
 func GetTestRunData(client *cloudapi.Client, refID string) (*TestRunData, error) {
-	// url := fmt.Sprintf("https://%s/loadtests/v4/test_runs(%s)?select=id,run_status,k8s_load_zones_config", client.Host, refID)
-	// return getTestRun(client, url)
-	return &TestRunData{
-		TestRunId: refID,
-		LZConfig: LZConfig{
-			RunnerImage:   "grafana/k6:latest",
-			InstanceCount: 1,
-		},
-	}, nil
+	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status,k8s_load_zones_config", strings.TrimSuffix(client.BaseURL(), "/v1"), refID)
+	return getTestRun(client, url)
 }
 
+// called by K6 controller
 func GetTestRunState(client *cloudapi.Client, refID string, log logr.Logger) (TestRunStatus, error) {
-	// url := fmt.Sprintf("https://%s/loadtests/v4/test_runs(%s)?select=id,run_status", client.Host, refID)
-	// trData, err := getTestRun(client, url)
-	// return TestRunStatus(trData.RunStatus), err
-
-	if rand.Intn(2) > 0 {
-		return TestRunStatus(5), nil // mimic aborted
+	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status", ApiURL(client.BaseURL()), refID)
+	trData, err := getTestRun(client, url)
+	if err != nil {
+		return TestRunStatus(cloudapi.RunStatusRunning), err
 	}
-	return TestRunStatus(2), nil
+
+	return TestRunStatus(trData.RunStatus), nil
 }

@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -82,7 +83,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 
-		r.poller = cloud.NewTestRunPoller("http://mock-cloud.k6-operator-system.svc.cluster.local:8080", token, logger)
+		r.poller = cloud.NewTestRunPoller(cloud.ApiURL(k6CloudHost()), token, plz.Name, logger)
 	}
 
 	// fmt.Println("finalizers check", plz.DeletionTimestamp, plz.GetFinalizers())
@@ -179,4 +180,9 @@ func (r *PrivateLoadZoneReconciler) UpdateStatus(
 	}
 
 	return true, nil
+}
+
+func k6CloudHost() string {
+	host, _ := os.LookupEnv("K6_CLOUD_HOST")
+	return host
 }
