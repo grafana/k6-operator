@@ -21,6 +21,9 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/grafana/k6-operator/pkg/cloud"
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"go.k6.io/k6/cloudapi"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,7 +72,25 @@ func init() {
 func (plz *PrivateLoadZone) Register(ctx context.Context, logger logr.Logger, client *cloudapi.Client) {
 	plz.UpdateCondition(PLZRegistered, metav1.ConditionFalse)
 
-	// TODO add register call and error processing
+	cpu, err := resource.ParseQuantity(plz.Spec.Resources.Cpu().String())
+	if err != nil {
+		logger.Error(err, fmt.Sprintf("CPU resource of PLZ %s cannot be parsed", plz.Name))
+		return
+	}
+
+	data := cloud.PLZRegistrationData{
+		LoadZoneID: plz.Name,
+		Resources: cloud.PLZResources{
+			CPU:    cpu.AsApproximateFloat64(),
+			Memory: plz.Spec.Resources.Memory().String(),
+		},
+	}
+
+	if err := cloud.RegisterPLZ(client, data); err != nil {
+		logger.Error(err, fmt.Sprintf("Failed to register PLZ %s.", plz.Name))
+	}
+
+	logger.Info(fmt.Sprintf("Registered PLZ %s.", plz.Name))
 
 	plz.UpdateCondition(PLZRegistered, metav1.ConditionTrue)
 }
@@ -77,8 +98,11 @@ func (plz *PrivateLoadZone) Register(ctx context.Context, logger logr.Logger, cl
 // Deregister attempts to deregister PLZ with the k6 Cloud.
 // It is meant to be used as a finalizer.
 func (plz *PrivateLoadZone) Deregister(ctx context.Context, logger logr.Logger, client *cloudapi.Client) {
-	// TODO add deregister call and error processing
+	if err := cloud.DeRegisterPLZ(client, plz.Name); err != nil {
+		logger.Error(err, fmt.Sprintf("Failed to de-register PLZ %s.", plz.Name))
+	}
 
-	fmt.Println("calling deregister for", *plz)
+	logger.Info(fmt.Sprintf("De-registered PLZ %s.", plz.Name))
+
 	plz.UpdateCondition(PLZRegistered, metav1.ConditionFalse)
 }

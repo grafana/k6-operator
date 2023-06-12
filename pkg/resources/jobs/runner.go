@@ -117,6 +117,11 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 
 	// this is a cloud output run
 	if len(k6.Status.TestRunID) > 0 {
+		// temporary hack
+		if k6.IsTrue(v1alpha1.CloudPLZTestRun) {
+			k6.Status.AggregationVars = "50|3s|8s|6s|10000|10"
+		}
+
 		aggregationVars, err := cloud.DecodeAggregationConfig(k6.Status.AggregationVars)
 		if err != nil {
 			return nil, err

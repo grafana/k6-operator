@@ -41,7 +41,7 @@ func (r *PrivateLoadZoneReconciler) startFactory(plz *v1alpha1.PrivateLoadZone, 
 				continue
 			}
 
-			k6 = testrun.NewPLZTestRun(plz, trData)
+			k6 = testrun.NewPLZTestRun(plz, trData, k6CloudHost())
 
 			logger.Info(fmt.Sprintf("PLZ test run has been prepared with image `%s` and `%d` instances",
 				k6.Spec.Runner.Image, k6.Spec.Parallelism), "testRunId", testRunId)
