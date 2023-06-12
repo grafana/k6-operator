@@ -123,15 +123,16 @@ func loadToken(ctx context.Context, log logr.Logger, c client.Client, secretName
 		err error
 	)
 
-	if sOpts != nil {
+	if sOpts != nil && len(secretName) > 0 {
+		// PLZ mode case
 		secretOpts = sOpts
 	}
 
 	if len(secretName) > 0 {
-		log.Info("Loading token by name.", "name", secretName, "secretNamespace", sOpts.Namespace)
+		log.Info("Loading token by name.", "name", secretName, "secretNamespace", secretOpts.Namespace)
 
-		if err := c.Get(ctx, types.NamespacedName{Namespace: sOpts.Namespace, Name: secretName}, &secret); err != nil {
-			log.Error(err, "Failed to load k6 Cloud token")
+		if err := c.Get(ctx, types.NamespacedName{Namespace: secretOpts.Namespace, Name: secretName}, &secret); err != nil {
+			log.Error(err, "Failed to load k6 Cloud token", "name", secretName, "secretNamespace", secretOpts.Namespace)
 			// This may be a networking issue, etc. so just retry.
 			return
 		}
@@ -139,7 +140,7 @@ func loadToken(ctx context.Context, log logr.Logger, c client.Client, secretName
 		log.Info("Loading token by label pair.", "labelset", secretOpts.LabelSelector.String(), "secretNamespace", secretOpts.Namespace)
 
 		if err = c.List(ctx, &secrets, secretOpts); err != nil {
-			log.Error(err, "Failed to load k6 Cloud token")
+			log.Error(err, "Failed to load k6 Cloud token", "labelset", secretOpts.LabelSelector.String(), "secretNamespace", secretOpts.Namespace)
 			// This may be a networking issue, etc. so just retry.
 			return
 		}
@@ -147,7 +148,7 @@ func loadToken(ctx context.Context, log logr.Logger, c client.Client, secretName
 		if len(secrets.Items) < 1 {
 			// we should stop execution in case of this error
 			returnErr = fmt.Errorf("There are no secrets to hold k6 Cloud token")
-			log.Error(returnErr, returnErr.Error())
+			log.Error(returnErr, returnErr.Error(), "labelset", secretOpts.LabelSelector.String(), "secretNamespace", secretOpts.Namespace)
 			return
 		}
 
