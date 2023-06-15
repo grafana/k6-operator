@@ -159,6 +159,7 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 					Tolerations:                  k6.Spec.Runner.Tolerations,
 					SecurityContext:              &k6.Spec.Runner.SecurityContext,
 					ImagePullSecrets:             k6.Spec.Runner.ImagePullSecrets,
+					InitContainers:               getInitContainers(k6.Spec.Runner.InitContainers, k6.Spec.Runner, script),
 					Containers: []corev1.Container{{
 						Image:           image,
 						ImagePullPolicy: k6.Spec.Runner.ImagePullPolicy,
@@ -169,8 +170,8 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           ports,
 						EnvFrom:         k6.Spec.Runner.EnvFrom,
-						LivenessProbe: generateProbe(k6.Spec.Runner.LivenessProbe),
-						ReadinessProbe: generateProbe(k6.Spec.Runner.ReadinessProbe),
+						LivenessProbe:   generateProbe(k6.Spec.Runner.LivenessProbe),
+						ReadinessProbe:  generateProbe(k6.Spec.Runner.ReadinessProbe),
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),

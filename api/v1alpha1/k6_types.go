@@ -40,6 +40,17 @@ type Pod struct {
 	EnvFrom                      []corev1.EnvFromSource        `json:"envFrom,omitempty"`
 	ReadinessProbe               *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	LivenessProbe                *corev1.Probe                 `json:"livenessProbe,omitempty"`
+	InitContainers               []InitContainer               `json:"initContainers,omitempty"`
+}
+
+type InitContainer struct {
+	Image           string                 `json:"image,omitempty"`
+	ImagePullPolicy corev1.PullPolicy      `json:"imagePullPolicy,omitempty"`
+	Env             []corev1.EnvVar        `json:"env,omitempty"`
+	EnvFrom         []corev1.EnvFromSource `json:"envFrom,omitempty"`
+	Command         []string               `json:"command,omitempty"`
+	Args            []string               `json:"args,omitempty"`
+	WorkingDir      string                 `json:"workingDir,omitempty"`
 }
 
 type K6Scuttle struct {
