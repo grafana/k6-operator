@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-logr/logr"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -86,35 +87,52 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		r.poller = cloud.NewTestRunPoller(cloud.ApiURL(k6CloudHost()), token, plz.Name, logger)
 	}
 
-	// fmt.Println("finalizers check", plz.DeletionTimestamp, plz.GetFinalizers())
 	if plz.DeletionTimestamp.IsZero() && (plz.IsUnknown(v1alpha1.PLZRegistered) || plz.IsFalse(v1alpha1.PLZRegistered)) {
-		plz.Initialize()
+		if controllerutil.ContainsFinalizer(plz, plzFinalizer) {
+			// PLZ has been already registered so just update status accordingly
 
-		plz.Register(ctx, logger, r.poller.Client)
-		logger.Info(fmt.Sprintf("PLZ %s is registered.", plz.Name))
-
-		controllerutil.AddFinalizer(plz, plzFinalizer)
-		// fmt.Println("register call and adding finalizers", plz.GetFinalizers())
-
-		if updateHappened, err := r.UpdateStatus(ctx, plz, logger); err != nil {
-			return ctrl.Result{}, err
-		} else if updateHappened {
-			return ctrl.Result{}, nil
-		}
-	} else {
-		if !plz.DeletionTimestamp.IsZero() && controllerutil.ContainsFinalizer(plz, plzFinalizer) {
-			r.poller.Stop()
-
-			plz.Deregister(ctx, logger, r.poller.Client)
-			logger.Info(fmt.Sprintf("PLZ %s is deregistered.", plz.Name))
-
-			controllerutil.RemoveFinalizer(plz, plzFinalizer)
+			plz.Initialize()
+			plz.UpdateCondition(v1alpha1.PLZRegistered, metav1.ConditionTrue)
 
 			if _, err := r.UpdateStatus(ctx, plz, logger); err != nil {
 				return ctrl.Result{}, err
-			} else { //if updateHappened {
-				return ctrl.Result{}, nil
 			}
+		} else {
+			// This is the first reconcile: PLZ should be registered
+			if err := plz.Register(ctx, logger, r.poller.Client); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			logger.Info(fmt.Sprintf("PLZ %s is registered with k6 Cloud.", plz.Name))
+
+			controllerutil.AddFinalizer(plz, plzFinalizer)
+
+			if err := r.Update(ctx, plz); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			return ctrl.Result{Requeue: true}, nil
+		}
+	} else {
+		if !plz.DeletionTimestamp.IsZero() && controllerutil.ContainsFinalizer(plz, plzFinalizer) {
+			// PLZ has been deleted.
+
+			r.poller.Stop()
+
+			// Since resource is being deleted, there isn't much to do about
+			// deregistration error here.
+			_ = plz.Deregister(ctx, logger, r.poller.Client)
+
+			logger.Info(fmt.Sprintf("PLZ %s is deregistered with k6 Cloud.", plz.Name))
+
+			controllerutil.RemoveFinalizer(plz, plzFinalizer)
+
+			if err := r.Update(ctx, plz); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			// nothing left to do
+			return ctrl.Result{}, nil
 		}
 	}
 
