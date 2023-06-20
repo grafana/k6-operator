@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -16,26 +17,46 @@ import (
 
 // CreateJobs creates jobs that will spawn k6 pods for distributed test
 func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
-	var err error
-	var res ctrl.Result
+	var (
+		err   error
+		res   ctrl.Result
+		token string // only for cloud output tests
+	)
+
+	if k6.IsTrue(v1alpha1.CloudTestRun) && k6.IsTrue(v1alpha1.CloudTestRunCreated) {
+		log = log.WithValues("testRunId", k6.Status.TestRunID)
+
+		var tokenReady bool
+		token, tokenReady, err = loadToken(ctx, log, r)
+		if err != nil {
+			// An error here means a very likely mis-configuration of the token.
+			// Consider updating status to error to let a user know quicker?
+			log.Error(err, "A problem while getting token.")
+			return ctrl.Result{}, nil
+		}
+		if !tokenReady {
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		}
+	}
 
 	log.Info("Creating test jobs")
 
-	if res, err = createJobSpecs(ctx, log, k6, r); err != nil {
+	if res, err = createJobSpecs(ctx, log, k6, r, token); err != nil {
 		return res, err
 	}
 
 	log.Info("Changing stage of K6 status to created")
 	k6.Status.Stage = "created"
-	if err = r.Client.Status().Update(ctx, k6); err != nil {
-		log.Error(err, "Could not update status of custom resource")
-		return ctrl.Result{}, nil
-	}
 
+	if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
+		return ctrl.Result{}, err
+	} else if updateHappened {
+		return ctrl.Result{Requeue: true}, nil
+	}
 	return ctrl.Result{}, nil
 }
 
-func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
+func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler, token string) (ctrl.Result, error) {
 	found := &batchv1.Job{}
 	namespacedName := types.NamespacedName{
 		Name:      fmt.Sprintf("%s-1", k6.Name),
@@ -48,14 +69,14 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 	}
 
 	for i := 1; i <= int(k6.Spec.Parallelism); i++ {
-		if err := launchTest(ctx, k6, i, log, r); err != nil {
+		if err := launchTest(ctx, k6, i, log, r, token); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 	return ctrl.Result{}, nil
 }
 
-func launchTest(ctx context.Context, k6 *v1alpha1.K6, index int, log logr.Logger, r *K6Reconciler) error {
+func launchTest(ctx context.Context, k6 *v1alpha1.K6, index int, log logr.Logger, r *K6Reconciler, token string) error {
 	var job *batchv1.Job
 	var service *corev1.Service
 	var err error
@@ -63,7 +84,7 @@ func launchTest(ctx context.Context, k6 *v1alpha1.K6, index int, log logr.Logger
 	msg := fmt.Sprintf("Launching k6 test #%d", index)
 	log.Info(msg)
 
-	if job, err = jobs.NewRunnerJob(k6, index, testRunId, token); err != nil {
+	if job, err = jobs.NewRunnerJob(k6, index, token); err != nil {
 		log.Error(err, "Failed to generate k6 test job")
 		return err
 	}

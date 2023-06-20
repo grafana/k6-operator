@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"strconv"
 
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	"strings"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/segmentation"
 	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
@@ -15,7 +18,7 @@ import (
 )
 
 // NewRunnerJob creates a new k6 job from a CRD
-func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1.Job, error) {
+func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.Name, index)
 	postCommand := []string{"k6", "run"}
 
@@ -114,14 +117,20 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 	env := newIstioEnvVar(k6.Spec.Scuttle, istioEnabled)
 
 	// this is a cloud output run
-	if len(testRunId) > 0 {
+	if len(k6.Status.TestRunID) > 0 {
+		aggregationVars, err := cloud.DecodeAggregationConfig(k6.Status.AggregationVars)
+		if err != nil {
+			return nil, err
+		}
+		env = append(env, aggregationVars...)
 		env = append(env, corev1.EnvVar{
 			Name:  "K6_CLOUD_PUSH_REF_ID",
-			Value: testRunId,
+			Value: k6.Status.TestRunID,
 		}, corev1.EnvVar{
 			Name:  "K6_CLOUD_TOKEN",
 			Value: token,
-		})
+		},
+		)
 	}
 
 	env = append(env, k6.Spec.Runner.Env...)
@@ -161,6 +170,8 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, testRunId, token string) (*batchv1
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           ports,
 						EnvFrom:         k6.Spec.Runner.EnvFrom,
+						LivenessProbe:   generateProbe(k6.Spec.Runner.LivenessProbe),
+						ReadinessProbe:  generateProbe(k6.Spec.Runner.ReadinessProbe),
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -243,6 +254,21 @@ func newAntiAffinity() *corev1.Affinity {
 					},
 					TopologyKey: "kubernetes.io/hostname",
 				},
+			},
+		},
+	}
+}
+
+func generateProbe(configuredProbe *corev1.Probe) *corev1.Probe {
+	if configuredProbe != nil {
+		return configuredProbe
+	}
+	return &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/v1/status",
+				Port:   intstr.IntOrString{IntVal: 6565},
+				Scheme: "HTTP",
 			},
 		},
 	}

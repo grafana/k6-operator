@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.0.7
+VERSION ?= 0.0.9
 # Default bundle image tag
 BUNDLE_IMG ?= k6-controller-bundle:$(VERSION)
 # Options for 'bundle-build'
@@ -12,7 +12,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image to use for building Go
-GO_BUILDER_IMG ?= "golang:1.17"
+GO_BUILDER_IMG ?= "golang:1.18"
 # Image URL to use all building/pushing image targets
 IMG ?= ghcr.io/grafana/operator:latest
 # Default dockerfile to build
@@ -31,7 +31,7 @@ all: manager
 
 # Run tests
 ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
-ENVTEST_K8S_VERSION ?= 1.19.2
+ENVTEST_K8S_VERSION ?= 1.24.1
 GOOS=$(shell go env GOOS)
 GOARCH=$(shell go env GOARCH)
 KUBEBUILDER_ASSETS_ROOT=/tmp

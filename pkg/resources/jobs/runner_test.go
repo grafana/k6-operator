@@ -5,13 +5,38 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	deep "github.com/go-test/deep"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// these are default values hard-coded in k6
+var aggregationEnvVars = []corev1.EnvVar{
+	corev1.EnvVar{
+		Name:  "K6_CLOUD_AGGREGATION_MIN_SAMPLES",
+		Value: "50",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_AGGREGATION_PERIOD",
+		Value: "3s",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_AGGREGATION_WAIT_PERIOD",
+		Value: "8s",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_METRIC_PUSH_INTERVAL",
+		Value: "6s",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_MAX_METRIC_SAMPLES_PER_PACKAGE",
+		Value: "10000",
+	}, corev1.EnvVar{
+		Name:  "K6_CLOUD_MAX_METRIC_PUSH_CONCURRENCY",
+		Value: "10",
+	},
+}
 
 func TestNewScriptVolumeClaim(t *testing.T) {
 	expectedOutcome := &types.Script{
@@ -312,6 +337,24 @@ func TestNewRunnerJob(t *testing.T) {
 								},
 							},
 						},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -354,7 +397,7 @@ func TestNewRunnerJob(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -416,6 +459,24 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -449,7 +510,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -511,6 +572,24 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -544,7 +623,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -606,6 +685,24 @@ func TestNewRunnerJobArguments(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -640,7 +737,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -702,6 +799,24 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -737,7 +852,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -812,6 +927,24 @@ func TestNewRunnerJobIstio(t *testing.T) {
 						Resources:    corev1.ResourceRequirements{},
 						VolumeMounts: script.VolumeMount(),
 						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -847,7 +980,7 @@ func TestNewRunnerJobIstio(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -904,19 +1037,37 @@ func TestNewRunnerJobCloud(t *testing.T) {
 						ImagePullPolicy: "",
 						Name:            "k6",
 						Command:         []string{"k6", "run", "--quiet", "--out", "cloud", "/test/test.js", "--address=0.0.0.0:6565", "--paused", "--tag", "instance_id=1", "--tag", "job_name=test-1"},
-						Env: []corev1.EnvVar{
-							{
+						Env: append(aggregationEnvVars,
+							corev1.EnvVar{
 								Name:  "K6_CLOUD_PUSH_REF_ID",
 								Value: "testrunid",
 							},
-							{
+							corev1.EnvVar{
 								Name:  "K6_CLOUD_TOKEN",
 								Value: "token",
 							},
-						},
+						),
 						Resources:    corev1.ResourceRequirements{},
 						VolumeMounts: script.VolumeMount(),
 						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -945,9 +1096,15 @@ func TestNewRunnerJobCloud(t *testing.T) {
 				},
 			},
 		},
+		// Since this test only creates a runner's spec so
+		// testrunid has to be set hard-coded here.
+		Status: v1alpha1.K6Status{
+			TestRunID:       "testrunid",
+			AggregationVars: "50|3s|8s|6s|10000|10",
+		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "testrunid", "token")
+	job, err := NewRunnerJob(k6, 1, "token")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -1008,6 +1165,24 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
 						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -1040,7 +1215,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -1186,7 +1361,7 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "", "")
+	job, err := NewRunnerJob(k6, 1, "")
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}

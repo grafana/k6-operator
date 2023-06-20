@@ -38,6 +38,8 @@ type Pod struct {
 	ServiceAccountName           string                        `json:"serviceAccountName,omitempty"`
 	SecurityContext              corev1.PodSecurityContext     `json:"securityContext,omitempty"`
 	EnvFrom                      []corev1.EnvFromSource        `json:"envFrom,omitempty"`
+	ReadinessProbe               *corev1.Probe                 `json:"readinessProbe,omitempty"`
+	LivenessProbe                *corev1.Probe                 `json:"livenessProbe,omitempty"`
 	InitContainers               []InitContainer               `json:"initContainers,omitempty"`
 }
 
@@ -55,7 +57,7 @@ type K6Scuttle struct {
 	EnvoyAdminApi           string `json:"envoyAdminApi,omitempty"`
 	NeverKillIstio          bool   `json:"neverKillIstio,omitempty"`
 	NeverKillIstioOnFailure bool   `json:"neverKillIstioOnFailure,omitempty"`
-	ScuttleLogging          bool   `json:"scuttleLogging,omitempty"`
+	DisableLogging          bool   `json:"disableLogging,omitempty"`
 	StartWithoutEnvoy       bool   `json:"startWithoutEnvoy,omitempty"`
 	WaitForEnvoyTimeout     string `json:"waitForEnvoyTimeout,omitempty"`
 	IstioQuitApi            string `json:"istioQuitApi,omitempty"`
@@ -70,6 +72,7 @@ type K6Spec struct {
 	Separate    bool                   `json:"separate,omitempty"`
 	Arguments   string                 `json:"arguments,omitempty"`
 	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
+	Initializer *Pod                   `json:"initializer,omitempty"`
 	Starter     Pod                    `json:"starter,omitempty"`
 	Runner      Pod                    `json:"runner,omitempty"`
 	Quiet       string                 `json:"quiet,omitempty"`
@@ -109,7 +112,11 @@ type Stage string
 
 // K6Status defines the observed state of K6
 type K6Status struct {
-	Stage Stage `json:"stage,omitempty"`
+	Stage           Stage  `json:"stage,omitempty"`
+	TestRunID       string `json:"testRunId,omitempty"`
+	AggregationVars string `json:"aggregationVars,omitempty"`
+
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // K6 is the Schema for the k6s API
@@ -117,6 +124,7 @@ type K6Status struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Stage",type="string",JSONPath=".status.stage",description="Stage"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="TestRunID",type="string",JSONPath=".status.testRunId"
 type K6 struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

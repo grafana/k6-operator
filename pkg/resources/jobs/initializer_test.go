@@ -53,6 +53,7 @@ func TestNewInitializerJob(t *testing.T) {
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
+					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
 						{
 							Image:           "ghcr.io/grafana/operator:latest-runner",
@@ -60,7 +61,7 @@ func TestNewInitializerJob(t *testing.T) {
 							Name:            "k6",
 							Command: []string{
 								"sh", "-c",
-								"k6 archive /test/test.js -O ./test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements ./test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
+								"k6 archive /test/test.js -O /tmp/test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements /tmp/test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
 							},
 							Env:          []corev1.EnvVar{},
 							Resources:    corev1.ResourceRequirements{},
@@ -87,7 +88,7 @@ func TestNewInitializerJob(t *testing.T) {
 				},
 			},
 			Arguments: "--out cloud",
-			Runner: v1alpha1.Pod{
+			Initializer: &v1alpha1.Pod{
 				Metadata: v1alpha1.PodMetadata{
 					Labels: map[string]string{
 						"label1": "awesome",

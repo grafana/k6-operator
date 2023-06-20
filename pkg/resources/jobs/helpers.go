@@ -86,10 +86,10 @@ func newIstioEnvVar(istio v1alpha1.K6Scuttle, istioEnabled bool) []corev1.EnvVar
 			})
 		}
 
-		if istio.ScuttleLogging {
+		if istio.DisableLogging {
 			env = append(env, corev1.EnvVar{
 				Name:  "SCUTTLE_LOGGING",
-				Value: strconv.FormatBool(istio.ScuttleLogging),
+				Value: strconv.FormatBool(false),
 			})
 		}
 
