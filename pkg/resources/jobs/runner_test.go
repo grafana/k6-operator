@@ -125,7 +125,7 @@ func TestNewScriptNoScript(t *testing.T) {
 
 func TestNewVolumeSpecVolumeClaim(t *testing.T) {
 	expectedOutcome := []corev1.Volume{
-		{
+		corev1.Volume{
 			Name: "k6-test-volume",
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
@@ -148,7 +148,7 @@ func TestNewVolumeSpecVolumeClaim(t *testing.T) {
 
 func TestNewVolumeSpecConfigMap(t *testing.T) {
 	expectedOutcome := []corev1.Volume{
-		{
+		corev1.Volume{
 			Name: "k6-test-volume",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -1272,9 +1272,9 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 						{
 							Name:            "k6-init-0",
 							Image:           "busybox:1.28",
-							ImagePullPolicy: corev1.PullNever,
 							Command:         []string{"sh", "-c", "cat /test/test.js"},
 							VolumeMounts:    script.VolumeMount(),
+							ImagePullPolicy: corev1.PullNever,
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -1301,6 +1301,24 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: "env",
 									},
+								},
+							},
+						},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
 								},
 							},
 						},
