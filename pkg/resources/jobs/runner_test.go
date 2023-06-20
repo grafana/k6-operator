@@ -1095,10 +1095,11 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					InitContainers: []corev1.Container{
 						{
-							Name:         "k6-init-0",
-							Image:        "busybox:1.28",
-							Command:      []string{"sh", "-c", "cat /test/test.js"},
-							VolumeMounts: script.VolumeMount(),
+							Name:            "k6-init-0",
+							Image:           "busybox:1.28",
+							ImagePullPolicy: corev1.PullNever,
+							Command:         []string{"sh", "-c", "cat /test/test.js"},
+							VolumeMounts:    script.VolumeMount(),
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{

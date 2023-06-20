@@ -1034,10 +1034,6 @@ spec:
                           type: array
                         image:
                           type: string
-                        imagePullPolicy:
-                          description: PullPolicy describes a policy for if/when to
-                            pull a container image
-                          type: string
                         workingDir:
                           type: string
                       type: object
@@ -1255,8 +1251,6 @@ spec:
                           type: string
                       type: object
                     type: array
-                required:
-                - initContainers
                 type: object
               script:
                 description: K6Script describes where the script to execute the tests
@@ -2251,10 +2245,6 @@ spec:
                           type: array
                         image:
                           type: string
-                        imagePullPolicy:
-                          description: PullPolicy describes a policy for if/when to
-                            pull a container image
-                          type: string
                         workingDir:
                           type: string
                       type: object
@@ -2472,8 +2462,6 @@ spec:
                           type: string
                       type: object
                     type: array
-                required:
-                - initContainers
                 type: object
             required:
             - parallelism

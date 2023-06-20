@@ -102,7 +102,7 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 					Tolerations:                  k6.Spec.Runner.Tolerations,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					ImagePullSecrets:             k6.Spec.Runner.ImagePullSecrets,
-					InitContainers:               getInitContainers(k6.Spec.Runner.InitContainers, script),
+					InitContainers:               getInitContainers(&k6.Spec, script),
 					Containers: []corev1.Container{
 						{
 							Image:           image,

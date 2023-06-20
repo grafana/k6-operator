@@ -26,4 +26,3 @@ bin
 kubebuilder-tools-*
 
 .vscode
-.stignore

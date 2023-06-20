@@ -42,13 +42,12 @@ type Pod struct {
 }
 
 type InitContainer struct {
-	Image           string                 `json:"image,omitempty"`
-	ImagePullPolicy corev1.PullPolicy      `json:"imagePullPolicy,omitempty"`
-	Env             []corev1.EnvVar        `json:"env,omitempty"`
-	EnvFrom         []corev1.EnvFromSource `json:"envFrom,omitempty"`
-	Command         []string               `json:"command,omitempty"`
-	Args            []string               `json:"args,omitempty"`
-	WorkingDir      string                 `json:"workingDir,omitempty"`
+	Image      string                 `json:"image,omitempty"`
+	Env        []corev1.EnvVar        `json:"env,omitempty"`
+	EnvFrom    []corev1.EnvFromSource `json:"envFrom,omitempty"`
+	Command    []string               `json:"command,omitempty"`
+	Args       []string               `json:"args,omitempty"`
+	WorkingDir string                 `json:"workingDir,omitempty"`
 }
 
 type K6Scuttle struct {
