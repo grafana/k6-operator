@@ -8,6 +8,7 @@ rules:
     min-spaces-from-content: 1
   trailing-spaces:
     level: warning
+  indentation: disable # kustomize can rewrite yaml files and break this rule
   truthy:
     ignore: |
       /.github/workflows
