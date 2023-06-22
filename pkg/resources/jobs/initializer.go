@@ -77,8 +77,8 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 		// printing JSON as usual. Then parse temp file only for errors, ignoring
 		// any other log messages.
 		// Related: https://github.com/grafana/k6-docs/issues/877
-		"k6 archive %s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
-		scriptName, archiveName, argLine,
+		"mkdir -p $(dirname %s) && k6 archive %s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
+		archiveName, scriptName, archiveName, argLine,
 		archiveName))
 
 	env := append(newIstioEnvVar(k6.Spec.Scuttle, istioEnabled), k6.Spec.Initializer.Env...)
