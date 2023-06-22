@@ -1,0 +1,17 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: k6-sample-init-container
+spec:
+  parallelism: 1
+  script:
+    configMap:
+      name: "crocodile-stress-test"
+      file: "test.js"
+  runner:
+    initContainers:
+      - image: busybox:1.28
+        command: ['sh', '-c', 'cat /test/test.js']
+      - image: busybox:1.28
+        command: ['sh', '-c', 'echo "Waiting for task...."; sleep 10; echo "Task is done!!!"']
