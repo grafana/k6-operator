@@ -64,20 +64,23 @@ spec:
 │   │   ├── stress-test.js
 │   ├── test.js
 ```
-In the above example, `test.js` imports a function from `stress-test.js` and they would look like this:
-```js
-// stress-test.js
-import stress-test from "./requests/stress-test.js";
 
-export let options = {
-      vus: 50,
-      duration: '10s'
-    };
+In the above example, `test.js` imports a function from `stress-test.js` and they would look like this:
+
+```js
+// test.js
+import stressTest from "./requests/stress-test.js";
+
+export const options = {
+  vus: 50,
+  duration: '10s'
+};
 
 export default function () {
-      stress-test();
+  stressTest();
 }
 ```
+
 ```js
 // stress-test.js
 import { sleep, check } from 'k6';
@@ -91,7 +94,6 @@ export default () => {
   });
   sleep(1);
 };
-
 ```
 
 #### LocalFile
