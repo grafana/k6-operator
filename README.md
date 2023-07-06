@@ -45,7 +45,7 @@ There is a sample avaiable in `config/samples/k6_v1alpha1_k6_with_volumeClaim.ya
 
 If you have a PVC with the name `stress-test-volumeClaim` containing your script and any other supporting file(s), you can pass it to the test like this:
 
-```
+```yaml
 spec:
   parallelism: 2
   script:
@@ -215,12 +215,12 @@ k6 supports [output to its Cloud](https://k6.io/docs/results-visualization/cloud
 To use this option in k6-operator, set the argument in yaml:
 
 ```yaml
-...
+# ...
   script:
     configMap:
       name: "<configmap>"
   arguments: --out cloud
-...
+# ...
 ```
 
 Then uncomment cloud output section in `config/default/kustomization.yaml` and copy your token from the Cloud there:
@@ -242,7 +242,7 @@ This is sufficient to run k6 with the Cloud output and default values of `projec
 
 ```js
 export let options = {
-  ...
+  // ...
   ext: {
     loadimpact: {
       name: 'Configured k6-operator test',
@@ -282,8 +282,8 @@ kubectl create configmap scenarios-test --from-file=archive.tar
 
 In case of using an archive it must be additionally specified in your yaml for K6 deployment:
 
-```bash
-...
+```yaml
+# ...
 spec:
   parallelism: 1
   script:
