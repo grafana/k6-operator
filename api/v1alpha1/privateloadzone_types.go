@@ -22,7 +22,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/pkg/cloud"
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	"go.k6.io/k6/cloudapi"
 	corev1 "k8s.io/api/core/v1"
@@ -73,16 +72,10 @@ func init() {
 func (plz *PrivateLoadZone) Register(ctx context.Context, logger logr.Logger, client *cloudapi.Client) error {
 	plz.UpdateCondition(PLZRegistered, metav1.ConditionFalse)
 
-	cpu, err := resource.ParseQuantity(plz.Spec.Resources.Cpu().String())
-	if err != nil {
-		logger.Error(err, fmt.Sprintf("CPU resource of PLZ %s cannot be parsed", plz.Name))
-		return err
-	}
-
 	data := cloud.PLZRegistrationData{
 		LoadZoneID: plz.Name,
 		Resources: cloud.PLZResources{
-			CPU:    cpu.AsApproximateFloat64(),
+			CPU:    plz.Spec.Resources.Cpu().String(),
 			Memory: plz.Spec.Resources.Memory().String(),
 		},
 	}

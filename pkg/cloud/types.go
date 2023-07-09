@@ -63,6 +63,6 @@ type PLZRegistrationData struct {
 }
 
 type PLZResources struct {
-	CPU    float64 `json:"cpu"`
-	Memory string  `json:"memory"`
+	CPU    string `json:"cpu"`
+	Memory string `json:"memory"`
 }
