@@ -231,11 +231,19 @@ func (r *K6Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 		// If this is a cloud test run in any mode, try to finalize it.
 		if k6.IsTrue(v1alpha1.CloudTestRun) &&
 			k6.IsFalse(v1alpha1.CloudTestRunFinalized) {
+
+			// If TestRunRunning has just been updated, wait for a bit before
+			// acting, to avoid race condition between different reconcile loops.
+			t, _ := k6.LastUpdate(v1alpha1.TestRunRunning)
+			if time.Now().Sub(t) < 5*time.Second {
+				return ctrl.Result{RequeueAfter: time.Second * 2}, nil
+			}
+
 			if err = cloud.FinishTestRun(r.k6CloudClient, k6.Status.TestRunID); err != nil {
 				log.Error(err, "Failed to finalize the test run with cloud output")
 				return ctrl.Result{}, nil
 			} else {
-				log.Info(fmt.Sprintf("Cloud test run %s was finalized succesfully", k6.Status.TestRunID))
+				log.Info(fmt.Sprintf("Cloud test run %s was finalized successfully", k6.Status.TestRunID))
 
 				k6.UpdateCondition(v1alpha1.CloudTestRunFinalized, metav1.ConditionTrue)
 			}
@@ -358,9 +366,7 @@ func (r *K6Reconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.K6, log log
 
 	isAborted := status.Aborted()
 
-	// if isAborted {
 	log.Info(fmt.Sprintf("Received test run status %v", status))
-	// }
 
 	return isAborted
 }
