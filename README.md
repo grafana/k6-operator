@@ -8,11 +8,17 @@ Read also the [complete tutorial](https://k6.io/blog/running-distributed-tests-o
 
 ## Setup
 
+### Prerequisites
+In order to install the operator, the following additional tooling must be installed:
+- [go](https://go.dev/doc/install)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- [kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/)
+
 ### Deploying the operator
 Install the operator by running the command below:
 
 ```bash
-$ make deploy
+make deploy
 ```
 
 ### Installing the CRD
@@ -21,7 +27,7 @@ The k6 operator includes one custom resource called `K6`. This will be automatic
 deployment, but in case you want to do it yourself, you may run the command below:
 
 ```bash
-$ make install
+make install
 ```
 
 ## Usage
@@ -34,7 +40,7 @@ The operator utilises `ConfigMap`s and `LocalFile` to serve test scripts to the 
 
 #### ConfigMap
 ```bash
-$ kubectl create configmap my-test --from-file /path/to/my/test.js
+kubectl create configmap my-test --from-file /path/to/my/test.js
 ```
 
 ***Note: there is a character limit of 1048576 bytes to a single configmap. If you need to have a larger test file, you'll need to use a volumeClaim or a LocalFile instead***
@@ -155,7 +161,7 @@ spec:
 The test configuration is applied using
 
 ```bash
-$ kubectl apply -f /path/to/your/k6-resource.yml
+kubectl apply -f /path/to/your/k6-resource.yml
 ```
 
 #### Parallelism
@@ -255,7 +261,7 @@ export let options = {
 ### Cleaning up between test runs
 After completing a test run, you need to clean up the test jobs created. This is done by running the following command:
 ```bash
-$ kubectl delete -f /path/to/your/k6-resource.yml
+kubectl delete -f /path/to/your/k6-resource.yml
 ```
 
 ### Multi-file tests
@@ -295,25 +301,32 @@ spec:
 In other words, `file` option must be the correct entrypoint for `k6 run`.
 
 ### Using extensions
-By default, the operator will use `grafana/k6:latest` as the container image for the test jobs. If you want to use
-extensions built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image`
-property on the `K6` kubernetes resource. For example, the following Dockerfile can be used to create a container
-image using `https://github.com/grafana/xk6-output-prometheus-remote` as an extension:
+By default, the operator will use `grafana/k6:latest` as the container image for the test jobs. 
+If you want to use [extensions](https://k6.io/docs/extensions/get-started/explore/) built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image` property on the `K6` kubernetes resource. 
 
+For example, create a `Dockerfile` with the following content:
 
 ```Dockerfile
 # Build the k6 binary with the extension
-FROM golang:1.18.1 as builder
+FROM golang:1.20 as builder
 
 RUN go install go.k6.io/xk6/cmd/xk6@latest
-RUN xk6 build --output /k6 --with github.com/grafana/xk6-output-prometheus-remote@latest
+# For our example, we'll add support for output of test metrics to InfluxDB v2.
+# Feel free to add other extensions using the '--with ...'.
+RUN xk6 build \
+    --with github.com/grafana/xk6-output-influxdb@latest \
+    --output /k6
 
 # Use the operator's base image and override the k6 binary
 FROM grafana/k6:latest
 COPY --from=builder /k6 /usr/bin/k6
 ```
-
-If we build and tag this image as `k6-prometheus:local`, then we can use it as follows:
+Build the image based on this `Dockerfile` by executing: 
+```bash
+docker build -t k6-extended:local .
+```
+Once the build is completed, push the resulting `k6-extended:local` image to an image repository accessible to your Kubernetes cluster.
+We can now use it as follows:
 
 ```yaml
 # k6-resource-with-extensions.yml
@@ -328,31 +341,14 @@ spec:
     configMap:
       name: crocodile-stress-test
       file: test.js
-  arguments: -o xk6-prometheus-rw
   runner:
-    image: k6-prometheus:local
+    image: k6-extended:local
     env:
-      - name: K6_PROMETHEUS_RW_SERVER_URL
-        value: http://prometheus.somewhere:9090/api/v1/write
+      - name: K6_OUT
+        value: xk6-influxdb=http://influxdb.somewhere:8086/demo
 ```
 
-Note that we are replacing the test job image (`k6-prometheus:latest`), passing required arguments to `k6`
-(`-o xk6-prometheus-rw`), and also setting the environment variable to the runner (`K6_PROMETHEUS_RW_SERVER_URL`).
-
-<!-- If using the Prometheus Operator, you'll also need to create a pod monitor:
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: k6-monitor
-spec:
-  selector:
-    matchLabels:
-      app: k6
-  podMetricsEndpoints:
-  - port: metrics
-``` -->
+Note that we are overriding the default image with `k6-extended:latest`, providing the test runner with environment variables used by our included extensions.
 
 ### Scheduling Tests
 
@@ -450,7 +446,6 @@ spec:
               configMap:
                 name: <test-name>-config
 ```
-
 
 ## Uninstallation
 Running the command below will delete all resources created by the operator.
