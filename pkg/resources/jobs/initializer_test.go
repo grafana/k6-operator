@@ -56,7 +56,7 @@ func TestNewInitializerJob(t *testing.T) {
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
 						{
-							Image:           "ghcr.io/grafana/operator:latest-runner",
+							Image:           "ghcr.io/grafana/k6-operator:latest-runner",
 							ImagePullPolicy: "",
 							Name:            "k6",
 							Command: []string{

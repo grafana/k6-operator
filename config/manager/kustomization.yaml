@@ -1,9 +1,8 @@
----
 resources:
 - manager.yaml
 images:
 - name: controller
-  newName: ghcr.io/grafana/operator
+  newName: ghcr.io/grafana/k6-operator
   newTag: latest
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

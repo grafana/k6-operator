@@ -25,7 +25,7 @@ jobs:
           build-args: |
             GO_BUILDER_IMG=golang:1.18
           tags: |
-            ghcr.io/grafana/operator:${{ github.sha }}
+            ghcr.io/grafana/k6-operator:${{ github.sha }}
   kind:
     runs-on: ubuntu-latest
     steps:
@@ -44,7 +44,7 @@ jobs:
         run: |
           kubectl cluster-info
           kubectl apply -f rendered.yaml
-          kubectl -n k6-operator-system set image deployment/k6-operator-controller-manager manager=ghcr.io/grafana/operator:${{ github.sha }}
+          kubectl -n k6-operator-system set image deployment/k6-operator-controller-manager manager=ghcr.io/grafana/k6-operator:${{ github.sha }}
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
           kubectl apply -f e2e/test.yaml
           sleep 30
