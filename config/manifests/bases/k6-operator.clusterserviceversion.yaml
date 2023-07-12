@@ -5,7 +5,7 @@ metadata:
   annotations:
     alm-examples: "[]"
     capabilities: Basic Install
-    containerImage: ghcr.io/grafana/operator
+    containerImage: ghcr.io/grafana/k6-operator
     repository: https://github.com/grafana/k6-operator
     support: k6
   name: k6-operator.v0.0.0
