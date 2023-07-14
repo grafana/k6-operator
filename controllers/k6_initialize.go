@@ -132,6 +132,13 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 			return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 		}
 
+		if len(inspectOutput.External.Loadimpact.Name) < 1 {
+			// script has already been parsed for initializer job definition,
+			// so this is safe
+			script, _ := k6.Spec.Script.Parse()
+			inspectOutput.External.Loadimpact.Name = script.Filename
+		}
+
 		if testRunData, err := cloud.CreateTestRun(inspectOutput, k6.Spec.Parallelism, host, token, log); err != nil {
 			log.Error(err, "Failed to create a new cloud test run.")
 			return res, nil
