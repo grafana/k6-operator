@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.k6.io/k6/cloudapi"
 	"go.k6.io/k6/lib/consts"
-	"gopkg.in/guregu/null.v3"
+	null "gopkg.in/guregu/null.v3"
 )
 
 var client *cloudapi.Client
@@ -25,10 +25,6 @@ type TestRun struct {
 }
 
 func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*cloudapi.CreateTestRunResponse, error) {
-	if len(opts.External.Loadimpact.Name) < 1 {
-		opts.External.Loadimpact.Name = "k6-operator-test"
-	}
-
 	cloudConfig := cloudapi.NewConfig()
 
 	if opts.External.Loadimpact.ProjectID > 0 {
@@ -57,7 +53,7 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 		client = cloudapi.NewClient(logger, token, host, consts.Version, time.Duration(time.Minute))
 	}
 
-	return createTestRun(client, host, &TestRun{
+	tr := TestRun{
 		Name:              opts.External.Loadimpact.Name,
 		ProjectID:         cloudConfig.ProjectID.Int64,
 		VUsMax:            int64(opts.MaxVUs),
@@ -65,7 +61,8 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 		Duration:          int64(opts.TotalDuration.TimeDuration().Seconds()),
 		ProcessThresholds: true,
 		Instances:         instances,
-	})
+	}
+	return createTestRun(client, host, &tr)
 }
 
 // We cannot use cloudapi.TestRun struct and cloudapi.Client.CreateTestRun call because they're not aware of
