@@ -82,6 +82,12 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 
 	env := append(newIstioEnvVar(k6.Spec.Scuttle, istioEnabled), k6.Spec.Initializer.Env...)
 
+	volumes := script.Volume()
+	volumes = append(volumes, k6.Spec.Initializer.Volumes...)
+
+	volumeMounts := script.VolumeMount()
+	volumeMounts = append(volumeMounts, k6.Spec.Initializer.VolumeMounts...)
+
 	var zero32 int32
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -115,11 +121,11 @@ func NewInitializerJob(k6 *v1alpha1.K6, argLine string) (*batchv1.Job, error) {
 							Command:         command,
 							Env:             env,
 							Resources:       k6.Spec.Initializer.Resources,
-							VolumeMounts:    script.VolumeMount(),
+							VolumeMounts:    volumeMounts,
 							Ports:           ports,
 						},
 					},
-					Volumes: script.Volume(),
+					Volumes: volumes,
 				},
 			},
 		},

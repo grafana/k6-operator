@@ -2,8 +2,9 @@ package jobs
 
 import (
 	"fmt"
-	"github.com/grafana/k6-operator/pkg/types"
 	"strconv"
+
+	"github.com/grafana/k6-operator/pkg/types"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -121,15 +122,23 @@ func getInitContainers(k6Spec *v1alpha1.K6Spec, script *types.Script) []corev1.C
 	var initContainers []corev1.Container
 
 	for i, k6InitContainer := range k6Spec.Runner.InitContainers {
+
+		name := fmt.Sprintf("k6-init-%d", i)
+		if k6InitContainer.Name != "" {
+			name = k6InitContainer.Name
+		}
+
+		volumeMounts := append(script.VolumeMount(), k6InitContainer.VolumeMounts...)
+
 		initContainer := corev1.Container{
-			Name:            fmt.Sprintf("k6-init-%d", i),
+			Name:            name,
 			Image:           k6InitContainer.Image,
 			Command:         k6InitContainer.Command,
 			Args:            k6InitContainer.Args,
 			WorkingDir:      k6InitContainer.WorkingDir,
 			EnvFrom:         k6InitContainer.EnvFrom,
 			Env:             k6InitContainer.Env,
-			VolumeMounts:    script.VolumeMount(),
+			VolumeMounts:    volumeMounts,
 			ImagePullPolicy: k6Spec.Runner.ImagePullPolicy,
 		}
 		initContainers = append(initContainers, initContainer)

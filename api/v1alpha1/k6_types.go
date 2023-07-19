@@ -45,15 +45,19 @@ type Pod struct {
 	ReadinessProbe               *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	LivenessProbe                *corev1.Probe                 `json:"livenessProbe,omitempty"`
 	InitContainers               []InitContainer               `json:"initContainers,omitempty"`
+	Volumes                      []corev1.Volume               `json:"volumes,omitempty"`
+	VolumeMounts                 []corev1.VolumeMount          `json:"volumeMounts,omitempty"`
 }
 
 type InitContainer struct {
-	Image      string                 `json:"image,omitempty"`
-	Env        []corev1.EnvVar        `json:"env,omitempty"`
-	EnvFrom    []corev1.EnvFromSource `json:"envFrom,omitempty"`
-	Command    []string               `json:"command,omitempty"`
-	Args       []string               `json:"args,omitempty"`
-	WorkingDir string                 `json:"workingDir,omitempty"`
+	Name         string                 `json:"name,omitempty"`
+	Image        string                 `json:"image,omitempty"`
+	Env          []corev1.EnvVar        `json:"env,omitempty"`
+	EnvFrom      []corev1.EnvFromSource `json:"envFrom,omitempty"`
+	Command      []string               `json:"command,omitempty"`
+	Args         []string               `json:"args,omitempty"`
+	WorkingDir   string                 `json:"workingDir,omitempty"`
+	VolumeMounts []corev1.VolumeMount   `json:"volumeMounts,omitempty"`
 }
 
 type K6Scuttle struct {

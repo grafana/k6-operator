@@ -53,11 +53,11 @@ test-setup-ci:
 
 e2e: deploy
 	kubectl create configmap crocodile-stress-test --from-file e2e/test.js
-	kubectl apply -f e2e/test.yaml
+	kubectl apply -f e2e/test.yaml -f e2e/test-initcontainer.yaml
 
 e2e-cleanup:
 	kubectl delete configmap crocodile-stress-test
-	kubectl delete -f e2e/test.yaml
+	kubectl delete -f e2e/test.yaml -f e2e/test-initcontainer.yaml
 
 # Build manager binary
 manager: generate fmt vet
