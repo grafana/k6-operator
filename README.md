@@ -9,22 +9,38 @@ Read also the [complete tutorial](https://k6.io/blog/running-distributed-tests-o
 ## Setup
 
 ### Prerequisites
-In order to install the operator, the following additional tooling must be installed:
-- [go](https://go.dev/doc/install)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
-- [kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/)
+
+The minimal prerequisite for k6-operator is a Kubernetes cluster and access to it with [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
 
 ### Deploying the operator
-Install the operator by running the command below:
+
+#### Bundle deployment
+
+The easiest way to install the operator is with bundle:
+```bash
+curl https://raw.githubusercontent.com/grafana/k6-operator/main/bundle.yaml | kubectl apply -f -
+```
+
+Bundle includes default manifests for k6-operator, including `k6-operator-system` namespace and k6-operator Deployment with latest tagged Docker image. Customizations can be made on top of this manifest as needs be, e.g. with `kustomize`.
+
+#### Makefile deployment
+
+In order to install the operator with Makefile, the following additional tooling must be installed:
+- [go](https://go.dev/doc/install)
+- [kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/)
+
+A more manual, low-level way to install the operator is by running the command below:
 
 ```bash
 make deploy
 ```
 
+This method may be more useful for development of k6-operator, depending on specifics of the setup.
+
 ### Installing the CRD
 
-The k6 operator includes one custom resource called `K6`. This will be automatically installed when you do a
-deployment, but in case you want to do it yourself, you may run the command below:
+The k6 operator includes custom resources called `K6` and `PrivateLoadZone`. These will be automatically installed when you do a
+deployment or install a bundle, but in case you want to do it yourself, you may run the command below:
 
 ```bash
 make install
@@ -229,7 +245,14 @@ To use this option in k6-operator, set the argument in yaml:
 # ...
 ```
 
-Then uncomment cloud output section in `config/default/kustomization.yaml` and copy your token from the Cloud there:
+Then, if you installed operator with bundle, create a secret with the following command:
+
+```bash
+kubectl -n k6-operator-system create secret generic my-cloud-token \
+    --from-literal=token=<COPY YOUR TOKEN HERE> && kubectl -n k6-operator-system label secret my-cloud-token "k6cloud=token"
+```
+
+Alternatively, if you installed operator with Makefile, you can uncomment cloud output section in `config/default/kustomization.yaml` and copy your token from the Cloud there:
 
 ```yaml
 # Uncomment this section if you need cloud output and copy-paste your token
@@ -244,7 +267,9 @@ secretGenerator:
       k6cloud: token
 ```
 
-This is sufficient to run k6 with the Cloud output and default values of `projectID` and `name` (`"k6-operator-test"`). For non-default values, extended script options can be used like this:
+And re-run `make deploy`.
+
+This is sufficient to run k6 with the Cloud output and default values of `projectID` and `name`. For non-default values, extended script options can be used like this:
 
 ```js
 export let options = {
@@ -448,9 +473,15 @@ spec:
 ```
 
 ## Uninstallation
-Running the command below will delete all resources created by the operator.
+
+You can remove the all resources created by the operator with bundle:
 ```bash
-$ make delete
+curl https://raw.githubusercontent.com/grafana/k6-operator/main/bundle.yaml | kubectl delete -f -
+```
+
+Or with `make` command:
+```bash
+make delete
 ```
 
 ## Developing Locally
