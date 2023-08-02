@@ -1,0 +1,27 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: k6-sample-init-container-volume
+spec:
+  parallelism: 1
+  script:
+    localFile: /test/test.js
+  runner:
+    volumes:
+      - emptyDir: {}
+        name: k6-provision-location
+    volumeMounts:
+      - mountPath: /test
+        name: k6-provision-location
+    initContainers:
+      - image: busybox:1.28
+        command:
+          [
+            "sh",
+            "-c",
+            "cd /test; wget https://raw.githubusercontent.com/grafana/k6-operator/main/e2e/test.js;",
+          ]
+        volumeMounts:
+          - mountPath: /test
+            name: k6-provision-location

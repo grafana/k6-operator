@@ -134,6 +134,12 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 
 	env = append(env, k6.Spec.Runner.Env...)
 
+	volumes := script.Volume()
+	volumes = append(volumes, k6.Spec.Runner.Volumes...)
+
+	volumeMounts := script.VolumeMount()
+	volumeMounts = append(volumeMounts, k6.Spec.Runner.VolumeMounts...)
+
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -166,14 +172,14 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 						Command:         command,
 						Env:             env,
 						Resources:       k6.Spec.Runner.Resources,
-						VolumeMounts:    script.VolumeMount(),
+						VolumeMounts:    volumeMounts,
 						Ports:           ports,
 						EnvFrom:         k6.Spec.Runner.EnvFrom,
 						LivenessProbe:   generateProbe(k6.Spec.Runner.LivenessProbe),
 						ReadinessProbe:  generateProbe(k6.Spec.Runner.ReadinessProbe),
 					}},
 					TerminationGracePeriodSeconds: &zero,
-					Volumes:                       script.Volume(),
+					Volumes:                       volumes,
 				},
 			},
 		},
