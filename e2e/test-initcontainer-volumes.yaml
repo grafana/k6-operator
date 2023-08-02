@@ -20,7 +20,7 @@ spec:
           [
             "sh",
             "-c",
-            "cd /test; wget https://github.com/grafana/k6-operator/blob/main/e2e/test.js;",
+            "cd /test; wget https://raw.githubusercontent.com/grafana/k6-operator/main/e2e/test.js;",
           ]
         volumeMounts:
           - mountPath: /test
