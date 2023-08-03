@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# Use this script when you want to upgrade k6 but not k6-operator.
+#
+# First change the k6 version in Dockerfile.runner, then run this script.
+
+set -ev
+
+make docker-build-runner
+
+aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 830473435438.dkr.ecr.us-west-2.amazonaws.com
+
+make docker-push-runner
