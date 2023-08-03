@@ -110,37 +110,13 @@ docker-build: test
 	docker build . -t ${IMG} -f ${DOCKERFILE} --build-arg GO_BUILDER_IMG=${GO_BUILDER_IMG}
 
 docker-build-controller:
-	docker build --pull . -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION} -f Dockerfile.controller
+	docker build --pull . --build-arg GO_BUILDER_IMG=${GO_BUILDER_IMG} -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION} -f Dockerfile.controller
 
 docker-build-runner:
 	docker build --pull . -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:${IMAGE_VERSION} -f Dockerfile.runner
 
 docker-build-starter:
 	docker build --pull . -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:${IMAGE_VERSION} -f Dockerfile.starter
-
-docker-push-controller:
-	docker tag 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION} 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:main
-	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION}
-	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:main
-
-docker-push-runner:
-	docker tag 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:${IMAGE_VERSION} 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:main
-	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:${IMAGE_VERSION}
-	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:main
-
-docker-push-starter:
-	docker tag 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:${IMAGE_VERSION} 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:main
-	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:${IMAGE_VERSION}
-	docker push 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:main
-
-docker-build-controller:
-	docker build . -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION} -f Dockerfile.controller
-
-docker-build-runner:
-	docker build . -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-runner:${IMAGE_VERSION} -f Dockerfile.runner
-
-docker-build-starter:
-	docker build . -t 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-starter:${IMAGE_VERSION} -f Dockerfile.starter
 
 docker-push-controller:
 	docker tag 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION} 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:main
