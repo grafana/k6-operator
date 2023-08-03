@@ -14,7 +14,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # Image to use for building Go
 GO_BUILDER_IMG ?= "golang:1.18"
 # Image version to use for all building/pushing image targets
-IMAGE_VERSION ?= v0.0.7-202208081725
+IMAGE_VERSION ?= v0.0.10rc3-202308031215
 
 # Image URL to use all building/pushing image targets
 IMG ?= 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller:${IMAGE_VERSION}

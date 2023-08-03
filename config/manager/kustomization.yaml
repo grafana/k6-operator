@@ -3,6 +3,6 @@ resources:
 images:
 - name: controller
   newName: 830473435438.dkr.ecr.us-west-2.amazonaws.com/k6-operator-controller
-  newTag: v0.0.7-202208081725
+  newTag: v0.0.10rc3-202308031215
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
