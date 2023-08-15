@@ -23,7 +23,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ include "k6-operator.fullname" . }}-proxy-rolebinding
   labels:
-    {{- include "k6-operator.customLabels" . }}
+    {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
   annotations:
     {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 roleRef:
