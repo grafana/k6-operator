@@ -10,6 +10,26 @@ metadata:
     {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -34,17 +54,14 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ""
+  - coordination.k8s.io
   resources:
-  - services
+  - leases
   verbs:
   - create
-  - delete
   - get
   - list
-  - patch
   - update
-  - watch
 - apiGroups:
   - ""
   resources:
@@ -69,20 +86,40 @@ rules:
 - apiGroups:
   - k6.io
   resources:
-  - k6s/status
   - k6s/finalizers
+  - k6s/status
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - ""
+  - k6.io
   resources:
-  - secrets
+  - privateloadzones
   verbs:
-  - list
+  - create
+  - delete
   - get
+  - list
+  - patch
+  - update
   - watch
+- apiGroups:
+  - k6.io
+  resources:
+  - privateloadzones/finalizers
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - k6.io
+  resources:
+  - privateloadzones/status
+  verbs:
+  - get
+  - patch
+  - update
 {{- if .Values.authProxy.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
