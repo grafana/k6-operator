@@ -17,6 +17,10 @@ Since around v0.0.7 k6-operator has been releasing a default runner image togeth
 | v0.0.9rc2           | [runner-v0.0.9rc2](ghcr.io/grafana/operator:runner-v0.0.9rc2) | v0.42.0 |
 | v0.0.9rc3           | [runner-v0.0.9rc3](ghcr.io/grafana/operator:runner-v0.0.9rc3) | v0.42.0 |
 | v0.0.9              | [runner-v0.0.9](ghcr.io/grafana/operator:runner-v0.0.9)       | v0.44.0 |
+| v0.0.10rc1          | [runner-v0.0.10rc1](ghcr.io/grafana/operator:runner-v0.0.10rc1)     | v0.44.1 |
+| v0.0.10rc2          | [runner-v0.0.10rc2](ghcr.io/grafana/operator:runner-v0.0.10rc2)     | v0.45.0 |
+| v0.0.10rc3          | [runner-v0.0.10rc3](ghcr.io/grafana/k6-operator:runner-v0.0.10rc3)  | v0.45.0 |
+| v0.0.10             | [runner-v0.0.10](ghcr.io/grafana/k6-operator:runner-v0.0.10)        | v0.46.0 |
 
 ### What was used before?
 
