@@ -3615,7 +3615,8 @@ spec:
                           bit is set (new files created in the volume will be owned
                           by FSGroup) 3. The permission bits are OR'd with rw-rw----
                           \n If unset, the Kubelet will not modify the ownership and
-                          permissions of any volume."
+                          permissions of any volume. Note that this field cannot be
+                          set when spec.os.name is windows."
                         format: int64
                         type: integer
                       fsGroupChangePolicy:
@@ -3625,14 +3626,16 @@ spec:
                           support fsGroup based ownership(and permissions). It will
                           have no effect on ephemeral volume types such as: secret,
                           configmaps and emptydir. Valid values are "OnRootMismatch"
-                          and "Always". If not specified defaults to "Always".'
+                          and "Always". If not specified, "Always" is used. Note that
+                          this field cannot be set when spec.os.name is windows.'
                         type: string
                       runAsGroup:
                         description: The GID to run the entrypoint of the container
                           process. Uses runtime default if unset. May also be set
                           in SecurityContext.  If set in both SecurityContext and
                           PodSecurityContext, the value specified in SecurityContext
-                          takes precedence for that container.
+                          takes precedence for that container. Note that this field
+                          cannot be set when spec.os.name is windows.
                         format: int64
                         type: integer
                       runAsNonRoot:
@@ -3650,6 +3653,8 @@ spec:
                           unspecified. May also be set in SecurityContext.  If set
                           in both SecurityContext and PodSecurityContext, the value
                           specified in SecurityContext takes precedence for that container.
+                          Note that this field cannot be set when spec.os.name is
+                          windows.
                         format: int64
                         type: integer
                       seLinuxOptions:
@@ -3658,7 +3663,8 @@ spec:
                           SELinux context for each container.  May also be set in
                           SecurityContext.  If set in both SecurityContext and PodSecurityContext,
                           the value specified in SecurityContext takes precedence
-                          for that container.
+                          for that container. Note that this field cannot be set when
+                          spec.os.name is windows.
                         properties:
                           level:
                             description: Level is SELinux level label that applies
@@ -3677,10 +3683,38 @@ spec:
                               to the container.
                             type: string
                         type: object
+                      seccompProfile:
+                        description: The seccomp options to use by the containers
+                          in this pod. Note that this field cannot be set when spec.os.name
+                          is windows.
+                        properties:
+                          localhostProfile:
+                            description: localhostProfile indicates a profile defined
+                              in a file on the node should be used. The profile must
+                              be preconfigured on the node to work. Must be a descending
+                              path, relative to the kubelet's configured seccomp profile
+                              location. Must only be set if type is "Localhost".
+                            type: string
+                          type:
+                            description: "type indicates which kind of seccomp profile
+                              will be applied. Valid options are: \n Localhost - a
+                              profile defined in a file on the node should be used.
+                              RuntimeDefault - the container runtime default profile
+                              should be used. Unconfined - no profile should be applied."
+                            type: string
+                        required:
+                        - type
+                        type: object
                       supplementalGroups:
                         description: A list of groups applied to the first process
                           run in each container, in addition to the container's primary
-                          GID.  If unspecified, no groups will be added to any container.
+                          GID, the fsGroup (if specified), and group memberships defined
+                          in the container image for the uid of the container process.
+                          If unspecified, no additional groups are added to any container.
+                          Note that group memberships defined in the container image
+                          for the uid of the container process are still effective,
+                          even if they are not included in this list. Note that this
+                          field cannot be set when spec.os.name is windows.
                         items:
                           format: int64
                           type: integer
@@ -3688,7 +3722,8 @@ spec:
                       sysctls:
                         description: Sysctls hold a list of namespaced sysctls used
                           for the pod. Pods with unsupported sysctls (by the container
-                          runtime) might fail to launch.
+                          runtime) might fail to launch. Note that this field cannot
+                          be set when spec.os.name is windows.
                         items:
                           description: Sysctl defines a kernel parameter to be set
                           properties:
@@ -3708,7 +3743,8 @@ spec:
                           containers. If unspecified, the options within a container's
                           SecurityContext will be used. If set in both SecurityContext
                           and PodSecurityContext, the value specified in SecurityContext
-                          takes precedence.
+                          takes precedence. Note that this field cannot be set when
+                          spec.os.name is linux.
                         properties:
                           gmsaCredentialSpec:
                             description: GMSACredentialSpec is where the GMSA admission
@@ -3720,6 +3756,18 @@ spec:
                             description: GMSACredentialSpecName is the name of the
                               GMSA credential spec to use.
                             type: string
+                          hostProcess:
+                            description: HostProcess determines if a container should
+                              be run as a 'Host Process' container. This field is
+                              alpha-level and will only be honored by components that
+                              enable the WindowsHostProcessContainers feature flag.
+                              Setting this field without the feature flag will result
+                              in errors when validating the Pod. All of a Pod's containers
+                              must have the same effective HostProcess value (it is
+                              not allowed to have a mix of HostProcess containers
+                              and non-HostProcess containers).  In addition, if HostProcess
+                              is true then HostNetwork must also be set to true.
+                            type: boolean
                           runAsUserName:
                             description: The UserName in Windows to run the entrypoint
                               of the container process. Defaults to the user specified
@@ -5569,7 +5617,8 @@ spec:
                           bit is set (new files created in the volume will be owned
                           by FSGroup) 3. The permission bits are OR'd with rw-rw----
                           \n If unset, the Kubelet will not modify the ownership and
-                          permissions of any volume."
+                          permissions of any volume. Note that this field cannot be
+                          set when spec.os.name is windows."
                         format: int64
                         type: integer
                       fsGroupChangePolicy:
@@ -5579,14 +5628,16 @@ spec:
                           support fsGroup based ownership(and permissions). It will
                           have no effect on ephemeral volume types such as: secret,
                           configmaps and emptydir. Valid values are "OnRootMismatch"
-                          and "Always". If not specified defaults to "Always".'
+                          and "Always". If not specified, "Always" is used. Note that
+                          this field cannot be set when spec.os.name is windows.'
                         type: string
                       runAsGroup:
                         description: The GID to run the entrypoint of the container
                           process. Uses runtime default if unset. May also be set
                           in SecurityContext.  If set in both SecurityContext and
                           PodSecurityContext, the value specified in SecurityContext
-                          takes precedence for that container.
+                          takes precedence for that container. Note that this field
+                          cannot be set when spec.os.name is windows.
                         format: int64
                         type: integer
                       runAsNonRoot:
@@ -5604,6 +5655,8 @@ spec:
                           unspecified. May also be set in SecurityContext.  If set
                           in both SecurityContext and PodSecurityContext, the value
                           specified in SecurityContext takes precedence for that container.
+                          Note that this field cannot be set when spec.os.name is
+                          windows.
                         format: int64
                         type: integer
                       seLinuxOptions:
@@ -5612,7 +5665,8 @@ spec:
                           SELinux context for each container.  May also be set in
                           SecurityContext.  If set in both SecurityContext and PodSecurityContext,
                           the value specified in SecurityContext takes precedence
-                          for that container.
+                          for that container. Note that this field cannot be set when
+                          spec.os.name is windows.
                         properties:
                           level:
                             description: Level is SELinux level label that applies
@@ -5631,10 +5685,38 @@ spec:
                               to the container.
                             type: string
                         type: object
+                      seccompProfile:
+                        description: The seccomp options to use by the containers
+                          in this pod. Note that this field cannot be set when spec.os.name
+                          is windows.
+                        properties:
+                          localhostProfile:
+                            description: localhostProfile indicates a profile defined
+                              in a file on the node should be used. The profile must
+                              be preconfigured on the node to work. Must be a descending
+                              path, relative to the kubelet's configured seccomp profile
+                              location. Must only be set if type is "Localhost".
+                            type: string
+                          type:
+                            description: "type indicates which kind of seccomp profile
+                              will be applied. Valid options are: \n Localhost - a
+                              profile defined in a file on the node should be used.
+                              RuntimeDefault - the container runtime default profile
+                              should be used. Unconfined - no profile should be applied."
+                            type: string
+                        required:
+                        - type
+                        type: object
                       supplementalGroups:
                         description: A list of groups applied to the first process
                           run in each container, in addition to the container's primary
-                          GID.  If unspecified, no groups will be added to any container.
+                          GID, the fsGroup (if specified), and group memberships defined
+                          in the container image for the uid of the container process.
+                          If unspecified, no additional groups are added to any container.
+                          Note that group memberships defined in the container image
+                          for the uid of the container process are still effective,
+                          even if they are not included in this list. Note that this
+                          field cannot be set when spec.os.name is windows.
                         items:
                           format: int64
                           type: integer
@@ -5642,7 +5724,8 @@ spec:
                       sysctls:
                         description: Sysctls hold a list of namespaced sysctls used
                           for the pod. Pods with unsupported sysctls (by the container
-                          runtime) might fail to launch.
+                          runtime) might fail to launch. Note that this field cannot
+                          be set when spec.os.name is windows.
                         items:
                           description: Sysctl defines a kernel parameter to be set
                           properties:
@@ -5653,8 +5736,8 @@ spec:
                               description: Value of a property to set
                               type: string
                           required:
-                            - name
-                            - value
+                          - name
+                          - value
                           type: object
                         type: array
                       windowsOptions:
@@ -5662,7 +5745,8 @@ spec:
                           containers. If unspecified, the options within a container's
                           SecurityContext will be used. If set in both SecurityContext
                           and PodSecurityContext, the value specified in SecurityContext
-                          takes precedence.
+                          takes precedence. Note that this field cannot be set when
+                          spec.os.name is linux.
                         properties:
                           gmsaCredentialSpec:
                             description: GMSACredentialSpec is where the GMSA admission
@@ -5674,6 +5758,18 @@ spec:
                             description: GMSACredentialSpecName is the name of the
                               GMSA credential spec to use.
                             type: string
+                          hostProcess:
+                            description: HostProcess determines if a container should
+                              be run as a 'Host Process' container. This field is
+                              alpha-level and will only be honored by components that
+                              enable the WindowsHostProcessContainers feature flag.
+                              Setting this field without the feature flag will result
+                              in errors when validating the Pod. All of a Pod's containers
+                              must have the same effective HostProcess value (it is
+                              not allowed to have a mix of HostProcess containers
+                              and non-HostProcess containers).  In addition, if HostProcess
+                              is true then HostNetwork must also be set to true.
+                            type: boolean
                           runAsUserName:
                             description: The UserName in Windows to run the entrypoint
                               of the container process. Defaults to the user specified
