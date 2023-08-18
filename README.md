@@ -326,8 +326,8 @@ spec:
 In other words, `file` option must be the correct entrypoint for `k6 run`.
 
 ### Using extensions
-By default, the operator will use `grafana/k6:latest` as the container image for the test jobs. 
-If you want to use [extensions](https://k6.io/docs/extensions/get-started/explore/) built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image` property on the `K6` kubernetes resource. 
+By default, the operator will use `grafana/k6:latest` as the container image for the test jobs.
+If you want to use [extensions](https://k6.io/docs/extensions/get-started/explore/) built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image` property on the `K6` kubernetes resource.
 
 For example, create a `Dockerfile` with the following content:
 
@@ -346,7 +346,7 @@ RUN xk6 build \
 FROM grafana/k6:latest
 COPY --from=builder /k6 /usr/bin/k6
 ```
-Build the image based on this `Dockerfile` by executing: 
+Build the image based on this `Dockerfile` by executing:
 ```bash
 docker build -t k6-extended:local .
 ```
@@ -503,7 +503,7 @@ make delete
 #### Run e2e Tests
 
 - [install kind and create a k8s cluster](https://kind.sigs.k8s.io/docs/user/quick-start/) (or create your own dev cluster)
-- `make e2e`
+- `make e2e` for kustomize and `make e2e-helm` for helm
 - validate tests have been run
 - `make e2e-cleanup`
 
