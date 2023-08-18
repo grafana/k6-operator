@@ -202,6 +202,10 @@ bundle-build:
 # This section is only about the HELM deployment of the operator
 # ===============================================================
 
+e2e-helm: deploy-helm
+	kubectl create configmap crocodile-stress-test --from-file e2e/test.js
+	kubectl apply -f e2e/test.yaml
+
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy-helm: manifests helm
 	$(HELM) upgrade --install --wait k6-operator ./charts -f ./charts/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
