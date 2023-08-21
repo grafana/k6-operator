@@ -36,7 +36,7 @@ type Pod struct {
 	ImagePullSecrets             []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	ImagePullPolicy              corev1.PullPolicy             `json:"imagePullPolicy,omitempty"`
 	Metadata                     PodMetadata                   `json:"metadata,omitempty"`
-	NodeSelector                 map[string]string             `json:"nodeselector,omitempty"`
+	NodeSelector                 map[string]string             `json:"nodeSelector,omitempty"`
 	Tolerations                  []corev1.Toleration           `json:"tolerations,omitempty"`
 	Resources                    corev1.ResourceRequirements   `json:"resources,omitempty"`
 	ServiceAccountName           string                        `json:"serviceAccountName,omitempty"`
