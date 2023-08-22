@@ -710,7 +710,7 @@ spec:
                           type: string
                         type: object
                     type: object
-                  nodeselector:
+                  nodeSelector:
                     additionalProperties:
                       type: string
                     type: object
@@ -2305,7 +2305,7 @@ spec:
                           type: string
                         type: object
                     type: object
-                  nodeselector:
+                  nodeSelector:
                     additionalProperties:
                       type: string
                     type: object
@@ -3922,7 +3922,7 @@ spec:
                           type: string
                         type: object
                     type: object
-                  nodeselector:
+                  nodeSelector:
                     additionalProperties:
                       type: string
                     type: object
@@ -5279,7 +5279,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v0.0.10
+        image: ghcr.io/grafana/k6-operator:controller-v0.0.11rc1
         name: manager
         resources:
           limits:
