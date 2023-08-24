@@ -5,7 +5,7 @@ metadata:
   name: {{ include "k6-operator.fullname" . }}-controller-manager-metrics-service
   namespace: {{- include "k6-operator.namespace" . }}
   labels:
-    control-plane: {{ .Values.controlPlane }}
+    control-plane: "controller-manager"
     app.kubernetes.io/component: controller
     {{- include "k6-operator.labels" . | nindent 4 }}
     {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
@@ -17,5 +17,5 @@ spec:
     port: 8443
     targetPort: https
   selector:
-    control-plane: {{ .Values.controlPlane }}
+    control-plane: "controller-manager"
 {{- end }}
