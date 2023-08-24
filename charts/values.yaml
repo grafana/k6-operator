@@ -28,7 +28,7 @@ authProxy:
     # authProxy.image.name -- rbac-proxy image name
     name: gcr.io/kubebuilder/kube-rbac-proxy
     # authProxy.image.tag -- rbac-proxy image tag
-    tag: v0.5.0
+    tag: v0.8.0
     # authProxy.image.pullPolicy -- pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent)
     pullPolicy: IfNotPresent
   # authProxy.resources -- rbac-proxy resource limitation/request
@@ -38,8 +38,6 @@ authProxy:
   # authProxy.readinessProbe -- Readiness probe in Probe format
   readinessProbe: {}
 
-controlPlane: "controller-manager"
-
 manager:
   serviceAccount:
     # manager.serviceAccount.name -- kubernetes service account for the k6 manager
@@ -48,9 +46,9 @@ manager:
     create: true
   image:
     # manager.image.name -- controller-manager image name
-    name: ghcr.io/grafana/operator
+    name: ghcr.io/grafana/k6-operator
     # manager.image.tag -- controller-manager image tag
-    tag: latest
+    tag: controller-v0.0.10
     # manager.image.pullPolicy -- pull policy for the image possible values Always, Never, IfNotPresent (default: Always)
     pullPolicy: Always
   # manager.livenessProbe -- Liveness probe in Probe format

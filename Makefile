@@ -134,7 +134,7 @@ ifeq (, $(shell which kustomize))
 	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.5 ;\
 	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
 	}
 KUSTOMIZE=$(GOBIN)/kustomize
@@ -145,49 +145,6 @@ endif
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
 bundle: manifests
-	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG_NAME}:${IMG_TAG}
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate ./bundle
-
-# Build the bundle image.
-.PHONY: bundle-build
-bundle-build:
-	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
-
-# ===============================================================
-# This section is only about the HELM deployment of the operator
-# ===============================================================
-
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy-helm: manifests helm
-	$(HELM) upgrade --install --wait k6-operator ./charts -f ./charts/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
-
-helm-template: manifests helm
-	$(HELM) template k6-operator ./charts -f ./charts/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
-
-# Delete operator from a cluster
-delete-helm: manifests helm
-	$(HELM) uninstall k6-operator
-
-helm:
-ifeq (, $(shell which helm))
-	@{ \
-	set -e ;\
-	HELM_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$HELM_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
-	}
-HELM=$(GOBIN)/helm
-else
-HELM=$(shell which helm)
-endif
-
-# Generate bundle manifests and metadata, then validate generated files.
-.PHONY: bundle
-bundle-helm: manifests
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG_NAME}:${IMG_TAG}
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
@@ -223,18 +180,12 @@ ifeq (, $(shell which helm))
 	set -e ;\
 	HELM_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$HELM_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.5 ;\
-	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+	curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+	chmod 700 get_helm.sh ;\
+	./get_helm.sh ;\
+	rm -rf $$HELM_GEN_TMP_DIR ;\
 	}
-HELM=$(GOBIN)/helm
+HELM=$(shell which helm)
 else
 HELM=$(shell which helm)
 endif
-
-# Generate bundle manifests and metadata, then validate generated files.
-.PHONY: bundle
-bundle-helm: manifests
-	operator-sdk generate kustomize manifests -q
-	$(HELM) template k6-operator ./helm/charts -f ./helm/charts/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG) | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate ./bundle

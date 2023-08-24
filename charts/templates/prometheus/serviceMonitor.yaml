@@ -4,7 +4,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    control-plane: {{ .Values.controlPlane }}
+    control-plane: "controller-manager"
     namespace: {{- include "k6-operator.namespace" . }}
     app.kubernetes.io/component: monitoring
     {{- include "k6-operator.labels" . | nindent 4 }}
@@ -19,5 +19,5 @@ spec:
       port: https
   selector:
     matchLabels:
-      control-plane: {{ .Values.controlPlane }}
+      control-plane: "controller-manager"
 {{- end }}

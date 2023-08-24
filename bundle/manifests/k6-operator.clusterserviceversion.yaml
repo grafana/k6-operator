@@ -1,0 +1,296 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "k6.io/v1alpha1",
+          "kind": "K6",
+          "metadata": {
+            "name": "k6-sample"
+          },
+          "spec": {
+            "parallelism": 4,
+            "script": {
+              "configMap": {
+                "file": "test.js",
+                "name": "k6-test"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "k6.io/v1alpha1",
+          "kind": "PrivateLoadZone",
+          "metadata": {
+            "name": "privateloadzone-sample",
+            "namespace": "foo"
+          },
+          "spec": {
+            "resources": {
+              "cpu": "200m",
+              "memory": "512Mi"
+            },
+            "token": "grafana-k6-token"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    containerImage: ghcr.io/grafana/k6-operator
+    createdAt: "2023-08-24T23:16:16Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.31.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: https://github.com/grafana/k6-operator
+    support: k6
+  name: k6-operator.v0.0.10
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: K6 is the Schema for the k6s API
+      displayName: K6
+      kind: K6
+      name: k6s.k6.io
+      version: v1alpha1
+    - description: PrivateLoadZone is the Schema for the privateloadzones API
+      displayName: Private Load Zone
+      kind: PrivateLoadZone
+      name: privateloadzones.k6.io
+      version: v1alpha1
+  description: k6-operator
+  displayName: k6-operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - create
+          - get
+          - list
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - pods/log
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - k6.io
+          resources:
+          - k6s
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - k6.io
+          resources:
+          - k6s/finalizers
+          - k6s/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - k6.io
+          resources:
+          - privateloadzones
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - k6.io
+          resources:
+          - privateloadzones/finalizers
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - k6.io
+          resources:
+          - privateloadzones/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: k6-operator-controller
+      deployments:
+      - label:
+          control-plane: controller-manager
+        name: k6-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                command:
+                - /manager
+                image: ghcr.io/grafana/k6-operator:latest
+                name: manager
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 100Mi
+                  requests:
+                    cpu: 100m
+                    memory: 50Mi
+              serviceAccountName: k6-operator-controller
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - create
+          - get
+          - list
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: k6-operator-controller
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - testing
+  - performance
+  - reliability
+  - k6
+  links:
+  - name: k6 Operator
+    url: https://github.com/grafana/k6-operator
+  maintainers:
+  - email: olha@k6.io
+    name: Olha Yevtushenko
+  - email: daniel@k6.io
+    name: Daniel González Lopes
+  maturity: alpha
+  provider:
+    name: k6.io
+    url: https://k6.io/
+  version: 0.0.10

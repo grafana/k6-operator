@@ -1,13 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  labels:
-    app.kubernetes.io/component: controller
-    {{- include "k6-operator.labels" . | nindent 4 }}
-    {{- include "k6-operator.customLabels" . | nindent 4 }}
   annotations:
-    {{- include "k6-operator.customAnnotations" . | nindent 4 }}
     controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
   name: k6s.k6.io
 spec:
   group: k6.io
@@ -706,7 +702,7 @@ spec:
                           type: string
                         type: object
                     type: object
-                  nodeSelector:
+                  nodeselector:
                     additionalProperties:
                       type: string
                     type: object
@@ -2301,7 +2297,7 @@ spec:
                           type: string
                         type: object
                     type: object
-                  nodeSelector:
+                  nodeselector:
                     additionalProperties:
                       type: string
                     type: object
@@ -3918,7 +3914,7 @@ spec:
                           type: string
                         type: object
                     type: object
-                  nodeSelector:
+                  nodeselector:
                     additionalProperties:
                       type: string
                     type: object

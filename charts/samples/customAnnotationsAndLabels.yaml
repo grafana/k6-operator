@@ -45,7 +45,7 @@ authProxy:
 
 manager:
   image:
-    name: ghcr.io/grafana/operator
+    name: ghcr.io/grafana/k6-operator
     tag: latest
     pullPolicy: IfNotPresent
   env:

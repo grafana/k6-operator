@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ include "k6-operator.fullname" . }}-system
+  name: {{- include "k6-operator.namespace" . }}
   labels:
     app.kubernetes.io/name: {{ include "k6-operator.fullname" . }}
-    control-plane: {{ .Values.controlPlane }}
+    control-plane: "controller-manager"
     {{- with .Values.customLabels }}
       {{- toYaml . | nindent 4 }}
     {{- end }}
