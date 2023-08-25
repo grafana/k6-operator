@@ -2,6 +2,7 @@
 extends: default
 ignore: |
   /config/crd/bases/*
+  /charts/*
 rules:
   line-length: disable
   comments:

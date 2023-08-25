@@ -28,7 +28,7 @@ jobs:
             GO_BUILDER_IMG=golang:1.18
           tags: |
             ghcr.io/grafana/k6-operator:${{ github.sha }}
-  
+
   kind-kustomize:
     needs: ["docker"]
     runs-on: ubuntu-latest
