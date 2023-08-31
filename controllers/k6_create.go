@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -41,6 +42,12 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 			// An error here means a very likely mis-configuration of the token.
 			// Consider updating status to error to let a user know quicker?
 			log.Error(err, "A problem while getting token.")
+
+			if k6.IsTrue(v1alpha1.CloudTestRun) {
+				events := cloud.ErrorEvent(cloud.K6OperatorStartError).WithDetail(fmt.Sprintf("Failed to retrieve token: %v", err))
+				cloud.SendTestRunEvents(r.k6CloudClient, k6.Spec.TestRunID, log, events)
+			}
+
 			return ctrl.Result{}, nil
 		}
 		if !tokenReady {

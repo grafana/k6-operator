@@ -67,3 +67,94 @@ type PLZResources struct {
 	CPU    string `json:"cpu"`
 	Memory string `json:"memory"`
 }
+
+type Events []*EventPayload
+
+type EventPayload struct {
+	EventType `json:"event_type"`
+	Event     `json:"event"`
+}
+
+type Event struct {
+	ErrorCode `json:"error_code,omitempty"`
+	Detail    string `json:"error_detail,omitempty"`
+	Origin    `json:"origin,omitempty"`
+	Reason    string `json:"reason,omitempty"`
+}
+
+type EventType string
+
+var (
+	abortEvent = EventType("TestRunAbortEvent")
+	errorEvent = EventType("TestRunErrorEvent")
+)
+
+type ErrorCode uint
+
+var (
+	SetupError      = ErrorCode(8030)
+	TeardownError   = ErrorCode(8031)
+	OOMError        = ErrorCode(8032)
+	PanicError      = ErrorCode(8033)
+	UnknownError    = ErrorCode(8034)
+	ScriptException = ErrorCode(8035)
+
+	K6OperatorStartError  = ErrorCode(8050)
+	K6OperatorAbortError  = ErrorCode(8051)
+	K6OperatorRunnerError = ErrorCode(8052)
+)
+
+type Origin string
+
+var (
+	OriginUser = Origin("user")
+	OriginK6   = Origin("k6")
+)
+
+// WithDetail sets detail only for the 1st event
+func (e *Events) WithDetail(s string) *Events {
+	if len(*e) == 0 {
+		return e
+	}
+
+	if (*e)[0].EventType == abortEvent {
+		(*e)[0].Reason = s
+	} else {
+		(*e)[0].Detail = s
+	}
+	return e
+}
+
+// WithAbort adds abortEvent if errorEvent already exists
+// func (e *Events) WithAbort(s string) *Events {
+// 	if len(*e) == 0 {
+// 		return
+// 	}
+
+// 	if (*e)[0].EventType == errorEvent {
+// 		ae := EventPayload{
+// 			EventType: abort,
+// 		}
+// 	}
+//	return e
+// }
+
+func AbortEvent(o Origin) *Events {
+	e := Events([]*EventPayload{{
+		EventType: abortEvent,
+		Event: Event{
+			Origin: o,
+		},
+	}})
+	return &e
+}
+
+func ErrorEvent(ec ErrorCode) *Events {
+	e := Events([]*EventPayload{{
+		EventType: errorEvent,
+		Event: Event{
+			ErrorCode: ec,
+		},
+	}})
+	return &e
+}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/pkg/cloud"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,15 +36,27 @@ func FinishJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 	}
 
 	// TODO: We should distinguish between Suceeded/Failed/Unknown
-	var finished int32
+	var (
+		finished, failed int32
+	)
 	for _, job := range jl.Items {
 		if job.Status.Active != 0 {
 			continue
 		}
 		finished++
+
+		if job.Status.Failed > 0 {
+			failed++
+		}
 	}
 
-	log.Info(fmt.Sprintf("%d/%d jobs complete", finished, k6.GetSpec().Parallelism))
+	msg := fmt.Sprintf("%d/%d jobs complete, %d failed", finished, k6.GetSpec().Parallelism, failed)
+	log.Info(msg)
+
+	if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && failed > 0 {
+		events := cloud.ErrorEvent(cloud.K6OperatorRunnerError).WithDetail(msg)
+		cloud.SendTestRunEvents(r.k6CloudClient, k6.GetSpec().TestRunID, log, events)
+	}
 
 	if finished < k6.GetSpec().Parallelism {
 		return

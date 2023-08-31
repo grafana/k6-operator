@@ -120,3 +120,24 @@ func GetTestRunState(client *cloudapi.Client, refID string, log logr.Logger) (Te
 
 	return TestRunStatus(trData.RunStatus), nil
 }
+
+// called by K6 controller
+// If there's an error, it'll be logged.
+func SendTestRunEvents(client *cloudapi.Client, refID string, log logr.Logger, events *Events) {
+	if len(*events) == 0 {
+		return
+	}
+
+	url := fmt.Sprintf("%s/orchestrator/v1/testruns/%s/events", client.BaseURL(), refID)
+
+	req, err := client.NewRequest("POST", url, events)
+	if err != nil {
+		log.Error(err, fmt.Sprintf("Failed to create events HTTP request %+v", events))
+		return
+	}
+
+	// status code is checked in Do
+	if err = client.Do(req, nil); err != nil {
+		log.Error(err, fmt.Sprintf("Failed to send events %+v", events))
+	}
+}
