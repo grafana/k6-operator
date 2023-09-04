@@ -131,6 +131,8 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				return ctrl.Result{}, err
 			}
 
+			r.poller = nil
+
 			// nothing left to do
 			return ctrl.Result{}, nil
 		}
