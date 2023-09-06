@@ -55,7 +55,7 @@ manager:
   livenessProbe: {}
   # manager.readinessProbe -- Readiness probe in Probe format
   readinessProbe: {}
-  # manager.env -- Environment variable to be passet to the controller
+  # manager.env -- Environment variables to be applied on the controller
   env: {}
   # manager.resources -- controller-manager Resources definition
   resources:

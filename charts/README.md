@@ -35,7 +35,7 @@ Kubernetes: `>=1.16.0-0`
 | controlPlane | string | `"controller-manager"` |  |
 | customAnnotations | object | `{}` | Custom Annotations to be applied on all resources |
 | customLabels | object | `{}` | Custom Label to be applied on all resources |
-| manager.env | object | `{}` | Environment variable to be passet to the controller |
+| manager.env | object | `{}` | EEnvironment variables to be applied on the controller |
 | manager.image.name | string | `"ghcr.io/grafana/operator"` | controller-manager image name |
 | manager.image.pullPolicy | string | `"Always"` | pull policy for the image possible values Always, Never, IfNotPresent (default: Always) |
 | manager.image.tag | string | `"latest"` | controller-manager image tag |
