@@ -12,41 +12,41 @@ import (
 )
 
 // NewStarterJob builds a template used for creating a starter job
-func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
+func NewStarterJob(k6 v1alpha1.TestRunI, hostname []string) *batchv1.Job {
 
 	starterAnnotations := make(map[string]string)
-	if k6.Spec.Starter.Metadata.Annotations != nil {
-		starterAnnotations = k6.Spec.Starter.Metadata.Annotations
+	if k6.GetSpec().Starter.Metadata.Annotations != nil {
+		starterAnnotations = k6.GetSpec().Starter.Metadata.Annotations
 	}
 
 	starterImage := "ghcr.io/grafana/k6-operator:latest-starter"
-	if k6.Spec.Starter.Image != "" {
-		starterImage = k6.Spec.Starter.Image
+	if k6.GetSpec().Starter.Image != "" {
+		starterImage = k6.GetSpec().Starter.Image
 	}
 
-	starterLabels := newLabels(k6.Name)
-	if k6.Spec.Starter.Metadata.Labels != nil {
-		for k, v := range k6.Spec.Starter.Metadata.Labels { // Order not specified
+	starterLabels := newLabels(k6.NamespacedName().Name)
+	if k6.GetSpec().Starter.Metadata.Labels != nil {
+		for k, v := range k6.GetSpec().Starter.Metadata.Labels { // Order not specified
 			if _, ok := starterLabels[k]; !ok {
 				starterLabels[k] = v
 			}
 		}
 	}
 	serviceAccountName := "default"
-	if k6.Spec.Starter.ServiceAccountName != "" {
-		serviceAccountName = k6.Spec.Starter.ServiceAccountName
+	if k6.GetSpec().Starter.ServiceAccountName != "" {
+		serviceAccountName = k6.GetSpec().Starter.ServiceAccountName
 	}
 	automountServiceAccountToken := true
-	if k6.Spec.Starter.AutomountServiceAccountToken != "" {
-		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Starter.AutomountServiceAccountToken)
+	if k6.GetSpec().Starter.AutomountServiceAccountToken != "" {
+		automountServiceAccountToken, _ = strconv.ParseBool(k6.GetSpec().Starter.AutomountServiceAccountToken)
 	}
 
-	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, []string{"sh", "-c"})
-	env := newIstioEnvVar(k6.Spec.Scuttle, istioEnabled)
+	command, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, []string{"sh", "-c"})
+	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-starter", k6.Name),
-			Namespace:   k6.Namespace,
+			Name:        fmt.Sprintf("%s-starter", k6.NamespacedName().Name),
+			Namespace:   k6.NamespacedName().Namespace,
 			Labels:      starterLabels,
 			Annotations: starterAnnotations,
 		},
@@ -59,14 +59,14 @@ func NewStarterJob(k6 *v1alpha1.K6, hostname []string) *batchv1.Job {
 				Spec: corev1.PodSpec{
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					ServiceAccountName:           serviceAccountName,
-					Affinity:                     k6.Spec.Starter.Affinity,
-					NodeSelector:                 k6.Spec.Starter.NodeSelector,
-					Tolerations:                  k6.Spec.Starter.Tolerations,
+					Affinity:                     k6.GetSpec().Starter.Affinity,
+					NodeSelector:                 k6.GetSpec().Starter.NodeSelector,
+					Tolerations:                  k6.GetSpec().Starter.Tolerations,
 					RestartPolicy:                corev1.RestartPolicyNever,
-					SecurityContext:              &k6.Spec.Starter.SecurityContext,
-					ImagePullSecrets:             k6.Spec.Starter.ImagePullSecrets,
+					SecurityContext:              &k6.GetSpec().Starter.SecurityContext,
+					ImagePullSecrets:             k6.GetSpec().Starter.ImagePullSecrets,
 					Containers: []corev1.Container{
-						containers.NewStartContainer(hostname, starterImage, k6.Spec.Starter.ImagePullPolicy, command, env),
+						containers.NewStartContainer(hostname, starterImage, k6.GetSpec().Starter.ImagePullPolicy, command, env),
 					},
 				},
 			},

@@ -54,9 +54,9 @@ const (
 )
 
 // Initialize defines only conditions common to all test runs.
-func (k6 *K6) Initialize() {
+func Initialize(k6 TestRunI) {
 	t := metav1.Now()
-	k6.Status.Conditions = []metav1.Condition{
+	k6.GetStatus().Conditions = []metav1.Condition{
 		metav1.Condition{
 			Type:               CloudTestRun,
 			Status:             metav1.ConditionUnknown,
@@ -74,39 +74,39 @@ func (k6 *K6) Initialize() {
 	}
 
 	// PLZ test run case
-	if len(k6.Spec.TestRunID) > 0 {
-		k6.UpdateCondition(CloudTestRun, metav1.ConditionTrue)
-		k6.UpdateCondition(CloudPLZTestRun, metav1.ConditionTrue)
-		k6.UpdateCondition(CloudTestRunCreated, metav1.ConditionTrue)
-		k6.UpdateCondition(CloudTestRunFinalized, metav1.ConditionFalse)
-		k6.UpdateCondition(CloudTestRunAborted, metav1.ConditionFalse)
+	if len(k6.GetSpec().TestRunID) > 0 {
+		UpdateCondition(k6, CloudTestRun, metav1.ConditionTrue)
+		UpdateCondition(k6, CloudPLZTestRun, metav1.ConditionTrue)
+		UpdateCondition(k6, CloudTestRunCreated, metav1.ConditionTrue)
+		UpdateCondition(k6, CloudTestRunFinalized, metav1.ConditionFalse)
+		UpdateCondition(k6, CloudTestRunAborted, metav1.ConditionFalse)
 
-		k6.Status.TestRunID = k6.Spec.TestRunID
+		k6.GetStatus().TestRunID = k6.GetSpec().TestRunID
 	} else {
-		k6.UpdateCondition(CloudPLZTestRun, metav1.ConditionFalse)
+		UpdateCondition(k6, CloudPLZTestRun, metav1.ConditionFalse)
 		// PLZ test run can be defined only via spec.testRunId;
 		// otherwise it's not a PLZ test run.
 	}
 }
 
-func (k6 *K6) UpdateCondition(conditionType string, conditionStatus metav1.ConditionStatus) {
-	types.UpdateCondition(&k6.Status.Conditions, conditionType, conditionStatus)
+func UpdateCondition(k6 TestRunI, conditionType string, conditionStatus metav1.ConditionStatus) {
+	types.UpdateCondition(&k6.GetStatus().Conditions, conditionType, conditionStatus)
 }
 
-func (k6 K6) IsTrue(conditionType string) bool {
-	return meta.IsStatusConditionTrue(k6.Status.Conditions, conditionType)
+func IsTrue(k6 TestRunI, conditionType string) bool {
+	return meta.IsStatusConditionTrue(k6.GetStatus().Conditions, conditionType)
 }
 
-func (k6 K6) IsFalse(conditionType string) bool {
-	return meta.IsStatusConditionFalse(k6.Status.Conditions, conditionType)
+func IsFalse(k6 TestRunI, conditionType string) bool {
+	return meta.IsStatusConditionFalse(k6.GetStatus().Conditions, conditionType)
 }
 
-func (k6 K6) IsUnknown(conditionType string) bool {
-	return !k6.IsFalse(conditionType) && !k6.IsTrue(conditionType)
+func IsUnknown(k6 TestRunI, conditionType string) bool {
+	return !IsFalse(k6, conditionType) && !IsTrue(k6, conditionType)
 }
 
-func (k6 K6) LastUpdate(conditionType string) (time.Time, bool) {
-	cond := meta.FindStatusCondition(k6.Status.Conditions, conditionType)
+func LastUpdate(k6 TestRunI, conditionType string) (time.Time, bool) {
+	cond := meta.FindStatusCondition(k6.GetStatus().Conditions, conditionType)
 	if cond != nil {
 		return cond.LastTransitionTime.Time, true
 	}
@@ -116,7 +116,7 @@ func (k6 K6) LastUpdate(conditionType string) (time.Time, bool) {
 // SetIfNewer changes k6status only if changes in proposedStatus are consistent
 // with the expected progression of a test run. If there were any acceptable
 // changes proposed, it returns true.
-func (k6status *K6Status) SetIfNewer(proposedStatus K6Status) (isNewer bool) {
+func (k6status *TestRunStatus) SetIfNewer(proposedStatus TestRunStatus) (isNewer bool) {
 	isNewer = types.SetIfNewer(&k6status.Conditions, proposedStatus.Conditions,
 		func(proposedCondition metav1.Condition) (isNewer bool) {
 			// Accept change of test run ID only if it's not set yet and together with

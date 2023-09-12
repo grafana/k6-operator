@@ -15,12 +15,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"errors"
-	"path/filepath"
-
-	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 )
 
 type PodMetadata struct {
@@ -73,8 +70,8 @@ type K6Scuttle struct {
 	QuitWithoutEnvoyTimeout string `json:"quitWithoutEnvoyTimeout,omitempty"`
 }
 
-// K6Spec defines the desired state of K6
-type K6Spec struct {
+// TestRunSpec defines the desired state of TestRun
+type TestRunSpec struct {
 	Script      K6Script               `json:"script"`
 	Parallelism int32                  `json:"parallelism"`
 	Separate    bool                   `json:"separate,omitempty"`
@@ -121,8 +118,8 @@ type Cleanup string
 // +kubebuilder:validation:Enum=initialization;initialized;created;started;stopped;finished;error
 type Stage string
 
-// K6Status defines the observed state of K6
-type K6Status struct {
+// TestRunStatus defines the observed state of TestRun
+type TestRunStatus struct {
 	Stage           Stage  `json:"stage,omitempty"`
 	TestRunID       string `json:"testRunId,omitempty"`
 	AggregationVars string `json:"aggregationVars,omitempty"`
@@ -136,12 +133,14 @@ type K6Status struct {
 // +kubebuilder:printcolumn:name="Stage",type="string",JSONPath=".status.stage",description="Stage"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="TestRunID",type="string",JSONPath=".status.testRunId"
+// +kubebuilder:deprecated:warning="This CRD is deprecated in favor of testruns.k6.io/v1alpha1"
+
 type K6 struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   K6Spec   `json:"spec,omitempty"`
-	Status K6Status `json:"status,omitempty"`
+	Spec   TestRunSpec   `json:"spec,omitempty"`
+	Status TestRunStatus `json:"status,omitempty"`
 }
 
 // K6List contains a list of K6
@@ -156,41 +155,15 @@ func init() {
 	SchemeBuilder.Register(&K6{}, &K6List{})
 }
 
-// Parse extracts Script data bits from K6 spec and performs basic validation
-func (k6 K6Spec) ParseScript() (*types.Script, error) {
-	spec := k6.Script
-	s := &types.Script{
-		Filename: "test.js",
-		Path:     "/test/",
-	}
+// TestRunI implementation for K6
+func (k6 *K6) GetStatus() *TestRunStatus {
+	return &k6.Status
+}
 
-	if spec.VolumeClaim.Name != "" {
-		s.Name = spec.VolumeClaim.Name
-		if spec.VolumeClaim.File != "" {
-			s.Filename = spec.VolumeClaim.File
-		}
+func (k6 *K6) GetSpec() *TestRunSpec {
+	return &k6.Spec
+}
 
-		s.Type = "VolumeClaim"
-		return s, nil
-	}
-
-	if spec.ConfigMap.Name != "" {
-		s.Name = spec.ConfigMap.Name
-
-		if spec.ConfigMap.File != "" {
-			s.Filename = spec.ConfigMap.File
-		}
-
-		s.Type = "ConfigMap"
-		return s, nil
-	}
-
-	if spec.LocalFile != "" {
-		s.Name = "LocalFile"
-		s.Type = "LocalFile"
-		s.Path, s.Filename = filepath.Split(spec.LocalFile)
-		return s, nil
-	}
-
-	return nil, errors.New("Script definition should contain one of: ConfigMap, VolumeClaim, LocalFile")
+func (k6 *K6) NamespacedName() k8stypes.NamespacedName {
+	return k8stypes.NamespacedName{Namespace: k6.Namespace, Name: k6.Name}
 }

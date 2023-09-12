@@ -16,7 +16,7 @@ func TestName(testRunId string) string {
 }
 
 // ingestURL is a temp hack
-func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ingestUrl string) *v1alpha1.K6 {
+func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ingestUrl string) *v1alpha1.TestRun {
 	volume := corev1.Volume{
 		Name: "archive-volume",
 		VolumeSource: corev1.VolumeSource{
@@ -34,12 +34,12 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 		volumeMount,
 	)
 
-	return &v1alpha1.K6{
+	return &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      TestName(trData.TestRunID()),
 			Namespace: plz.Namespace,
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Runner: v1alpha1.Pod{
 				Image:              trData.RunnerImage,
 				ServiceAccountName: plz.Spec.ServiceAccountName,

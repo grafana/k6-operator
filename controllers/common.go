@@ -22,15 +22,15 @@ import (
 // It may take some time to retrieve inspect output so indicate with boolean if it's ready
 // and use returnErr only for errors that require a change of behaviour. All other errors
 // should just be logged.
-func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.K6, c client.Client) (
+func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, c client.Client) (
 	inspectOutput cloud.InspectOutput, ready bool, returnErr error) {
 	var (
 		listOpts = &client.ListOptions{
-			Namespace: k6.Namespace,
+			Namespace: k6.NamespacedName().Namespace,
 			LabelSelector: labels.SelectorFromSet(map[string]string{
 				"app":      "k6",
-				"k6_cr":    k6.Name,
-				"job-name": fmt.Sprintf("%s-initializer", k6.Name),
+				"k6_cr":    k6.NamespacedName().Name,
+				"job-name": fmt.Sprintf("%s-initializer", k6.NamespacedName().Name),
 			}),
 		}
 		podList = &corev1.PodList{}
@@ -69,7 +69,7 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.K6, c clie
 		log.Error(err, "unable to get access to clientset")
 		return
 	}
-	req := clientset.CoreV1().Pods(k6.Namespace).GetLogs(podList.Items[0].Name, &corev1.PodLogOptions{
+	req := clientset.CoreV1().Pods(k6.NamespacedName().Namespace).GetLogs(podList.Items[0].Name, &corev1.PodLogOptions{
 		Container: "k6",
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)

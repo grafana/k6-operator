@@ -28,23 +28,23 @@ func isServiceReady(log logr.Logger, service *v1.Service) bool {
 }
 
 // StartJobs in the Ready phase using a curl container
-func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (res ctrl.Result, err error) {
+func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (res ctrl.Result, err error) {
 	// It may take some time to get Services up, so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second}
 
-	if len(k6.Status.TestRunID) > 0 {
-		log = log.WithValues("testRunId", k6.Status.TestRunID)
+	if len(k6.GetStatus().TestRunID) > 0 {
+		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}
 
 	log.Info("Waiting for pods to get ready")
 
 	selector := labels.SelectorFromSet(map[string]string{
 		"app":    "k6",
-		"k6_cr":  k6.Name,
+		"k6_cr":  k6.NamespacedName().Name,
 		"runner": "true",
 	})
 
-	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
+	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.NamespacedName().Namespace}
 	pl := &v1.PodList{}
 	if err = r.List(ctx, pl, opts); err != nil {
 		log.Error(err, "Could not list pods")
@@ -59,9 +59,9 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 		count++
 	}
 
-	log.Info(fmt.Sprintf("%d/%d runner pods ready", count, k6.Spec.Parallelism))
+	log.Info(fmt.Sprintf("%d/%d runner pods ready", count, k6.GetSpec().Parallelism))
 
-	if count != int(k6.Spec.Parallelism) {
+	if count != int(k6.GetSpec().Parallelism) {
 		return res, nil
 	}
 
@@ -100,8 +100,8 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Recon
 	log.Info("Created starter job")
 
 	log.Info("Changing stage of K6 status to started")
-	k6.Status.Stage = "started"
-	k6.UpdateCondition(v1alpha1.TestRunRunning, metav1.ConditionTrue)
+	k6.GetStatus().Stage = "started"
+	v1alpha1.UpdateCondition(k6, v1alpha1.TestRunRunning, metav1.ConditionTrue)
 
 	if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
 		return ctrl.Result{}, err

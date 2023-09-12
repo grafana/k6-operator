@@ -156,7 +156,7 @@ func (r *PrivateLoadZoneReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// UpdateStatus is now using similar logic to K6Reconciler:
+// UpdateStatus is now using similar logic to TestRunReconciler:
 // see if it can / should be refactored.
 func (r *PrivateLoadZoneReconciler) UpdateStatus(
 	ctx context.Context,
