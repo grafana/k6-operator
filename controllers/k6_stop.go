@@ -16,18 +16,18 @@ import (
 // StopJobs in the Ready phase using a curl container
 // It assumes that Services of the runners are already up and
 // test is being executed.
-func StopJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (res ctrl.Result, err error) {
-	if len(k6.Status.TestRunID) > 0 {
-		log = log.WithValues("testRunId", k6.Status.TestRunID)
+func StopJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (res ctrl.Result, err error) {
+	if len(k6.GetStatus().TestRunID) > 0 {
+		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}
 
 	selector := labels.SelectorFromSet(map[string]string{
 		"app":    "k6",
-		"k6_cr":  k6.Name,
+		"k6_cr":  k6.NamespacedName().Name,
 		"runner": "true",
 	})
 
-	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
+	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.NamespacedName().Namespace}
 
 	var hostnames []string
 	sl := &v1.ServiceList{}
@@ -57,9 +57,9 @@ func StopJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconc
 	log.Info("Created stop job")
 
 	log.Info("Changing stage of K6 status to stopped")
-	k6.Status.Stage = "stopped"
-	k6.UpdateCondition(v1alpha1.TestRunRunning, metav1.ConditionFalse)
-	k6.UpdateCondition(v1alpha1.CloudTestRunAborted, metav1.ConditionTrue)
+	k6.GetStatus().Stage = "stopped"
+	v1alpha1.UpdateCondition(k6, v1alpha1.TestRunRunning, metav1.ConditionFalse)
+	v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRunAborted, metav1.ConditionTrue)
 
 	if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
 		return ctrl.Result{}, err

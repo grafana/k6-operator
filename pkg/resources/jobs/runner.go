@@ -17,39 +17,39 @@ import (
 )
 
 // NewRunnerJob creates a new k6 job from a CRD
-func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error) {
-	name := fmt.Sprintf("%s-%d", k6.Name, index)
+func NewRunnerJob(k6 v1alpha1.TestRunI, index int, token string) (*batchv1.Job, error) {
+	name := fmt.Sprintf("%s-%d", k6.NamespacedName().Name, index)
 	postCommand := []string{"k6", "run"}
 
-	command, istioEnabled := newIstioCommand(k6.Spec.Scuttle.Enabled, postCommand)
+	command, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, postCommand)
 
 	quiet := true
-	if k6.Spec.Quiet != "" {
-		quiet, _ = strconv.ParseBool(k6.Spec.Quiet)
+	if k6.GetSpec().Quiet != "" {
+		quiet, _ = strconv.ParseBool(k6.GetSpec().Quiet)
 	}
 
 	if quiet {
 		command = append(command, "--quiet")
 	}
 
-	if k6.Spec.Parallelism > 1 {
+	if k6.GetSpec().Parallelism > 1 {
 		var args []string
 		var err error
 
-		if args, err = segmentation.NewCommandFragments(index, int(k6.Spec.Parallelism)); err != nil {
+		if args, err = segmentation.NewCommandFragments(index, int(k6.GetSpec().Parallelism)); err != nil {
 			return nil, err
 
 		}
 		command = append(command, args...)
 	}
 
-	script, err := k6.Spec.ParseScript()
+	script, err := k6.GetSpec().ParseScript()
 	if err != nil {
 		return nil, err
 	}
 
-	if k6.Spec.Arguments != "" {
-		args := strings.Split(k6.Spec.Arguments, " ")
+	if k6.GetSpec().Arguments != "" {
+		args := strings.Split(k6.GetSpec().Arguments, " ")
 		command = append(command, args...)
 	}
 
@@ -59,8 +59,8 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 		"--address=0.0.0.0:6565")
 
 	paused := true
-	if k6.Spec.Paused != "" {
-		paused, _ = strconv.ParseBool(k6.Spec.Paused)
+	if k6.GetSpec().Paused != "" {
+		paused, _ = strconv.ParseBool(k6.GetSpec().Paused)
 	}
 
 	if paused {
@@ -81,19 +81,19 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 	)
 
 	image := "ghcr.io/grafana/k6-operator:latest-runner"
-	if k6.Spec.Runner.Image != "" {
-		image = k6.Spec.Runner.Image
+	if k6.GetSpec().Runner.Image != "" {
+		image = k6.GetSpec().Runner.Image
 	}
 
 	runnerAnnotations := make(map[string]string)
-	if k6.Spec.Runner.Metadata.Annotations != nil {
-		runnerAnnotations = k6.Spec.Runner.Metadata.Annotations
+	if k6.GetSpec().Runner.Metadata.Annotations != nil {
+		runnerAnnotations = k6.GetSpec().Runner.Metadata.Annotations
 	}
 
-	runnerLabels := newLabels(k6.Name)
+	runnerLabels := newLabels(k6.NamespacedName().Name)
 	runnerLabels["runner"] = "true"
-	if k6.Spec.Runner.Metadata.Labels != nil {
-		for k, v := range k6.Spec.Runner.Metadata.Labels { // Order not specified
+	if k6.GetSpec().Runner.Metadata.Labels != nil {
+		for k, v := range k6.GetSpec().Runner.Metadata.Labels { // Order not specified
 			if _, ok := runnerLabels[k]; !ok {
 				runnerLabels[k] = v
 			}
@@ -101,35 +101,35 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 	}
 
 	serviceAccountName := "default"
-	if k6.Spec.Runner.ServiceAccountName != "" {
-		serviceAccountName = k6.Spec.Runner.ServiceAccountName
+	if k6.GetSpec().Runner.ServiceAccountName != "" {
+		serviceAccountName = k6.GetSpec().Runner.ServiceAccountName
 	}
 
 	automountServiceAccountToken := true
-	if k6.Spec.Runner.AutomountServiceAccountToken != "" {
-		automountServiceAccountToken, _ = strconv.ParseBool(k6.Spec.Runner.AutomountServiceAccountToken)
+	if k6.GetSpec().Runner.AutomountServiceAccountToken != "" {
+		automountServiceAccountToken, _ = strconv.ParseBool(k6.GetSpec().Runner.AutomountServiceAccountToken)
 	}
 
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
-	ports = append(ports, k6.Spec.Ports...)
+	ports = append(ports, k6.GetSpec().Ports...)
 
-	env := newIstioEnvVar(k6.Spec.Scuttle, istioEnabled)
+	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
 
 	// this is a cloud output run
-	if len(k6.Status.TestRunID) > 0 {
+	if len(k6.GetStatus().TestRunID) > 0 {
 		// temporary hack
-		if k6.IsTrue(v1alpha1.CloudPLZTestRun) {
-			k6.Status.AggregationVars = "50|3s|8s|6s|10000|10"
+		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+			k6.GetStatus().AggregationVars = "50|3s|8s|6s|10000|10"
 		}
 
-		aggregationVars, err := cloud.DecodeAggregationConfig(k6.Status.AggregationVars)
+		aggregationVars, err := cloud.DecodeAggregationConfig(k6.GetStatus().AggregationVars)
 		if err != nil {
 			return nil, err
 		}
 		env = append(env, aggregationVars...)
 		env = append(env, corev1.EnvVar{
 			Name:  "K6_CLOUD_PUSH_REF_ID",
-			Value: k6.Status.TestRunID,
+			Value: k6.GetStatus().TestRunID,
 		}, corev1.EnvVar{
 			Name:  "K6_CLOUD_TOKEN",
 			Value: token,
@@ -137,18 +137,18 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 		)
 	}
 
-	env = append(env, k6.Spec.Runner.Env...)
+	env = append(env, k6.GetSpec().Runner.Env...)
 
 	volumes := script.Volume()
-	volumes = append(volumes, k6.Spec.Runner.Volumes...)
+	volumes = append(volumes, k6.GetSpec().Runner.Volumes...)
 
 	volumeMounts := script.VolumeMount()
-	volumeMounts = append(volumeMounts, k6.Spec.Runner.VolumeMounts...)
+	volumeMounts = append(volumeMounts, k6.GetSpec().Runner.VolumeMounts...)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   k6.Namespace,
+			Namespace:   k6.NamespacedName().Namespace,
 			Labels:      runnerLabels,
 			Annotations: runnerAnnotations,
 		},
@@ -164,24 +164,24 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 					ServiceAccountName:           serviceAccountName,
 					Hostname:                     name,
 					RestartPolicy:                corev1.RestartPolicyNever,
-					Affinity:                     k6.Spec.Runner.Affinity,
-					NodeSelector:                 k6.Spec.Runner.NodeSelector,
-					Tolerations:                  k6.Spec.Runner.Tolerations,
-					SecurityContext:              &k6.Spec.Runner.SecurityContext,
-					ImagePullSecrets:             k6.Spec.Runner.ImagePullSecrets,
-					InitContainers:               getInitContainers(&k6.Spec, script),
+					Affinity:                     k6.GetSpec().Runner.Affinity,
+					NodeSelector:                 k6.GetSpec().Runner.NodeSelector,
+					Tolerations:                  k6.GetSpec().Runner.Tolerations,
+					SecurityContext:              &k6.GetSpec().Runner.SecurityContext,
+					ImagePullSecrets:             k6.GetSpec().Runner.ImagePullSecrets,
+					InitContainers:               getInitContainers(k6.GetSpec(), script),
 					Containers: []corev1.Container{{
 						Image:           image,
-						ImagePullPolicy: k6.Spec.Runner.ImagePullPolicy,
+						ImagePullPolicy: k6.GetSpec().Runner.ImagePullPolicy,
 						Name:            "k6",
 						Command:         command,
 						Env:             env,
-						Resources:       k6.Spec.Runner.Resources,
+						Resources:       k6.GetSpec().Runner.Resources,
 						VolumeMounts:    volumeMounts,
 						Ports:           ports,
-						EnvFrom:         k6.Spec.Runner.EnvFrom,
-						LivenessProbe:   generateProbe(k6.Spec.Runner.LivenessProbe),
-						ReadinessProbe:  generateProbe(k6.Spec.Runner.ReadinessProbe),
+						EnvFrom:         k6.GetSpec().Runner.EnvFrom,
+						LivenessProbe:   generateProbe(k6.GetSpec().Runner.LivenessProbe),
+						ReadinessProbe:  generateProbe(k6.GetSpec().Runner.ReadinessProbe),
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       volumes,
@@ -190,26 +190,26 @@ func NewRunnerJob(k6 *v1alpha1.K6, index int, token string) (*batchv1.Job, error
 		},
 	}
 
-	if k6.Spec.Separate {
+	if k6.GetSpec().Separate {
 		job.Spec.Template.Spec.Affinity = newAntiAffinity()
 	}
 
 	return job, nil
 }
 
-func NewRunnerService(k6 *v1alpha1.K6, index int) (*corev1.Service, error) {
-	serviceName := fmt.Sprintf("%s-%s-%d", k6.Name, "service", index)
-	runnerName := fmt.Sprintf("%s-%d", k6.Name, index)
+func NewRunnerService(k6 v1alpha1.TestRunI, index int) (*corev1.Service, error) {
+	serviceName := fmt.Sprintf("%s-%s-%d", k6.NamespacedName().Name, "service", index)
+	runnerName := fmt.Sprintf("%s-%d", k6.NamespacedName().Name, index)
 
 	runnerAnnotations := make(map[string]string)
-	if k6.Spec.Runner.Metadata.Annotations != nil {
-		runnerAnnotations = k6.Spec.Runner.Metadata.Annotations
+	if k6.GetSpec().Runner.Metadata.Annotations != nil {
+		runnerAnnotations = k6.GetSpec().Runner.Metadata.Annotations
 	}
 
-	runnerLabels := newLabels(k6.Name)
+	runnerLabels := newLabels(k6.NamespacedName().Name)
 	runnerLabels["runner"] = "true"
-	if k6.Spec.Runner.Metadata.Labels != nil {
-		for k, v := range k6.Spec.Runner.Metadata.Labels { // Order not specified
+	if k6.GetSpec().Runner.Metadata.Labels != nil {
+		for k, v := range k6.GetSpec().Runner.Metadata.Labels { // Order not specified
 			if _, ok := runnerLabels[k]; !ok {
 				runnerLabels[k] = v
 			}
@@ -225,7 +225,7 @@ func NewRunnerService(k6 *v1alpha1.K6, index int) (*corev1.Service, error) {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        serviceName,
-			Namespace:   k6.Namespace,
+			Namespace:   k6.NamespacedName().Namespace,
 			Labels:      runnerLabels,
 			Annotations: runnerAnnotations,
 		},

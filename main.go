@@ -78,12 +78,20 @@ func main() {
 	mgr.AddHealthzCheck("health", healthz.Ping)
 	mgr.AddReadyzCheck("ready", healthz.Ping)
 
-	if err = (&controllers.K6Reconciler{
+	if err = (controllers.NewK6Reconciler(&controllers.TestRunReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("K6"),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	})).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "K6")
+		os.Exit(1)
+	}
+	if err = (&controllers.TestRunReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("TestRun"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "TestRun")
 		os.Exit(1)
 	}
 	if err = (&controllers.PrivateLoadZoneReconciler{
@@ -94,6 +102,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "PrivateLoadZone")
 		os.Exit(1)
 	}
+
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

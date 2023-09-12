@@ -26,7 +26,7 @@ func (r *PrivateLoadZoneReconciler) startFactory(plz *v1alpha1.PrivateLoadZone, 
 				Namespace: plz.Namespace,
 			}
 
-			k6 := &v1alpha1.K6{}
+			k6 := &v1alpha1.TestRun{}
 			if err := r.Get(context.Background(), namespacedName, k6); err == nil || !errors.IsNotFound(err) {
 				logger.Info(fmt.Sprintf("Test run `%s` has already been started.", testRunId))
 				// fmt.Println(k6)

@@ -46,7 +46,7 @@ func TestNewScriptVolumeClaim(t *testing.T) {
 		Type:     "VolumeClaim",
 	}
 
-	k6 := v1alpha1.K6Spec{
+	k6 := v1alpha1.TestRunSpec{
 		Script: v1alpha1.K6Script{
 			VolumeClaim: v1alpha1.K6VolumeClaim{
 				Name: "Test",
@@ -72,7 +72,7 @@ func TestNewScriptConfigMap(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	k6 := v1alpha1.K6Spec{
+	k6 := v1alpha1.TestRunSpec{
 		Script: v1alpha1.K6Script{
 			ConfigMap: v1alpha1.K6Configmap{
 				Name: "Test",
@@ -99,7 +99,7 @@ func TestNewScriptLocalFile(t *testing.T) {
 		Type:     "LocalFile",
 	}
 
-	k6 := v1alpha1.K6Spec{
+	k6 := v1alpha1.TestRunSpec{
 		Script: v1alpha1.K6Script{
 			LocalFile: "/custom/my_test.js",
 		},
@@ -115,7 +115,7 @@ func TestNewScriptLocalFile(t *testing.T) {
 }
 
 func TestNewScriptNoScript(t *testing.T) {
-	k6 := v1alpha1.K6Spec{}
+	k6 := v1alpha1.TestRunSpec{}
 
 	script, err := k6.ParseScript()
 	if err == nil && script != nil {
@@ -247,12 +247,12 @@ func TestNewRunnerService(t *testing.T) {
 		},
 	}
 
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Runner: v1alpha1.Pod{
 				Metadata: v1alpha1.PodMetadata{
 					Labels: map[string]string{
@@ -362,12 +362,12 @@ func TestNewRunnerJob(t *testing.T) {
 			},
 		},
 	}
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
 					Name: "test",
@@ -484,12 +484,12 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 			},
 		},
 	}
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Quiet: "false",
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
@@ -597,12 +597,12 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 			},
 		},
 	}
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Paused: "false",
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
@@ -711,12 +711,12 @@ func TestNewRunnerJobArguments(t *testing.T) {
 		},
 	}
 
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Arguments: "--cool-thing",
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
@@ -825,12 +825,12 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 		},
 	}
 
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
@@ -952,12 +952,12 @@ func TestNewRunnerJobIstio(t *testing.T) {
 			},
 		},
 	}
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Scuttle: v1alpha1.K6Scuttle{
 				Enabled: "true",
 			},
@@ -1075,12 +1075,12 @@ func TestNewRunnerJobCloud(t *testing.T) {
 			},
 		},
 	}
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
 					Name: "test",
@@ -1098,7 +1098,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 		},
 		// Since this test only creates a runner's spec so
 		// testrunid has to be set hard-coded here.
-		Status: v1alpha1.K6Status{
+		Status: v1alpha1.TestRunStatus{
 			TestRunID:       "testrunid",
 			AggregationVars: "50|3s|8s|6s|10000|10",
 		},
@@ -1190,12 +1190,12 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 			},
 		},
 	}
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Scuttle: v1alpha1.K6Scuttle{
 				Enabled: "false",
 			},
@@ -1329,12 +1329,12 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 			},
 		},
 	}
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
 					Name: "test",
@@ -1505,12 +1505,12 @@ func TestNewRunnerJobWithVolume(t *testing.T) {
 			},
 		},
 	}
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
 					Name: "test",

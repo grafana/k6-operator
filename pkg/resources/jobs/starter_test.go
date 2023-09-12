@@ -57,12 +57,12 @@ func TestNewStarterJob(t *testing.T) {
 		},
 	}
 
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Script: v1alpha1.K6Script{
 				ConfigMap: v1alpha1.K6Configmap{
 					Name: "test",
@@ -148,12 +148,12 @@ func TestNewStarterJobIstio(t *testing.T) {
 		},
 	}
 
-	k6 := &v1alpha1.K6{
+	k6 := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
 		},
-		Spec: v1alpha1.K6Spec{
+		Spec: v1alpha1.TestRunSpec{
 			Scuttle: v1alpha1.K6Scuttle{
 				Enabled: "true",
 			},

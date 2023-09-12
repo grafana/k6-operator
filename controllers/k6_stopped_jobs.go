@@ -48,20 +48,20 @@ func isJobRunning(log logr.Logger, service *v1.Service) bool {
 }
 
 // StoppedJobs checks if the runners pods have stopped execution.
-func StoppedJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (allStopped bool) {
-	if len(k6.Status.TestRunID) > 0 {
-		log = log.WithValues("testRunId", k6.Status.TestRunID)
+func StoppedJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (allStopped bool) {
+	if len(k6.GetStatus().TestRunID) > 0 {
+		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}
 
 	log.Info("Waiting for pods to stop the test run")
 
 	selector := labels.SelectorFromSet(map[string]string{
 		"app":    "k6",
-		"k6_cr":  k6.Name,
+		"k6_cr":  k6.NamespacedName().Name,
 		"runner": "true",
 	})
 
-	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
+	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.NamespacedName().Namespace}
 
 	var hostnames []string
 	sl := &v1.ServiceList{}
@@ -80,7 +80,7 @@ func StoppedJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Rec
 		}
 	}
 
-	log.Info(fmt.Sprintf("%d/%d runners stopped execution", k6.Spec.Parallelism-count, k6.Spec.Parallelism))
+	log.Info(fmt.Sprintf("%d/%d runners stopped execution", k6.GetSpec().Parallelism-count, k6.GetSpec().Parallelism))
 
 	if count > 0 {
 		return
@@ -94,20 +94,20 @@ func StoppedJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Rec
 // with propagation policy so that corresponding pods are deleted as well.
 // On failure, error is returned.
 // On success, error is nil and allDeleted shows if all retrieved jobs were deleted.
-func KillJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (allDeleted bool, err error) {
-	if len(k6.Status.TestRunID) > 0 {
-		log = log.WithValues("testRunId", k6.Status.TestRunID)
+func KillJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (allDeleted bool, err error) {
+	if len(k6.GetStatus().TestRunID) > 0 {
+		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}
 
 	log.Info("Killing all runner jobs.")
 
 	selector := labels.SelectorFromSet(map[string]string{
 		"app":    "k6",
-		"k6_cr":  k6.Name,
+		"k6_cr":  k6.NamespacedName().Name,
 		"runner": "true",
 	})
 
-	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.Namespace}
+	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.NamespacedName().Namespace}
 	jl := &batchv1.JobList{}
 
 	if err = r.List(ctx, jl, opts); err != nil {

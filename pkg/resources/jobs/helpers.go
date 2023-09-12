@@ -119,7 +119,7 @@ func newIstioEnvVar(istio v1alpha1.K6Scuttle, istioEnabled bool) []corev1.EnvVar
 }
 
 // TODO: Envoy variables are not passed to init containers
-func getInitContainers(k6Spec *v1alpha1.K6Spec, script *types.Script) []corev1.Container {
+func getInitContainers(k6Spec *v1alpha1.TestRunSpec, script *types.Script) []corev1.Container {
 	var initContainers []corev1.Container
 
 	for i, k6InitContainer := range k6Spec.Runner.InitContainers {

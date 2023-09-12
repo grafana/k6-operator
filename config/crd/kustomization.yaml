@@ -5,6 +5,7 @@
 resources:
   - bases/k6.io_k6s.yaml
   - bases/k6.io_privateloadzones.yaml
+  - bases/k6.io_testruns.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

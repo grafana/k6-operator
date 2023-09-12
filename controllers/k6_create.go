@@ -17,26 +17,26 @@ import (
 )
 
 // CreateJobs creates jobs that will spawn k6 pods for distributed test
-func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler) (ctrl.Result, error) {
+func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (ctrl.Result, error) {
 	var (
 		err   error
 		res   ctrl.Result
 		token string // only for cloud tests
 	)
 
-	if k6.IsTrue(v1alpha1.CloudTestRun) && k6.IsTrue(v1alpha1.CloudTestRunCreated) {
-		log = log.WithValues("testRunId", k6.Status.TestRunID)
+	if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunCreated) {
+		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 
 		var (
 			tokenReady bool
 			sOpts      *client.ListOptions
 		)
 
-		if k6.IsTrue(v1alpha1.CloudPLZTestRun) {
-			sOpts = &client.ListOptions{Namespace: k6.Namespace}
+		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+			sOpts = &client.ListOptions{Namespace: k6.NamespacedName().Namespace}
 		}
 
-		token, tokenReady, err = loadToken(ctx, log, r.Client, k6.Spec.Token, sOpts)
+		token, tokenReady, err = loadToken(ctx, log, r.Client, k6.GetSpec().Token, sOpts)
 		if err != nil {
 			// An error here means a very likely mis-configuration of the token.
 			// Consider updating status to error to let a user know quicker?
@@ -55,7 +55,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 	}
 
 	log.Info("Changing stage of K6 status to created")
-	k6.Status.Stage = "created"
+	k6.GetStatus().Stage = "created"
 
 	if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
 		return ctrl.Result{}, err
@@ -65,11 +65,11 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reco
 	return ctrl.Result{}, nil
 }
 
-func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6Reconciler, token string) (ctrl.Result, error) {
+func createJobSpecs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler, token string) (ctrl.Result, error) {
 	found := &batchv1.Job{}
 	namespacedName := types.NamespacedName{
-		Name:      fmt.Sprintf("%s-1", k6.Name),
-		Namespace: k6.Namespace,
+		Name:      fmt.Sprintf("%s-1", k6.NamespacedName().Name),
+		Namespace: k6.NamespacedName().Namespace,
 	}
 
 	if err := r.Get(ctx, namespacedName, found); err == nil || !errors.IsNotFound(err) {
@@ -77,7 +77,7 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 		return ctrl.Result{}, err
 	}
 
-	for i := 1; i <= int(k6.Spec.Parallelism); i++ {
+	for i := 1; i <= int(k6.GetSpec().Parallelism); i++ {
 		if err := launchTest(ctx, k6, i, log, r, token); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -85,7 +85,7 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 	return ctrl.Result{}, nil
 }
 
-func launchTest(ctx context.Context, k6 *v1alpha1.K6, index int, log logr.Logger, r *K6Reconciler, token string) error {
+func launchTest(ctx context.Context, k6 v1alpha1.TestRunI, index int, log logr.Logger, r *TestRunReconciler, token string) error {
 	var job *batchv1.Job
 	var service *corev1.Service
 	var err error
