@@ -1,8 +1,13 @@
 ---
-name: Chart Testing
-on: [push]
+name: Helm Test
+on:
+  push:
+    # run only on branches and not tags
+    branches:
+      - '**'
+
 jobs:
-  kind:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
