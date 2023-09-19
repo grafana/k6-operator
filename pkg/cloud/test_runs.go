@@ -128,9 +128,9 @@ func SendTestRunEvents(client *cloudapi.Client, refID string, log logr.Logger, e
 		return
 	}
 
-	url := fmt.Sprintf("%s/orchestrator/v1/testruns/%s/events", client.BaseURL(), refID)
-
+	url := fmt.Sprintf("%s/orchestrator/v1/testruns/%s/events", strings.TrimSuffix(client.BaseURL(), "/v1"), refID)
 	req, err := client.NewRequest("POST", url, events)
+
 	if err != nil {
 		log.Error(err, fmt.Sprintf("Failed to create events HTTP request %+v", events))
 		return
