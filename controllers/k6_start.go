@@ -2,12 +2,14 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,6 +64,19 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Te
 	log.Info(fmt.Sprintf("%d/%d runner pods ready", count, k6.GetSpec().Parallelism))
 
 	if count != int(k6.GetSpec().Parallelism) {
+		if t, ok := v1alpha1.LastUpdate(k6, v1alpha1.TestRunRunning); !ok {
+			// this should never happen
+			return res, errors.New("Cannot find condition TestRunRunning")
+		} else {
+			// let's try this approach
+			if time.Since(t).Minutes() > 5 {
+				if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
+					events := cloud.ErrorEvent(cloud.K6OperatorStartError).WithDetail("Creation of runner pods takes too long: perhaps, something is off with your configuration. Check if runner jobs and pods were created successfully.")
+					cloud.SendTestRunEvents(r.k6CloudClient, k6.GetSpec().TestRunID, log, events)
+				}
+			}
+		}
+
 		return res, nil
 	}
 

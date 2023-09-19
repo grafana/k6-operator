@@ -43,9 +43,9 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 			// Consider updating status to error to let a user know quicker?
 			log.Error(err, "A problem while getting token.")
 
-			if k6.IsTrue(v1alpha1.CloudTestRun) {
+			if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
 				events := cloud.ErrorEvent(cloud.K6OperatorStartError).WithDetail(fmt.Sprintf("Failed to retrieve token: %v", err))
-				cloud.SendTestRunEvents(r.k6CloudClient, k6.Spec.TestRunID, log, events)
+				cloud.SendTestRunEvents(r.k6CloudClient, k6.GetSpec().TestRunID, log, events)
 			}
 
 			return ctrl.Result{}, nil
@@ -58,6 +58,12 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 	log.Info("Creating test jobs")
 
 	if res, err = createJobSpecs(ctx, log, k6, r, token); err != nil {
+
+		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
+			events := cloud.ErrorEvent(cloud.K6OperatorStartError).WithDetail(fmt.Sprintf("Failed to create runner jobs: %v", err))
+			cloud.SendTestRunEvents(r.k6CloudClient, k6.GetSpec().TestRunID, log, events)
+		}
+
 		return res, err
 	}
 
