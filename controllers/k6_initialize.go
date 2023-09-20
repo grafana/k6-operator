@@ -52,7 +52,11 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.K6, r *K6
 
 	inspectOutput, inspectReady, err := inspectTestRun(ctx, log, *k6, r.Client)
 	if err != nil {
-		// inspectTestRun made a log message already so just return without requeue
+		// if there is any error, we have to reflect it on the K6 manifest
+		k6.Status.Stage = "error"
+		if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{}, nil
 	}
 	if !inspectReady {

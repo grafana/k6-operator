@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -46,7 +47,15 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.K6, c clie
 	}
 
 	// there should be only 1 initializer pod
-	if podList.Items[0].Status.Phase != "Succeeded" {
+	switch podList.Items[0].Status.Phase {
+	case "Succeeded":
+		// nothing to do
+	case "Failed":
+		// the init job has failed
+		returnErr = errors.New("init job has failed")
+		log.Error(returnErr, "error:")
+		return
+	default:
 		log.Info("Waiting for initializing pod to finish")
 		return
 	}
