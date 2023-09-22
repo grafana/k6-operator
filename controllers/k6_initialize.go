@@ -154,7 +154,7 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 			k6.GetStatus().TestRunID = testRunData.ReferenceID
 			v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRunCreated, metav1.ConditionTrue)
 
-			k6.GetStatus().AggregationVars = cloud.EncodeAggregationConfig(testRunData)
+			k6.GetStatus().AggregationVars = cloud.EncodeAggregationConfig(testRunData.ConfigOverride)
 
 			_, err := r.UpdateStatus(ctx, k6, log)
 			// log.Info(fmt.Sprintf("Debug updating status after create %v", updateHappened))

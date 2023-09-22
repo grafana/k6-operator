@@ -24,7 +24,7 @@ func Test_EncodeAggregationConfig(t *testing.T) {
 		},
 	}
 
-	encodedAggregation := EncodeAggregationConfig(testRunResponse)
+	encodedAggregation := EncodeAggregationConfig(testRunResponse.ConfigOverride)
 	assert.Equal(t, expected, encodedAggregation)
 }
 
