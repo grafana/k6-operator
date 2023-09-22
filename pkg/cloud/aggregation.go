@@ -28,13 +28,13 @@ var aggregationVarNames = map[int][]string{
 	},
 }
 
-func EncodeAggregationConfig(testRun *cloudapi.CreateTestRunResponse) string {
+func EncodeAggregationConfig(testRun *cloudapi.Config) string {
 	return fmt.Sprintf("%d|%s|%s|%s|%d",
 		2, // use v2 for all new test runs
-		testRun.ConfigOverride.AggregationPeriod.String(),
-		testRun.ConfigOverride.AggregationWaitPeriod.String(),
-		testRun.ConfigOverride.MetricPushInterval.String(),
-		testRun.ConfigOverride.MetricPushConcurrency.Int64)
+		testRun.AggregationPeriod.String(),
+		testRun.AggregationWaitPeriod.String(),
+		testRun.MetricPushInterval.String(),
+		testRun.MetricPushConcurrency.Int64)
 }
 
 func DecodeAggregationConfig(encoded string) ([]corev1.EnvVar, error) {

@@ -30,10 +30,11 @@ type testRunList struct {
 
 // TestRunData holds the output from /loadtests/v4/test_runs(%s)
 type TestRunData struct {
-	TestRunId int `json:"id"`
-	Instances int `json:"instances"`
-	LZConfig  `json:"k8s_load_zones_config"`
-	RunStatus cloudapi.RunStatus `json:"run_status"`
+	TestRunId     int `json:"id"`
+	Instances     int `json:"instances"`
+	LZConfig      `json:"k8s_load_zones_config"`
+	RunStatus     cloudapi.RunStatus `json:"run_status"`
+	RuntimeConfig cloudapi.Config    `json:"k6_runtime_config"`
 }
 
 type LZConfig struct {
