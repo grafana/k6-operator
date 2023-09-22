@@ -44,10 +44,7 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 				Image:              trData.RunnerImage,
 				ServiceAccountName: plz.Spec.ServiceAccountName,
 				NodeSelector:       plz.Spec.NodeSelector,
-				Resources: corev1.ResourceRequirements{
-					Limits: plz.Spec.Resources,
-					// Requests will default to the Limits values.
-				},
+				Resources:          plz.Spec.Resources,
 				Volumes: []corev1.Volume{
 					volume,
 				},
