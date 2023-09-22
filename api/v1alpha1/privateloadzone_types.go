@@ -30,10 +30,10 @@ import (
 
 // PrivateLoadZoneSpec defines the desired state of PrivateLoadZone
 type PrivateLoadZoneSpec struct {
-	Token              string              `json:"token"`
-	Resources          corev1.ResourceList `json:"resources"`
-	ServiceAccountName string              `json:"serviceAccountName,omitempty"`
-	NodeSelector       map[string]string   `json:"nodeSelector,omitempty"`
+	Token              string                      `json:"token"`
+	Resources          corev1.ResourceRequirements `json:"resources"`
+	ServiceAccountName string                      `json:"serviceAccountName,omitempty"`
+	NodeSelector       map[string]string           `json:"nodeSelector,omitempty"`
 }
 
 // PrivateLoadZoneStatus defines the observed state of PrivateLoadZone
@@ -75,8 +75,8 @@ func (plz *PrivateLoadZone) Register(ctx context.Context, logger logr.Logger, cl
 	data := cloud.PLZRegistrationData{
 		LoadZoneID: plz.Name,
 		Resources: cloud.PLZResources{
-			CPU:    plz.Spec.Resources.Cpu().String(),
-			Memory: plz.Spec.Resources.Memory().String(),
+			CPU:    plz.Spec.Resources.Limits.Cpu().String(),
+			Memory: plz.Spec.Resources.Limits.Memory().String(),
 		},
 	}
 
