@@ -67,7 +67,7 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 				LocalFile: "/test/archive.tar",
 			},
 			Parallelism: int32(trData.InstanceCount),
-			Separate:    true,
+			Separate:    false,
 			Arguments:   "--out cloud --no-thresholds",
 			Cleanup:     v1alpha1.Cleanup("post"),
 
