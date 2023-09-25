@@ -133,7 +133,7 @@ type TestRunStatus struct {
 // +kubebuilder:printcolumn:name="Stage",type="string",JSONPath=".status.stage",description="Stage"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="TestRunID",type="string",JSONPath=".status.testRunId"
-// +kubebuilder:deprecated:warning="This CRD is deprecated in favor of testruns.k6.io/v1alpha1"
+// +kubebuilder:deprecatedversion:warning="This CRD is deprecated in favor of testruns.k6.io"
 
 type K6 struct {
 	metav1.TypeMeta   `json:",inline"`
