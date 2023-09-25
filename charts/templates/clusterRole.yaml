@@ -120,6 +120,27 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - k6.io
+  resources:
+  - testruns
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - k6.io
+  resources:
+  - testruns/finalizers
+  - testruns/status
+  verbs:
+  - get
+  - patch
+  - update
 {{- if .Values.authProxy.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
