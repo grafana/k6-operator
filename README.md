@@ -39,16 +39,18 @@ This method may be more useful for development of k6-operator, depending on spec
 
 ### Installing the CRD
 
-The k6 operator includes custom resources called `K6` and `PrivateLoadZone`. These will be automatically installed when you do a
+The k6-operator includes custom resources called `TestRun` and `PrivateLoadZone`. These will be automatically installed when you do a
 deployment or install a bundle, but in case you want to do it yourself, you may run the command below:
 
 ```bash
 make install
 ```
 
+> :warning: `K6` CRD has been substituted with `TestRun` CRD and will be deprecated in the future.
+
 ## Usage
 
-Two samples are available in `config/samples`, one for a test script and one for an actual test run.
+Samples are available in `config/samples` and `e2e/`, both for `TestRun` and for `PrivateLoadZone`.
 
 ### Adding test scripts
 
@@ -126,14 +128,14 @@ There is a sample avaiable in `config/samples/k6_v1alpha1_k6_with_localfile.yaml
 
 ### Executing tests
 
-Tests are executed by applying the custom resource `K6` to a cluster where the operator is running. The properties
+Tests are executed by applying the custom resource `TestRun` to a cluster where the operator is running. The properties
 of a test run are few, but allow you to control some key aspects of a distributed execution.
 
 ```yaml
 # k6-resource.yml
 
 apiVersion: k6.io/v1alpha1
-kind: K6
+kind: TestRun
 metadata:
   name: k6-sample
 spec:
@@ -199,7 +201,7 @@ If you want to use a custom Service Account you'll need to pass it into both the
 
 ```yaml
 apiVersion: k6.io/v1alpha1
-kind: K6
+kind: TestRun
 metadata:
   name: <test-name>
 spec:
@@ -311,7 +313,7 @@ The above command will create an archive.tar in your current folder unless `-O` 
 kubectl create configmap scenarios-test --from-file=archive.tar
 ```
 
-In case of using an archive it must be additionally specified in your yaml for K6 deployment:
+In case of using an archive it must be additionally specified in your yaml for TestRun deployment:
 
 ```yaml
 # ...
@@ -327,7 +329,7 @@ In other words, `file` option must be the correct entrypoint for `k6 run`.
 
 ### Using extensions
 By default, the operator will use `grafana/k6:latest` as the container image for the test jobs.
-If you want to use [extensions](https://k6.io/docs/extensions/get-started/explore/) built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image` property on the `K6` kubernetes resource.
+If you want to use [extensions](https://k6.io/docs/extensions/get-started/explore/) built with [xk6](https://github.com/grafana/xk6) you'll need to create your own image and override the `image` property on the `TestRun` kubernetes resource.
 
 For example, create a `Dockerfile` with the following content:
 
@@ -357,7 +359,7 @@ We can now use it as follows:
 # k6-resource-with-extensions.yml
 
 apiVersion: k6.io/v1alpha1
-kind: K6
+kind: TestRun
 metadata:
   name: k6-sample-with-extensions
 spec:
@@ -409,7 +411,7 @@ rules:
   - apiGroups:
       - k6.io
     resources:
-      - k6s
+      - testruns
     verbs:
       - create
       - delete
