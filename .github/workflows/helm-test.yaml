@@ -30,7 +30,7 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --target-branch ${{ github.ref_name }})
+          changed=$(ct list-changed --config ./charts/ct.yaml --target-branch ${{ github.ref_name }})
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
