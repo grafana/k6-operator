@@ -2,7 +2,7 @@
 remote: origin
 target-branch: main
 chart-dirs:
-  - charts
+  - charts/k6-operator
 chart-repos:
   - grafana=https://grafana.github.io/helm-charts
 helm-extra-args: --timeout 600s
