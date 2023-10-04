@@ -23,4 +23,4 @@ jobs:
         uses: helm/chart-testing-action@v2.2.0
 
       - name: Run chart-testing (lint)
-        run: ct lint --target-branch ${{ github.ref_name }} --charts ./charts/
+        run: ct lint --target-branch ${{ github.ref_name }} --config ./charts/ct.yaml
