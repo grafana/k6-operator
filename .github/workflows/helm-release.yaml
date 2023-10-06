@@ -20,4 +20,4 @@ jobs:
       ct_configfile: charts/ct.yaml
       helm_tag_prefix: helm
     secrets:
-      helm_repo_token: ${{ secrets.GITHUB_TOKEN }}
+      helm_repo_token: ${{ secrets.K6_OPERATOR_HELM_RELEASE_KEY }}
