@@ -13,11 +13,12 @@ jobs:
   call-update-helm-repo:
     permissions:
       contents: write
-    uses: grafana/helm-charts/.github/workflows/update-helm-repo.yaml@main
+    uses: grafana/helm-charts/.github/workflows/update-helm-repo.yaml@ci/fix-for-github-apps-jwt
     with:
       charts_dir: charts
       cr_configfile: charts/cr.yaml
       ct_configfile: charts/ct.yaml
       helm_tag_prefix: helm
     secrets:
-      helm_repo_token: ${{ secrets.GITHUB_TOKEN }}
+      gihub_app_id: ${{ secrets.K6_OPERATOR_HELM_RELEASE_APP_ID }}
+      helm_repo_token: ${{ secrets.K6_OPERATOR_HELM_RELEASE_PEM_KEY }}
