@@ -48,8 +48,10 @@ jobs:
       - name: Testing
         run: |
           kubectl cluster-info
+          kubectl cluster-info dump | grep 'nodeInfo' -A 11
           kubectl apply -f rendered.yaml
           kubectl -n k6-operator-system set image deployment/k6-operator-controller-manager manager=ghcr.io/grafana/k6-operator:${{ github.sha }}
+          kubectl -n k6-operator-system describe deployment k6-operator-controller-manager
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
           kubectl apply -f e2e/test.yaml
           sleep 30
@@ -81,6 +83,8 @@ jobs:
       - name: Testing
         run: |
           helm install k6-operator ./charts/ -f ./charts/values.yaml --set manager.image.tag=${{github.sha}}
+          kubectl cluster-info dump | grep 'nodeInfo' -A 11
+          kubectl -n k6-operator-system describe deployment k6-operator-controller-manager
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
           kubectl apply -f e2e/test.yaml
           sleep 30
