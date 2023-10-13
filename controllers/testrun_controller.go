@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // TestRunReconciler reconciles a K6 object
@@ -285,9 +284,9 @@ func (r *TestRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.TestRun{}).
 		Owns(&batchv1.Job{}).
-		Watches(&source.Kind{Type: &v1.Pod{}},
+		Watches(&v1.Pod{},
 			handler.EnqueueRequestsFromMapFunc(
-				func(object client.Object) []reconcile.Request {
+				func(ctx context.Context, object client.Object) []reconcile.Request {
 					pod := object.(*v1.Pod)
 					k6CrName, ok := pod.GetLabels()[k6CrLabelName]
 					if !ok {

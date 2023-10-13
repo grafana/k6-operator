@@ -27,8 +27,11 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	k6v1alpha1 "github.com/grafana/k6-operator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
@@ -59,17 +62,27 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
-	watchNamespace := getWatchNamespace()
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                     scheme,
-		MetricsBindAddress:         metricsAddr,
-		Port:                       9443,
+	mgrOpts := ctrl.Options{
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: 9443,
+		}),
 		LeaderElection:             enableLeaderElection,
 		LeaderElectionID:           "fcdfce80.io",
-		LeaderElectionResourceLock: "configmapsleases",
-		Namespace:                  watchNamespace,
-	})
+		LeaderElectionResourceLock: "leases",
+	}
+	if watchNamespace, namespaced := getWatchNamespace(); namespaced {
+		mgrOpts.Cache = cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				watchNamespace: cache.Config{},
+			},
+		}
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOpts)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -112,12 +125,8 @@ func main() {
 	}
 }
 
-func getWatchNamespace() string {
+func getWatchNamespace() (string, bool) {
 	var watchNamespaceEnvVar = "WATCH_NAMESPACE"
 
-	ns, found := os.LookupEnv(watchNamespaceEnvVar)
-	if !found {
-		return ""
-	}
-	return ns
+	return os.LookupEnv(watchNamespaceEnvVar)
 }
