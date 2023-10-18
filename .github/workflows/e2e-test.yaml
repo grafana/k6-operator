@@ -76,9 +76,9 @@ jobs:
           version: v3.7.2
 
       - name: Create kind cluster
-        uses: helm/kind-action@v1.2.0
-        # with:
-        #   node_image: "kindest/node:v1.27.1"
+        uses: helm/kind-action@v1.8.0
+        with:
+          node_image: "kindest/node:v1.27.1"
 
       - name: Testing
         run: |
