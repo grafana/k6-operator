@@ -80,6 +80,7 @@ func main() {
 				watchNamespace: cache.Config{},
 			},
 		}
+		setupLog.Info("WATCH_NAMESPACE is configured", "ns", watchNamespace)
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOpts)
