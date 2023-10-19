@@ -10222,7 +10222,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v0.0.11rc3
+        image: ghcr.io/grafana/k6-operator:controller-v0.0.11
         name: manager
         resources:
           limits:
