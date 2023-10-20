@@ -20,5 +20,5 @@ jobs:
       ct_configfile: charts/ct.yaml
       helm_tag_prefix: helm
     secrets:
-      gihub_app_id: ${{ secrets.K6_OPERATOR_HELM_RELEASE_APP_ID }}
+      github_app_id: ${{ secrets.K6_OPERATOR_HELM_RELEASE_APP_ID }}
       github_app_pem: ${{ secrets.K6_OPERATOR_HELM_RELEASE_PEM_KEY }}
