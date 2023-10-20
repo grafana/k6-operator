@@ -21,4 +21,4 @@ jobs:
       helm_tag_prefix: helm
     secrets:
       gihub_app_id: ${{ secrets.K6_OPERATOR_HELM_RELEASE_APP_ID }}
-      helm_repo_token: ${{ secrets.K6_OPERATOR_HELM_RELEASE_PEM_KEY }}
+      github_app_pem: ${{ secrets.K6_OPERATOR_HELM_RELEASE_PEM_KEY }}
