@@ -1,5 +1,5 @@
 ---
-name: "push"
+name: "Release k6-operator"
 
 on:
   workflow_dispatch:
