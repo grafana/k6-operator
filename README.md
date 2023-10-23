@@ -23,6 +23,22 @@ curl https://raw.githubusercontent.com/grafana/k6-operator/main/bundle.yaml | ku
 
 Bundle includes default manifests for k6-operator, including `k6-operator-system` namespace and k6-operator Deployment with latest tagged Docker image. Customizations can be made on top of this manifest as needs be, e.g. with `kustomize`.
 
+#### Deployment with Helm
+
+Helm releases of k6-operator are published together with other Grafana Helm charts and can be installed with the following commands:
+
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm install k6-operator grafana/k6-operator
+```
+
+Passing additional configuration can be done with `values.yaml` (example can be found [here](https://github.com/grafana/k6-operator/blob/main/charts/k6-operator/samples/customAnnotationsAndLabels.yaml)):
+
+```bash
+helm install k6-operator grafana/k6-operator -f values.yaml
+```
+
 #### Makefile deployment
 
 In order to install the operator with Makefile, the following additional tooling must be installed:
