@@ -240,7 +240,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			// If TestRunRunning has just been updated, wait for a bit before
 			// acting, to avoid race condition between different reconcile loops.
 			t, _ := v1alpha1.LastUpdate(k6, v1alpha1.TestRunRunning)
-			if time.Now().Sub(t) < 5*time.Second {
+			if time.Since(t) < 5*time.Second {
 				return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 			}
 
@@ -268,7 +268,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		// delete if configured
 		if k6.GetSpec().Cleanup == "post" {
 			log.Info("Cleaning up all resources")
-			r.Delete(ctx, k6)
+			r.Delete(ctx, k6) //nolint:errcheck
 		}
 		// notify if configured
 		return ctrl.Result{}, nil
@@ -302,10 +302,7 @@ func (r *TestRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				func(object client.Object) bool {
 					pod := object.(*v1.Pod)
 					_, ok := pod.GetLabels()[k6CrLabelName]
-					if !ok {
-						return false
-					}
-					return true
+					return ok
 				}))).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 1,

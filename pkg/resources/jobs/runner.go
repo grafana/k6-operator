@@ -55,7 +55,7 @@ func NewRunnerJob(k6 v1alpha1.TestRunI, index int, token string) (*batchv1.Job, 
 
 	command = append(
 		command,
-		fmt.Sprintf(script.FullName()),
+		script.FullName(),
 		"--address=0.0.0.0:6565")
 
 	paused := true
