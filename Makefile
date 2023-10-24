@@ -98,6 +98,10 @@ fmt:
 vet:
 	go vet ./...
 
+# Run golangci-lint
+lint:
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.0
+	golangci-lint --timeout 5m run ./...
 # Generate code
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."

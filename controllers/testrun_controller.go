@@ -268,7 +268,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		// delete if configured
 		if k6.GetSpec().Cleanup == "post" {
 			log.Info("Cleaning up all resources")
-			r.Delete(ctx, k6) //nolint:errcheck
+			_ = r.Delete(ctx, k6)
 		}
 		// notify if configured
 		return ctrl.Result{}, nil
