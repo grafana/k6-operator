@@ -82,7 +82,7 @@ jobs:
 
       - name: Testing
         run: |
-          helm install k6-operator ./charts/ -f ./charts/values.yaml --set manager.image.tag=${{github.sha}}
+          helm install k6-operator ./charts/k6-operator/ -f ./charts/k6-operator/values.yaml --set manager.image.tag=${{github.sha}}
           kubectl cluster-info dump | grep 'nodeInfo' -A 11
           kubectl -n k6-operator-system describe deployment k6-operator-controller-manager
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
