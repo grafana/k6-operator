@@ -168,10 +168,10 @@ e2e-helm: deploy-helm
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy-helm: manifests helm
-	$(HELM) upgrade --install --wait k6-operator ./charts -f ./charts/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
+	$(HELM) upgrade --install --wait k6-operator ./charts/k6-operator -f ./charts/k6-operator/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
 
 helm-template: manifests helm
-	$(HELM) template k6-operator ./charts -f ./charts/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
+	$(HELM) template k6-operator ./charts/k6-operator -f ./charts/k6-operator/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
 
 # Delete operator from a cluster
 delete-helm: manifests helm
