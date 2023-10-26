@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/go-logr/logr"
@@ -32,7 +32,7 @@ func isJobRunning(log logr.Logger, service *v1.Service) bool {
 
 	defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error(err, fmt.Sprintf("Error on reading status of the runner job %v", service.ObjectMeta.Name))
 		return true
@@ -63,7 +63,6 @@ func StoppedJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *
 
 	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.NamespacedName().Namespace}
 
-	var hostnames []string
 	sl := &v1.ServiceList{}
 
 	if err := r.List(ctx, sl, opts); err != nil {
@@ -73,7 +72,6 @@ func StoppedJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *
 
 	var count int32
 	for _, service := range sl.Items {
-		hostnames = append(hostnames, service.Spec.ClusterIP)
 
 		if isJobRunning(log, &service) {
 			count++

@@ -28,9 +28,7 @@ func newIstioCommand(istioEnabled string, inheritedCommands []string) ([]string,
 		command = append(command, "scuttle")
 	}
 
-	for _, inheritedCommand := range inheritedCommands {
-		command = append(command, inheritedCommand)
-	}
+	command = append(command, inheritedCommands...)
 
 	return command, istio
 }

@@ -89,8 +89,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr.AddHealthzCheck("health", healthz.Ping)
-	mgr.AddReadyzCheck("ready", healthz.Ping)
+	_ = mgr.AddHealthzCheck("health", healthz.Ping)
+	_ = mgr.AddReadyzCheck("ready", healthz.Ping)
 
 	if err = (controllers.NewK6Reconciler(&controllers.TestRunReconciler{
 		Client: mgr.GetClient(),

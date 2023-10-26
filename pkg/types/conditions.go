@@ -56,7 +56,7 @@ func SetIfNewer(cond *[]metav1.Condition,
 		}
 
 		if callbackF != nil {
-			if callbackResult := callbackF(proposedCondition); callbackResult == true {
+			if callbackResult := callbackF(proposedCondition); callbackResult {
 				isNewer = callbackResult
 			}
 		}

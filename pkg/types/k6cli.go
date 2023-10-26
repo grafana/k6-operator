@@ -14,12 +14,10 @@ type CLI struct {
 
 func ParseCLI(arguments string) *CLI {
 	lastArgV := func(start int, args []string) (end int) {
-		var nextArg bool
 		end = start
-		for !nextArg && end < len(args) {
+		for end < len(args) {
 			args[end] = strings.TrimSpace(args[end])
 			if len(args[end]) > 0 && args[end][0] == '-' {
-				nextArg = true
 				break
 			}
 			end++

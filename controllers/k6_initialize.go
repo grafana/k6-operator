@@ -133,7 +133,7 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 		// If CloudTestRunCreated has just been updated, wait for a bit before
 		// acting, to avoid race condition between different reconcile loops.
 		t, _ := v1alpha1.LastUpdate(k6, v1alpha1.CloudTestRunCreated)
-		if time.Now().Sub(t) < 5*time.Second {
+		if time.Since(t) < 5*time.Second {
 			return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 		}
 

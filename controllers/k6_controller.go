@@ -96,10 +96,7 @@ func (r *K6Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 				func(object client.Object) bool {
 					pod := object.(*v1.Pod)
 					_, ok := pod.GetLabels()[k6CrLabelName]
-					if !ok {
-						return false
-					}
-					return true
+					return ok
 				}))).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 1,
