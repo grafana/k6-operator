@@ -76,10 +76,14 @@ type EventPayload struct {
 }
 
 type Event struct {
-	ErrorCode `json:"error_code,omitempty"`
-	Detail    string `json:"error_detail,omitempty"`
 	Origin    `json:"origin,omitempty"`
-	Reason    string `json:"reason,omitempty"`
+	ErrorCode `json:"error_code,omitempty"`
+
+	// reason is used for abort events,
+	// while details are for any non-abort event
+	Reason       string `json:"reason,omitempty"`
+	Detail       string `json:"error_detail,omitempty"`
+	PublicDetail string `json:"error_detail_public,omitempty"`
 }
 
 type EventType string
@@ -111,7 +115,8 @@ var (
 	OriginK6   = Origin("k6")
 )
 
-// WithDetail sets detail only for the 1st event
+// WithDetail sets detail only for the 1st event.
+// If it's abort, WithDetail sets reason field.
 func (e *Events) WithDetail(s string) *Events {
 	if len(*e) == 0 {
 		return e
@@ -121,32 +126,31 @@ func (e *Events) WithDetail(s string) *Events {
 		(*e)[0].Reason = s
 	} else {
 		(*e)[0].Detail = s
+		(*e)[0].PublicDetail = s
 	}
 	return e
 }
 
-// WithAbort adds abortEvent if errorEvent already exists
-// func (e *Events) WithAbort(s string) *Events {
-// 	if len(*e) == 0 {
-// 		return
-// 	}
+// WithAbort adds abortEvent to errorEvent if it already exists.
+func (e *Events) WithAbort() *Events {
+	if len(*e) == 0 {
+		return e
+	}
 
-// 	if (*e)[0].EventType == errorEvent {
-// 		ae := EventPayload{
-// 			EventType: abort,
-// 		}
-// 	}
-//	return e
-// }
+	if (*e)[0].EventType == errorEvent {
+		*e = append(*e, AbortEvent(OriginUser))
+	}
+	return e
+}
 
-func AbortEvent(o Origin) *Events {
-	e := Events([]*EventPayload{{
+func AbortEvent(o Origin) *EventPayload {
+	e := &EventPayload{
 		EventType: abortEvent,
 		Event: Event{
 			Origin: o,
 		},
-	}})
-	return &e
+	}
+	return e
 }
 
 func ErrorEvent(ec ErrorCode) *Events {

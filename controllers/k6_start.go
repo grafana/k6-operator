@@ -71,8 +71,10 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Te
 			// let's try this approach
 			if time.Since(t).Minutes() > 5 {
 				if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
-					events := cloud.ErrorEvent(cloud.K6OperatorStartError).WithDetail("Creation of runner pods takes too long: perhaps, something is off with your configuration. Check if runner jobs and pods were created successfully.")
-					cloud.SendTestRunEvents(r.k6CloudClient, k6.GetSpec().TestRunID, log, events)
+					events := cloud.ErrorEvent(cloud.K6OperatorStartError).
+						WithDetail("Creation of runner pods takes too long: your configuration might be off. Check if runner jobs and pods were created successfully.").
+						WithAbort()
+					cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
 				}
 			}
 		}

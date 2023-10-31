@@ -82,7 +82,7 @@ func (r *TestRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log logr.Logger, k6 v1alpha1.TestRunI) (ctrl.Result, error) {
 	var err error
-	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+	if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
 		// bootstrap the client
 		found, err := r.createClient(ctx, k6, log)
 		if err != nil {
