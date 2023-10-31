@@ -52,10 +52,14 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 
 	inspectOutput, inspectReady, err := inspectTestRun(ctx, log, k6, r.Client)
 	if err != nil {
+		// Cloud output test run is not created yet at this point, so sending
+		// events is possible only for PLZ test run.
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
 			// This error won't allow to start a test so let k6 Cloud know of it
-			events := cloud.ErrorEvent(cloud.K6OperatorStartError).WithDetail(fmt.Sprintf("Failed to inspect the test script: %v", err))
-			cloud.SendTestRunEvents(r.k6CloudClient, k6.GetSpec().TestRunID, log, events)
+			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
+				WithDetail(fmt.Sprintf("Failed to inspect the test script: %v", err)).
+				WithAbort()
+			cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
 		}
 
 		// inspectTestRun made a log message already so just return without requeue

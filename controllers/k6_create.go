@@ -40,14 +40,8 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 		token, tokenReady, err = loadToken(ctx, log, r.Client, k6.GetSpec().Token, sOpts)
 		if err != nil {
 			// An error here means a very likely mis-configuration of the token.
-			// Consider updating status to error to let a user know quicker?
+			// TODO: update status to error to let a user know quicker
 			log.Error(err, "A problem while getting token.")
-
-			if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
-				events := cloud.ErrorEvent(cloud.K6OperatorStartError).WithDetail(fmt.Sprintf("Failed to retrieve token: %v", err))
-				cloud.SendTestRunEvents(r.k6CloudClient, k6.GetSpec().TestRunID, log, events)
-			}
-
 			return ctrl.Result{}, nil
 		}
 		if !tokenReady {
@@ -58,10 +52,11 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 	log.Info("Creating test jobs")
 
 	if res, err = createJobSpecs(ctx, log, k6, r, token); err != nil {
-
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
-			events := cloud.ErrorEvent(cloud.K6OperatorStartError).WithDetail(fmt.Sprintf("Failed to create runner jobs: %v", err))
-			cloud.SendTestRunEvents(r.k6CloudClient, k6.GetSpec().TestRunID, log, events)
+			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
+				WithDetail(fmt.Sprintf("Failed to create runner jobs: %v", err)).
+				WithAbort()
+			cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
 		}
 
 		return res, err
@@ -86,7 +81,11 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	}
 
 	if err := r.Get(ctx, namespacedName, found); err == nil || !errors.IsNotFound(err) {
-		log.Info("Could not start a new test, Make sure you've deleted your previous run.")
+		if err == nil {
+			err = fmt.Errorf("job with the name %s exists; make sure you've deleted your previous run", namespacedName.Name)
+		}
+
+		log.Info(err.Error())
 		return ctrl.Result{}, err
 	}
 

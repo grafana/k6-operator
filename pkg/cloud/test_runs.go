@@ -110,7 +110,7 @@ func GetTestRunData(client *cloudapi.Client, refID string) (*TestRunData, error)
 	return getTestRun(client, url)
 }
 
-// called by K6 controller
+// called by TestRun controller
 func GetTestRunState(client *cloudapi.Client, refID string, log logr.Logger) (TestRunStatus, error) {
 	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status", ApiURL(client.BaseURL()), refID)
 	trData, err := getTestRun(client, url)
@@ -121,7 +121,7 @@ func GetTestRunState(client *cloudapi.Client, refID string, log logr.Logger) (Te
 	return TestRunStatus(trData.RunStatus), nil
 }
 
-// called by K6 controller
+// called by TestRun controller
 // If there's an error, it'll be logged.
 func SendTestRunEvents(client *cloudapi.Client, refID string, log logr.Logger, events *Events) {
 	if len(*events) == 0 {

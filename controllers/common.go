@@ -46,7 +46,7 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	}
 
 	// there should be only 1 initializer pod
-	if podList.Items[0].Status.Phase != "Succeeded" {
+	if podList.Items[0].Status.Phase != corev1.PodSucceeded && podList.Items[0].Status.Phase != corev1.PodFailed {
 		log.Info("Waiting for initializing pod to finish")
 		return
 	}
