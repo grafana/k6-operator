@@ -1,8 +1,15 @@
 ---
 name: Helm Lint
-on: [push]
+on:
+  # `ct lint` does not work well with tag references on releases.
+  # OTOH, Helm linting on tags is not necessary so long as it
+  # happens on push to branches.
+  push:
+    branches:
+      - '**'
+
 jobs:
-  lintAllTheThings:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
