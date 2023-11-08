@@ -4,6 +4,10 @@ customAnnotations:
 customLabels:
   "customized-labels": "k6-operator"
 
+podLabels:
+  environment: production
+  owner: development
+
 certManager:
   enabled: true
 

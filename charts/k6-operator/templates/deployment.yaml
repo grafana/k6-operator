@@ -19,6 +19,7 @@ spec:
     metadata:
       labels:
         {{- include "k6-operator.selectorLabels" . | nindent 8 }}
+        {{- include "k6-operator.podLabels" . | nindent 8 }}
     spec:
       containers:
         {{- if .Values.authProxy.enabled }}

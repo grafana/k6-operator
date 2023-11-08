@@ -4,6 +4,9 @@ customAnnotations: {}
 # customLabels -- Custom Label to be applied on all resources
 customLabels: {}
 
+# podLabels -- Custom Label to be applied on all pods
+podLabels: {}
+
 # nodeSelector -- Node Selector to be applied on all containers
 nodeSelector: {}
 

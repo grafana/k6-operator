@@ -72,6 +72,14 @@ Create the name of the service account to use
   {{- end }}
 {{- end -}}
 
+{{- define "k6-operator.podLabels" -}}
+  {{- if .Values.podLabels }}
+    {{- with .Values.podLabels }}
+      {{- toYaml . }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+
 {{- define "k6-operator.customAnnotations" -}}
   {{- if .Values.customAnnotations }}
     {{- with .Values.customAnnotations }}
