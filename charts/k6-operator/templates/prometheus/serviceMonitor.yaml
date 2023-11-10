@@ -12,8 +12,11 @@ metadata:
   annotations:
     {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
   name: controller-manager-metrics-monitor
-  namespace: system
+  namespace: {{- include "k6-operator.namespace" . }}
 spec:
+  namespaceSelector:
+    matchNames:
+      - {{- include "k6-operator.namespace" . }}
   endpoints:
     - path: /metrics
       port: https
