@@ -21,7 +21,6 @@ import (
 func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (ctrl.Result, error) {
 	var (
 		err   error
-		res   ctrl.Result
 		token string // only for cloud tests
 	)
 
@@ -51,7 +50,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 
 	log.Info("Creating test jobs")
 
-	if res, err = createJobSpecs(ctx, log, k6, r, token); err != nil {
+	if res, recheck, err := createJobSpecs(ctx, log, k6, r, token); err != nil {
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
 			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 				WithDetail(fmt.Sprintf("Failed to create runner jobs: %v", err)).
@@ -60,9 +59,11 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 		}
 
 		return res, err
+	} else if recheck {
+		return res, nil
 	}
 
-	log.Info("Changing stage of K6 status to created")
+	log.Info("Changing stage of TestRun status to created")
 	k6.GetStatus().Stage = "created"
 
 	if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
@@ -73,7 +74,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 	return ctrl.Result{}, nil
 }
 
-func createJobSpecs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler, token string) (ctrl.Result, error) {
+func createJobSpecs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler, token string) (ctrl.Result, bool, error) {
 	found := &batchv1.Job{}
 	namespacedName := types.NamespacedName{
 		Name:      fmt.Sprintf("%s-1", k6.NamespacedName().Name),
@@ -84,17 +85,24 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 		if err == nil {
 			err = fmt.Errorf("job with the name %s exists; make sure you've deleted your previous run", namespacedName.Name)
 		}
-
 		log.Info(err.Error())
-		return ctrl.Result{}, err
+
+		// is it possible to implement this delay with resourceVersion of the job?
+		t, _ := v1alpha1.LastUpdate(k6, v1alpha1.CloudTestRun)
+		if time.Since(t).Seconds() <= 30 {
+			// try again before returning an error
+			return ctrl.Result{RequeueAfter: time.Second * 10}, true, nil
+		}
+
+		return ctrl.Result{}, false, err
 	}
 
 	for i := 1; i <= int(k6.GetSpec().Parallelism); i++ {
 		if err := launchTest(ctx, k6, i, log, r, token); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, false, err
 		}
 	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{}, false, nil
 }
 
 func launchTest(ctx context.Context, k6 v1alpha1.TestRunI, index int, log logr.Logger, r *TestRunReconciler, token string) error {
