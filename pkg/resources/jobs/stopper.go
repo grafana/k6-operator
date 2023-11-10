@@ -16,7 +16,7 @@ func NewStopJob(k6 v1alpha1.TestRunI, hostname []string) *batchv1.Job {
 
 	job.Name = fmt.Sprintf("%s-stopper", k6.NamespacedName().Name)
 
-	image := "ghcr.io/grafana/k6-operator:latest-starter"
+	image := getOperatorImageName() + ":latest-starter"
 	if k6.GetSpec().Starter.Image != "" {
 		image = k6.GetSpec().Starter.Image
 	}

@@ -2,6 +2,7 @@ package testrun
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
@@ -30,7 +31,7 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 
 	initContainer := containers.NewS3InitContainer(
 		trData.ArchiveURL,
-		"ghcr.io/grafana/k6-operator:latest-starter",
+		getOperatorImageName()+":latest-starter",
 		volumeMount,
 	)
 
@@ -74,5 +75,14 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 			TestRunID: trData.TestRunID(),
 			Token:     plz.Spec.Token,
 		},
+	}
+}
+
+func getOperatorImageName() string {
+	image, ok := os.LookupEnv("OPERATOR_IMAGE_NAME")
+	if ok {
+		return image
+	} else {
+		return "ghcr.io/grafana/k6-operator"
 	}
 }

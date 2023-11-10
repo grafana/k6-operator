@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/grafana/k6-operator/pkg/types"
@@ -144,4 +145,13 @@ func getInitContainers(k6Spec *v1alpha1.TestRunSpec, script *types.Script) []cor
 	}
 
 	return initContainers
+}
+
+func getOperatorImageName() string {
+	image, ok := os.LookupEnv("OPERATOR_IMAGE_NAME")
+	if ok {
+		return image
+	} else {
+		return "ghcr.io/grafana/k6-operator"
+	}
 }

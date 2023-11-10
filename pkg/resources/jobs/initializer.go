@@ -18,7 +18,7 @@ func NewInitializerJob(k6 v1alpha1.TestRunI, argLine string) (*batchv1.Job, erro
 	}
 
 	var (
-		image                        = "ghcr.io/grafana/k6-operator:latest-runner"
+		image                        = getOperatorImageName() + ":latest-runner"
 		annotations                  = make(map[string]string)
 		labels                       = newLabels(k6.NamespacedName().Name)
 		serviceAccountName           = "default"

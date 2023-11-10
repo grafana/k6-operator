@@ -19,7 +19,7 @@ func NewStarterJob(k6 v1alpha1.TestRunI, hostname []string) *batchv1.Job {
 		starterAnnotations = k6.GetSpec().Starter.Metadata.Annotations
 	}
 
-	starterImage := "ghcr.io/grafana/k6-operator:latest-starter"
+	starterImage := getOperatorImageName() + ":latest-starter"
 	if k6.GetSpec().Starter.Image != "" {
 		starterImage = k6.GetSpec().Starter.Image
 	}
