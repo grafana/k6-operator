@@ -18,6 +18,7 @@ spec:
   template:
     metadata:
       labels:
+        control-plane: "controller-manager"
         {{- include "k6-operator.selectorLabels" . | nindent 8 }}
         {{- include "k6-operator.podLabels" . | nindent 8 }}
     spec:
