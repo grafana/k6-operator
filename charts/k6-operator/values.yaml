@@ -42,6 +42,8 @@ authProxy:
   readinessProbe: {}
 
 manager:
+  # manager.replicas -- number of controller-manager replicas (default: 1)
+  replicas: 1
   serviceAccount:
     # manager.serviceAccount.name -- kubernetes service account for the k6 manager
     name: k6-operator-controller

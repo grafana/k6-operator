@@ -11,7 +11,7 @@ metadata:
   annotations:
     {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.manager.replicas }}
   selector:
     matchLabels:
       {{- include "k6-operator.selectorLabels" . | nindent 6 }}
