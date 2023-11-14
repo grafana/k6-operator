@@ -229,6 +229,13 @@ func (in *Pod) DeepCopyInto(out *Pod) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.TopologySpreadConstraints != nil {
+		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
+		*out = make([]v1.TopologySpreadConstraint, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	in.Resources.DeepCopyInto(&out.Resources)
 	in.SecurityContext.DeepCopyInto(&out.SecurityContext)
 	if in.EnvFrom != nil {

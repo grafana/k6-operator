@@ -13,8 +13,7 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: K6 is the Schema for the k6s API
-      displayName: K6
+    - displayName: K6
       kind: K6
       name: k6s.k6.io
       version: v1alpha1
@@ -22,6 +21,11 @@ spec:
       displayName: Private Load Zone
       kind: PrivateLoadZone
       name: privateloadzones.k6.io
+      version: v1alpha1
+    - description: TestRun is the Schema for the testruns API
+      displayName: Test Run
+      kind: TestRun
+      name: testruns.k6.io
       version: v1alpha1
   description: k6-operator
   displayName: k6-operator

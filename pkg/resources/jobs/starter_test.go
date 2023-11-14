@@ -46,6 +46,7 @@ func TestNewStarterJob(t *testing.T) {
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					Tolerations:                  nil,
+					TopologySpreadConstraints:    nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
@@ -126,6 +127,7 @@ func TestNewStarterJobIstio(t *testing.T) {
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					Tolerations:                  nil,
+					TopologySpreadConstraints:    nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
