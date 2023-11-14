@@ -504,11 +504,12 @@ make delete
 
 ## Developing Locally
 
-### Run Tests
-
-#### Pre-Requisites
+### Pre-Requisites
 
 - [operator-sdk](https://sdk.operatorframework.io/docs/installation/)
+- [kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/)
+
+### Run Tests
 
 #### Test Setup
 
