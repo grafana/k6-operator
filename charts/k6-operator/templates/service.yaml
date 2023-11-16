@@ -17,5 +17,5 @@ spec:
     port: 8443
     targetPort: https
   selector:
-    control-plane: "controller-manager"
+    {{- include "k6-operator.selectorLabels" . | nindent 4 }}
 {{- end }}

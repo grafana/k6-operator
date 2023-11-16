@@ -13,6 +13,9 @@ metadata:
   name: controller-manager-metrics-monitor
   namespace: {{- include "k6-operator.namespace" . }}
 spec:
+  namespaceSelector:
+    matchNames:
+      - {{- include "k6-operator.namespace" . }}
   endpoints:
     - path: /metrics
       port: https
