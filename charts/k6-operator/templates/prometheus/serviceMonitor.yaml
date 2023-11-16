@@ -5,14 +5,13 @@ kind: ServiceMonitor
 metadata:
   labels:
     control-plane: "controller-manager"
-    namespace: {{- include "k6-operator.namespace" . }}
     app.kubernetes.io/component: monitoring
     {{- include "k6-operator.labels" . | nindent 4 }}
     {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
   annotations:
     {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
   name: controller-manager-metrics-monitor
-  namespace: system
+  namespace: {{- include "k6-operator.namespace" . }}
 spec:
   endpoints:
     - path: /metrics
