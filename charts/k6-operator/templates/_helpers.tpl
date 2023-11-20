@@ -89,7 +89,7 @@ Create the name of the service account to use
 {{- end -}}
 
 {{- define "k6-operator.namespace" -}}
-  {{- if eq .Release.Namespace "default" }}
+  {{- if eq .Release.Namespace "monitoring" }}
     {{- printf "%v-system" .Release.Name | indent 1 }}
   {{- else }}
     {{- .Release.Namespace | indent 1 }}
