@@ -16,6 +16,9 @@ affinity: {}
 # tolerations -- Tolerations to be applied on all containers
 tolerations: {}
 
+# installCRDs -- Installs CRDs as part of the release
+installCRDs: true
+
 namespace:
   # namespace.create -- create the namespace (default: true)
   create: true
