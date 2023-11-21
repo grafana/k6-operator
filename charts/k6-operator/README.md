@@ -1,6 +1,6 @@
 # k6-operator
 
-![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-informational?style=flat-square) ![AppVersion: 0.0.11](https://img.shields.io/badge/AppVersion-0.0.11-informational?style=flat-square)
+![Version: 3.1.0](https://img.shields.io/badge/Version-3.1.0-informational?style=flat-square) ![AppVersion: 0.0.11](https://img.shields.io/badge/AppVersion-0.0.11-informational?style=flat-square)
 
 A Helm chart to install the k6-operator
 
@@ -34,12 +34,14 @@ Kubernetes: `>=1.16.0-0`
 | authProxy.resources | object | `{}` | rbac-proxy resource limitation/request |
 | customAnnotations | object | `{}` | Custom Annotations to be applied on all resources |
 | customLabels | object | `{}` | Custom Label to be applied on all resources |
+| installCRDs | bool | `true` | Installs CRDs as part of the release |
 | manager.env | object | `{}` | Environment variables to be applied on the controller |
 | manager.image.name | string | `"ghcr.io/grafana/k6-operator"` | controller-manager image name |
 | manager.image.pullPolicy | string | `"Always"` | pull policy for the image possible values Always, Never, IfNotPresent (default: Always) |
 | manager.image.tag | string | `"controller-v0.0.11"` | controller-manager image tag |
 | manager.livenessProbe | object | `{}` | Liveness probe in Probe format |
 | manager.readinessProbe | object | `{}` | Readiness probe in Probe format |
+| manager.replicas | int | `1` | number of controller-manager replicas (default: 1) |
 | manager.resources | object | `{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}}` | controller-manager Resources definition |
 | manager.resources.limits.cpu | string | `"100m"` | controller-manager CPU limit (Max) |
 | manager.resources.limits.memory | string | `"100Mi"` | controller-manager Memory limit (Max) |
@@ -49,6 +51,7 @@ Kubernetes: `>=1.16.0-0`
 | manager.serviceAccount.name | string | `"k6-operator-controller"` | kubernetes service account for the k6 manager |
 | namespace.create | bool | `true` | create the namespace (default: true) |
 | nodeSelector | object | `{}` | Node Selector to be applied on all containers |
+| podLabels | object | `{}` | Custom Label to be applied on all pods |
 | prometheus.enabled | bool | `false` | enables the prometheus metrics scraping (default: false) |
 | tolerations | object | `{}` | Tolerations to be applied on all containers |
 
