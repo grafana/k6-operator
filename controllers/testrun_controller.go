@@ -16,7 +16,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -100,6 +99,14 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 	// Decision making here is now a mix between stages and conditions.
 	// TODO: refactor further.
 
+	if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) {
+		// check in with the BE for status
+		if r.ShouldAbort(ctx, k6, log) {
+			log.Info("Received an abort signal from the k6 Cloud: stopping the test.")
+			return StopJobs(ctx, log, k6, r)
+		}
+	}
+
 	switch k6.GetStatus().Stage {
 	case "":
 		log.Info("Initialize test")
@@ -110,7 +117,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			return ctrl.Result{}, err
 		}
 
-		log.Info("Changing stage of K6 status to initialization")
+		log.Info("Changing stage of TestRun status to initialization")
 		k6.GetStatus().Stage = "initialization"
 
 		if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
@@ -129,7 +136,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		if v1alpha1.IsFalse(k6, v1alpha1.CloudTestRun) {
 			// RunValidations has already happened and this is not a
 			// cloud test: we can move on
-			log.Info("Changing stage of K6 status to initialized")
+			log.Info("Changing stage of TestRun status to initialized")
 
 			k6.GetStatus().Stage = "initialized"
 
@@ -147,7 +154,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 
 			} else {
 				// if test run was created, then only changing status is left
-				log.Info("Changing stage of K6 status to initialized")
+				log.Info("Changing stage of TestRun status to initialized")
 
 				k6.GetStatus().Stage = "initialized"
 
@@ -179,7 +186,8 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		// wait for the test to finish
 		if !FinishJobs(ctx, log, k6, r) {
 
-			if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) && v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) {
+			// TODO: confirm if this check is needed given the check in the beginning of reconcile
+			if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) {
 				// check in with the BE for status
 				if r.ShouldAbort(ctx, k6, log) {
 					log.Info("Received an abort signal from the k6 Cloud: stopping the test.")
@@ -201,7 +209,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		if v1alpha1.IsTrue(k6, v1alpha1.TestRunRunning) {
 			v1alpha1.UpdateCondition(k6, v1alpha1.TestRunRunning, metav1.ConditionFalse)
 
-			log.Info("Changing stage of K6 status to stopped")
+			log.Info("Changing stage of TestRun status to stopped")
 			k6.GetStatus().Stage = "stopped"
 
 			_, err := r.UpdateStatus(ctx, k6, log)
@@ -254,7 +262,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			}
 		}
 
-		log.Info("Changing stage of K6 status to finished")
+		log.Info("Changing stage of TestRun status to finished")
 		k6.GetStatus().Stage = "finished"
 
 		_, err := r.UpdateStatus(ctx, k6, log)
@@ -355,12 +363,12 @@ func (r *TestRunReconciler) UpdateStatus(ctx context.Context, k6 v1alpha1.TestRu
 // cause a forced stop. It is meant to be used only by PLZ test runs.
 func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 v1alpha1.TestRunI, log logr.Logger) bool {
 	// sanity check
-	if len(k6.GetStatus().TestRunID) == 0 {
-		log.Error(errors.New("empty test run ID"), "Trying to get state of test run with empty test run ID")
+	if len(v1alpha1.TestRunID(k6)) == 0 {
+		// log.Error(errors.New("empty test run ID"), "Trying to get state of test run with empty test run ID")
 		return false
 	}
 
-	status, err := cloud.GetTestRunState(r.k6CloudClient, k6.GetStatus().TestRunID, log)
+	status, err := cloud.GetTestRunState(r.k6CloudClient, v1alpha1.TestRunID(k6), log)
 	if err != nil {
 		log.Error(err, "Failed to get test run state.")
 		return false

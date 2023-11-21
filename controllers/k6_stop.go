@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -56,7 +57,7 @@ func StopJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Tes
 
 	log.Info("Created stop job")
 
-	log.Info("Changing stage of K6 status to stopped")
+	log.Info("Changing stage of TestRun status to stopped")
 	k6.GetStatus().Stage = "stopped"
 	v1alpha1.UpdateCondition(k6, v1alpha1.TestRunRunning, metav1.ConditionFalse)
 	v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRunAborted, metav1.ConditionTrue)
@@ -64,7 +65,7 @@ func StopJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Tes
 	if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
 		return ctrl.Result{}, err
 	} else if updateHappened {
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Second}, nil
 	}
 	return ctrl.Result{}, nil
 }
