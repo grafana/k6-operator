@@ -73,13 +73,14 @@ func Initialize(k6 TestRunI) {
 		},
 	}
 
+	UpdateCondition(k6, CloudTestRunAborted, metav1.ConditionFalse)
+
 	// PLZ test run case
 	if len(k6.GetSpec().TestRunID) > 0 {
 		UpdateCondition(k6, CloudTestRun, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudPLZTestRun, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudTestRunCreated, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudTestRunFinalized, metav1.ConditionFalse)
-		UpdateCondition(k6, CloudTestRunAborted, metav1.ConditionFalse)
 
 		k6.GetStatus().TestRunID = k6.GetSpec().TestRunID
 	} else {
@@ -151,17 +152,23 @@ func (k6status *TestRunStatus) SetIfNewer(proposedStatus TestRunStatus) (isNewer
 				isNewer = true
 			}
 		case "created":
-			if proposedStatus.Stage == "started" || proposedStatus.Stage == "finished" || proposedStatus.Stage == "error" {
+			if proposedStatus.Stage == "started" ||
+				proposedStatus.Stage == "finished" ||
+				proposedStatus.Stage == "error" ||
+				proposedStatus.Stage == "stopped" {
 				k6status.Stage = proposedStatus.Stage
 				isNewer = true
 			}
 		case "started":
-			if proposedStatus.Stage == "stopped" || proposedStatus.Stage == "finished" || proposedStatus.Stage == "error" {
+			if proposedStatus.Stage == "stopped" ||
+				proposedStatus.Stage == "finished" ||
+				proposedStatus.Stage == "error" {
 				k6status.Stage = proposedStatus.Stage
 				isNewer = true
 			}
 		case "stopped":
-			if proposedStatus.Stage == "finished" || proposedStatus.Stage == "error" {
+			if proposedStatus.Stage == "finished" ||
+				proposedStatus.Stage == "error" {
 				k6status.Stage = proposedStatus.Stage
 				isNewer = true
 			}

@@ -136,6 +136,8 @@ func SendTestRunEvents(client *cloudapi.Client, refID string, log logr.Logger, e
 		return
 	}
 
+	log.Info(fmt.Sprintf("Sending events to k6 Cloud %+v", *events))
+
 	// status code is checked in Do
 	if err = client.Do(req, nil); err != nil {
 		log.Error(err, fmt.Sprintf("Failed to send events %+v", events))
