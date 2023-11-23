@@ -1,0 +1,24 @@
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: testrun-sample
+spec:
+  parallelism: 4
+  script:
+    configMap:
+      name: k6-test
+      file: test.js
+  runner:
+    metadata:
+      labels:
+        testrun: sample
+    topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchExpressions:
+        - key: testrun
+          operator: "In"
+          values:
+          - sample
