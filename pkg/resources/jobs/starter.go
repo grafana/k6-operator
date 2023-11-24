@@ -62,6 +62,7 @@ func NewStarterJob(k6 v1alpha1.TestRunI, hostname []string) *batchv1.Job {
 					Affinity:                     k6.GetSpec().Starter.Affinity,
 					NodeSelector:                 k6.GetSpec().Starter.NodeSelector,
 					Tolerations:                  k6.GetSpec().Starter.Tolerations,
+					TopologySpreadConstraints:    k6.GetSpec().Starter.TopologySpreadConstraints,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &k6.GetSpec().Starter.SecurityContext,
 					ImagePullSecrets:             k6.GetSpec().Starter.ImagePullSecrets,

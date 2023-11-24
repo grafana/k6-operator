@@ -45,6 +45,7 @@ func TestNewStopperJob(t *testing.T) {
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					Tolerations:                  nil,
+					TopologySpreadConstraints:    nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
@@ -124,6 +125,7 @@ func TestNewStopJobIstio(t *testing.T) {
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					Tolerations:                  nil,
+					TopologySpreadConstraints:    nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{

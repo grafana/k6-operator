@@ -52,6 +52,8 @@ func TestNewInitializerJob(t *testing.T) {
 					ServiceAccountName:           "default",
 					Affinity:                     nil,
 					NodeSelector:                 nil,
+					Tolerations:                  nil,
+					TopologySpreadConstraints:    nil,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
