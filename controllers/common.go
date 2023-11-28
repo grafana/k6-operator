@@ -19,6 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	errMessageTooLong = "Creation of %s takes too long: your configuration might be off. Check if %v were created successfully."
+)
+
 // It may take some time to retrieve inspect output so indicate with boolean if it's ready
 // and use returnErr only for errors that require a change of behaviour. All other errors
 // should just be logged.

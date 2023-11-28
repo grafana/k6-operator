@@ -16,6 +16,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -129,8 +130,27 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		return ctrl.Result{}, nil
 
 	case "initialization":
-		if v1alpha1.IsUnknown(k6, v1alpha1.CloudTestRun) {
-			return RunValidations(ctx, log, k6, r)
+		res, ready, err := RunValidations(ctx, log, k6, r)
+		if err != nil || !ready {
+			if t, ok := v1alpha1.LastUpdate(k6, v1alpha1.TestRunRunning); !ok {
+				// this should never happen
+				return res, errors.New("Cannot find condition TestRunRunning")
+			} else {
+				// let's try this approach
+				if time.Since(t).Minutes() > 5 {
+					msg := fmt.Sprintf(errMessageTooLong, "initializer pod", "initializer job and pod")
+					log.Info(msg)
+
+					if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
+						events := cloud.ErrorEvent(cloud.K6OperatorStartError).
+							WithDetail(msg).
+							WithAbort()
+						cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
+					}
+				}
+			}
+
+			return res, err
 		}
 
 		if v1alpha1.IsFalse(k6, v1alpha1.CloudTestRun) {

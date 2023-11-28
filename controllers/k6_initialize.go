@@ -44,7 +44,8 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	return res, nil
 }
 
-func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (res ctrl.Result, err error) {
+func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (
+	res ctrl.Result, ready bool, err error) {
 	// initializer is a quick job so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
@@ -63,10 +64,10 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 		}
 
 		// inspectTestRun made a log message already so just return without requeue
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, ready, err
 	}
 	if !inspectReady {
-		return res, nil
+		return res, ready, nil
 	}
 
 	log.Info(fmt.Sprintf("k6 inspect: %+v", inspectOutput))
@@ -83,11 +84,11 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 		k6.GetStatus().Stage = "error"
 
 		if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, ready, err
 		}
 
 		// Don't requeue in case of this error; unless it's made into a warning as described above.
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, ready, nil
 	}
 
 	if cli.HasCloudOut {
@@ -104,10 +105,12 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	}
 
 	if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, ready, err
 	}
 
-	return res, nil
+	ready = true
+
+	return res, ready, nil
 }
 
 // SetupCloudTest inspects the output of initializer and creates a new
