@@ -70,7 +70,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Te
 		} else {
 			// let's try this approach
 			if time.Since(t).Minutes() > 5 {
-				msg := "Creation of runner pods takes too long: your configuration might be off. Check if runner jobs and pods were created successfully."
+				msg := fmt.Sprintf(errMessageTooLong, "runner pods", "runner jobs and pods")
 				log.Info(msg)
 
 				if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
