@@ -41,9 +41,11 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 		err     error
 	)
 	if err = c.List(ctx, podList, listOpts); err != nil {
+		returnErr = err
 		log.Error(err, "Could not list pods")
 		return
 	}
+
 	if len(podList.Items) < 1 {
 		log.Info("No initializing pod found yet")
 		return
@@ -65,12 +67,14 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Error(err, "unable to fetch in-cluster REST config")
+		returnErr = err
 		return
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Error(err, "unable to get access to clientset")
+		returnErr = err
 		return
 	}
 	req := clientset.CoreV1().Pods(k6.NamespacedName().Namespace).GetLogs(podList.Items[0].Name, &corev1.PodLogOptions{
@@ -82,12 +86,13 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	podLogs, err := req.Stream(ctx)
 	if err != nil {
 		log.Error(err, "unable to stream logs from the pod")
+		returnErr = err
 		return
 	}
 	defer podLogs.Close()
 
 	buf := new(bytes.Buffer)
-	_, err = io.Copy(buf, podLogs)
+	_, returnErr = io.Copy(buf, podLogs)
 	if err != nil {
 		log.Error(err, "unable to copy logs from the pod")
 		return
