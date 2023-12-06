@@ -12,7 +12,7 @@ import (
 )
 
 // NewStopContainer is used to get a template for a new k6 stop curl container.
-func NewStopContainer(hostnames []string, image string, imagePullPolicy corev1.PullPolicy, command []string, env []corev1.EnvVar) corev1.Container {
+func NewStopContainer(hostnames []string, image string, imagePullPolicy corev1.PullPolicy, command []string, env []corev1.EnvVar, securityContext corev1.SecurityContext) corev1.Container {
 	req, _ := json.Marshal(
 		types.StatusAPIRequest{
 			Data: types.StatusAPIRequestData{
@@ -48,5 +48,6 @@ func NewStopContainer(hostnames []string, image string, imagePullPolicy corev1.P
 			command,
 			strings.Join(parts, ";"),
 		),
+		SecurityContext: &securityContext,
 	}
 }

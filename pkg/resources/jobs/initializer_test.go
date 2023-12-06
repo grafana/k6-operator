@@ -78,6 +78,7 @@ func TestNewInitializerJob(t *testing.T) {
 							Resources:    corev1.ResourceRequirements{},
 							VolumeMounts: script.VolumeMount(),
 							Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
+							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
 					Volumes: script.Volume(),
