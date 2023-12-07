@@ -16,9 +16,14 @@ body:
       label: k6-operator version or image
     validations:
       required: true
+  - type: input
+    attributes:
+      label: Helm chart version (if applicable)
+    validations:
+      required: false
   - type: textarea
     attributes:
-      label: K6 YAML
+      label: TestRun / PrivateLoadZone YAML
     validations:
       required: true
   - type: input
