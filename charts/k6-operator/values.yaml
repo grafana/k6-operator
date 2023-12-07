@@ -56,7 +56,7 @@ manager:
     # manager.image.name -- controller-manager image name
     name: ghcr.io/grafana/k6-operator
     # manager.image.tag -- controller-manager image tag
-    tag: controller-v0.0.11
+    tag: controller-v0.0.12
     # manager.image.pullPolicy -- pull policy for the image possible values Always, Never, IfNotPresent (default: Always)
     pullPolicy: Always
   # manager.livenessProbe -- Liveness probe in Probe format
