@@ -123,6 +123,7 @@ func NewInitializerJob(k6 v1alpha1.TestRunI, argLine string) (*batchv1.Job, erro
 							Env:             env,
 							Resources:       k6.GetSpec().Initializer.Resources,
 							VolumeMounts:    volumeMounts,
+							EnvFrom:         k6.GetSpec().Initializer.EnvFrom,
 							Ports:           ports,
 						},
 					},
