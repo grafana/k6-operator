@@ -65,7 +65,16 @@ func TestNewInitializerJob(t *testing.T) {
 								"sh", "-c",
 								"mkdir -p $(dirname /tmp/test.js.archived.tar) && k6 archive /test/test.js -O /tmp/test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements /tmp/test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
 							},
-							Env:          []corev1.EnvVar{},
+							Env: []corev1.EnvVar{},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "env",
+										},
+									},
+								},
+							},
 							Resources:    corev1.ResourceRequirements{},
 							VolumeMounts: script.VolumeMount(),
 							Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
@@ -97,6 +106,15 @@ func TestNewInitializerJob(t *testing.T) {
 					},
 					Annotations: map[string]string{
 						"awesomeAnnotation": "dope",
+					},
+				},
+				EnvFrom: []corev1.EnvFromSource{
+					{
+						ConfigMapRef: &corev1.ConfigMapEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "env",
+							},
+						},
 					},
 				},
 			},
