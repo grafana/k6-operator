@@ -67,6 +67,8 @@ func NewRunnerJob(k6 v1alpha1.TestRunI, index int, token string) (*batchv1.Job, 
 		command = append(command, "--paused")
 	}
 
+	command = append(command, "--no-setup")
+
 	// Add an instance tag: in case metrics are stored, they need to be distinguished by instance
 	command = append(command, "--tag", fmt.Sprintf("instance_id=%d", index))
 

@@ -11,6 +11,7 @@ import (
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
+	"github.com/grafana/k6-operator/pkg/testrun"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -85,6 +86,8 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Te
 		return res, nil
 	}
 
+	// services
+
 	var hostnames []string
 	sl := &v1.ServiceList{}
 
@@ -103,6 +106,23 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Te
 			log.Info(fmt.Sprintf("%v service is ready", service.ObjectMeta.Name))
 		}
 	}
+
+	// setup
+
+	log.Info("Invoking setup() on the first runner")
+
+	setupData, err := testrun.RunSetup(ctx, hostnames[0])
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	log.Info("Sending setup data to the runners")
+
+	if err = testrun.SetSetupData(ctx, hostnames, setupData); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// starter
 
 	starter := jobs.NewStarterJob(k6, hostnames)
 
