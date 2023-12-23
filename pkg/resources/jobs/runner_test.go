@@ -1301,6 +1301,7 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 									},
 								},
 							},
+							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
 					Containers: []corev1.Container{{
@@ -1479,6 +1480,7 @@ func TestNewRunnerJobWithVolume(t *testing.T) {
 									},
 								},
 							},
+							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
 					Containers: []corev1.Container{{

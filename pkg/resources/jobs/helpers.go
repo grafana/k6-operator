@@ -139,6 +139,7 @@ func getInitContainers(k6Spec *v1alpha1.TestRunSpec, script *types.Script) []cor
 			Env:             k6InitContainer.Env,
 			VolumeMounts:    volumeMounts,
 			ImagePullPolicy: k6Spec.Runner.ImagePullPolicy,
+			SecurityContext: &k6Spec.Runner.ContainerSecurityContext,
 		}
 		initContainers = append(initContainers, initContainer)
 	}
