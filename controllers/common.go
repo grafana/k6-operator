@@ -11,7 +11,9 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
+	"github.com/grafana/k6-operator/pkg/testrun"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -185,4 +187,59 @@ func getEnvVar(vars []corev1.EnvVar, name string) string {
 		}
 	}
 	return ""
+}
+
+func (r *TestRunReconciler) hostnames(ctx context.Context, log logr.Logger, abortOnUnready bool, opts *client.ListOptions) ([]string, error) {
+	var (
+		hostnames []string
+		err       error
+	)
+
+	sl := &v1.ServiceList{}
+
+	if err = r.List(ctx, sl, opts); err != nil {
+		log.Error(err, "Could not list services")
+		return nil, err
+	}
+
+	for _, service := range sl.Items {
+		log.Info(fmt.Sprintf("Checking service %s", service.Name))
+		if isServiceReady(log, &service) {
+			log.Info(fmt.Sprintf("%v service is ready", service.ObjectMeta.Name))
+			hostnames = append(hostnames, service.Spec.ClusterIP)
+		} else {
+			err = fmt.Errorf("%v service is not ready", service.ObjectMeta.Name)
+			log.Info(err.Error())
+			if abortOnUnready {
+				return nil, err
+			}
+		}
+	}
+
+	return hostnames, nil
+}
+
+func runSetup(ctx context.Context, hostnames []string, log logr.Logger) error {
+	log.Info("Invoking setup() on the first runner")
+
+	setupData, err := testrun.RunSetup(ctx, hostnames[0])
+	if err != nil {
+		return err
+	}
+
+	log.Info("Sending setup data to the runners")
+
+	if err = testrun.SetSetupData(ctx, hostnames, setupData); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func runTeardown(ctx context.Context, hostnames []string, log logr.Logger) {
+	log.Info("Invoking teardown() on the first responsive runner")
+
+	if err := testrun.RunTeardown(ctx, hostnames); err != nil {
+		log.Error(err, "Failed to invoke teardown()")
+	}
 }
