@@ -70,6 +70,10 @@ var reasons = map[string]string{
 	"TestRunRunningTrue":    "TestRunRunningTrue",
 	"TestRunRunningFalse":   "TestRunRunningFalse",
 
+	"TeardownExecutedUnknown": "TestRunPreparation",
+	"TeardownExecutedFalse":   "TeardownExecutedFalse",
+	"TeardownExecutedTrue":    "TeardownExecutedTrue",
+
 	"CloudTestRunUnknown": "TestRunTypeUnknown",
 	"CloudTestRunTrue":    "CloudTestRunTrue",
 	"CloudTestRunFalse":   "CloudTestRunFalse",

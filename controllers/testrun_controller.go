@@ -203,8 +203,36 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			return ctrl.Result{}, nil
 		}
 
-		// wait for the test to finish
-		if !FinishJobs(ctx, log, k6, r) {
+		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+			runningTime, _ := v1alpha1.LastUpdate(k6, v1alpha1.TestRunRunning)
+
+			if v1alpha1.IsFalse(k6, v1alpha1.TeardownExecuted) {
+				var allJobsStopped bool
+				// TODO: figure out baseline time
+				if time.Since(runningTime) > time.Second*30 {
+					allJobsStopped = StoppedJobs(ctx, log, k6, r)
+				}
+
+				// The test run reached a regular stop in execution so execute teardown
+				if v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) && allJobsStopped {
+					hostnames, err := r.hostnames(ctx, log, false, v1alpha1.ListOptions(k6))
+					if err != nil {
+						return ctrl.Result{}, nil
+					}
+					runTeardown(ctx, hostnames, log)
+					v1alpha1.UpdateCondition(k6, v1alpha1.TeardownExecuted, metav1.ConditionTrue)
+
+					_, err = r.UpdateStatus(ctx, k6, log)
+					return ctrl.Result{}, err
+					// NOTE: we proceed here regardless whether teardown() is successful or not
+				} else {
+					// Test runs can take a long time and usually they aren't supposed
+					// to be too quick. So check in only periodically.
+					return ctrl.Result{RequeueAfter: time.Second * 15}, nil
+				}
+			}
+		} else if !FinishJobs(ctx, log, k6, r) {
+			// wait for the test to finish
 
 			// TODO: confirm if this check is needed given the check in the beginning of reconcile
 			if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) {
@@ -285,7 +313,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		log.Info("Changing stage of TestRun status to finished")
 		k6.GetStatus().Stage = "finished"
 
-		_, err := r.UpdateStatus(ctx, k6, log)
+		_, err = r.UpdateStatus(ctx, k6, log)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

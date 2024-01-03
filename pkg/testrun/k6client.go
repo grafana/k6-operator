@@ -3,6 +3,7 @@ package testrun
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -17,9 +18,12 @@ func RunSetup(ctx context.Context, hostname string) (_ json.RawMessage, err erro
 	c, err := k6Client.New(fmt.Sprintf("%v:6565", hostname), k6Client.WithHTTPClient(&http.Client{
 		Timeout: 0,
 	}))
+	if err != nil {
+		return
+	}
 
 	var response types.SetupData
-	if err := c.CallAPI(ctx, "POST", &url.URL{Path: "/v1/setup"}, nil, &response); err != nil {
+	if err = c.CallAPI(ctx, "POST", &url.URL{Path: "/v1/setup"}, nil, &response); err != nil {
 		return nil, err
 	}
 
@@ -50,8 +54,12 @@ func SetSetupData(ctx context.Context, hostnames []string, data json.RawMessage)
 	return nil
 }
 
-func RunTeardown(ctx context.Context, hostname string, data json.RawMessage) (err error) {
-	c, err := k6Client.New(fmt.Sprintf("%v:6565", hostname), k6Client.WithHTTPClient(&http.Client{
+func RunTeardown(ctx context.Context, hostnames []string) (err error) {
+	if len(hostnames) == 0 {
+		return errors.New("no k6 Service is available to run teardown")
+	}
+
+	c, err := k6Client.New(fmt.Sprintf("%v:6565", hostnames[0]), k6Client.WithHTTPClient(&http.Client{
 		Timeout: 0,
 	}))
 	if err != nil {
