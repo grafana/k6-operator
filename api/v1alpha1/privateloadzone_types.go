@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	guuid "github.com/google/uuid"
+
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/pkg/cloud"
 
@@ -69,25 +71,27 @@ func init() {
 // Register attempts to register PLZ with the k6 Cloud.
 // Regardless of the result, condition PLZRegistered will be set to False.
 // Callee is expected to check the returned error and set condition when it's appropriate.
-func (plz *PrivateLoadZone) Register(ctx context.Context, logger logr.Logger, client *cloudapi.Client) error {
+func (plz *PrivateLoadZone) Register(ctx context.Context, logger logr.Logger, client *cloudapi.Client) (string, error) {
 	plz.UpdateCondition(PLZRegistered, metav1.ConditionFalse)
 
+	uid := uuid()
 	data := cloud.PLZRegistrationData{
 		LoadZoneID: plz.Name,
 		Resources: cloud.PLZResources{
 			CPU:    plz.Spec.Resources.Limits.Cpu().String(),
 			Memory: plz.Spec.Resources.Limits.Memory().String(),
 		},
+		UID: uid,
 	}
 
 	if err := cloud.RegisterPLZ(client, data); err != nil {
 		logger.Error(err, fmt.Sprintf("Failed to register PLZ %s.", plz.Name))
-		return err
+		return "", err
 	}
 
 	logger.Info(fmt.Sprintf("Registered PLZ %s.", plz.Name))
 
-	return nil
+	return uid, nil
 }
 
 // Deregister attempts to deregister PLZ with the k6 Cloud.
@@ -101,4 +105,8 @@ func (plz *PrivateLoadZone) Deregister(ctx context.Context, logger logr.Logger, 
 	logger.Info(fmt.Sprintf("De-registered PLZ %s.", plz.Name))
 
 	return nil
+}
+
+func uuid() string {
+	return guuid.New().String()
 }
