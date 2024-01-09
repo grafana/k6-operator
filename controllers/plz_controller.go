@@ -37,7 +37,10 @@ import (
 	"github.com/grafana/k6-operator/pkg/cloud"
 )
 
-const plzFinalizer = "privateloadzones.k6.io/finalizer"
+const (
+	plzFinalizer     = "privateloadzones.k6.io/finalizer"
+	plzUIDAnnotation = "privateloadzones.k6.io/plz-uid"
+)
 
 // PrivateLoadZoneReconciler reconciles a PrivateLoadZone object
 type PrivateLoadZoneReconciler struct {
@@ -99,13 +102,17 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			}
 		} else {
 			// This is the first reconcile: PLZ should be registered
-			if err := plz.Register(ctx, logger, r.poller.Client); err != nil {
+			uid, err := plz.Register(ctx, logger, r.poller.Client)
+			if err != nil {
 				return ctrl.Result{}, err
 			}
 
 			logger.Info(fmt.Sprintf("PLZ %s is registered with k6 Cloud.", plz.Name))
 
 			controllerutil.AddFinalizer(plz, plzFinalizer)
+			plz.SetAnnotations(map[string]string{
+				plzUIDAnnotation: uid,
+			})
 
 			if err := r.Update(ctx, plz); err != nil {
 				return ctrl.Result{}, err
