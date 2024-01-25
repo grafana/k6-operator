@@ -99,7 +99,7 @@ Status:
 
 If `Stage` is equal to `error` then it definitely makes sense to check the logs of k6-operator.
 
-Conditions can be used as a source of info as well, but it is a more advanced troubleshooting option that should be used if previous suggestions are insufficient.Note, that conditions that start with `Cloud` prefix matter only in the setting of k6 Cloud test runs, i.e. cloud output and PLZ test runs.
+Conditions can be used as a source of info as well, but it is a more advanced troubleshooting option that should be used if previous suggestions are insufficient. Note, that conditions that start with `Cloud` prefix matter only in the setting of k6 Cloud test runs, i.e. cloud output and PLZ test runs.
 
 ### `PrivateLoadZone` deployment
 
@@ -120,7 +120,7 @@ Each time a user runs a test in a PLZ, for example with `k6 cloud script.js`, th
 
 ### Where are my env vars...
 
-TODO
+Some tricky cases with environment variables are described in [this doc](./env-vars.md).
 
 ### Tags are not working?!
 
