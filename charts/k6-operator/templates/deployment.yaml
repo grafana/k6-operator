@@ -25,7 +25,7 @@ spec:
       containers:
         {{- if .Values.authProxy.enabled }}
         - name: kube-rbac-proxy
-          image: "{{ .Values.authProxy.image.name }}:{{ .Values.authProxy.image.tag }}"
+          image: "{{ .Values.global.image.registry | default .Values.authProxy.image.registry }}/{{ .Values.authProxy.image.repository }}:{{ .Values.authProxy.image.tag }}"
           imagePullPolicy: {{ .Values.authProxy.image.pullPolicy }}
           {{- if .Values.authProxy.resources }}
           resources:
@@ -50,7 +50,7 @@ spec:
               name: https
         {{- end }}
         - name: manager
-          image: "{{ .Values.manager.image.name }}:{{ .Values.manager.image.tag }}"
+          image: "{{ .Values.global.image.registry | default .Values.manager.image.registry }}/{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
           imagePullPolicy: {{ .Values.manager.image.pullPolicy }}
           {{- if .Values.manager.livenessProbe }}
           livenessProbe:
@@ -75,7 +75,11 @@ spec:
             {{- if .Values.authProxy.enabled }}
             - --metrics-addr=127.0.0.1:8080
             {{- end }}
-      serviceAccount: {{ include "k6-operator.serviceAccountName" . }}
+      serviceAccountName: {{ include "k6-operator.serviceAccountName" . }}
+      {{- if .Values.global.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.global.image.pullSecrets | nindent 8 }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
