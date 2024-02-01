@@ -88,8 +88,9 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 		log.Info(err.Error())
 
 		// is it possible to implement this delay with resourceVersion of the job?
-		t, _ := v1alpha1.LastUpdate(k6, v1alpha1.CloudTestRun)
-		if time.Since(t).Seconds() <= 30 {
+		t, condUpdated := v1alpha1.LastUpdate(k6, v1alpha1.CloudTestRun)
+		// if condition has not been updated yet or has been updated very recently
+		if !condUpdated || time.Since(t).Seconds() <= 30 {
 			// try again before returning an error
 			return ctrl.Result{RequeueAfter: time.Second * 10}, true, nil
 		}
