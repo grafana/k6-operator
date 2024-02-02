@@ -88,7 +88,6 @@ func Initialize(k6 TestRunI) {
 
 	// PLZ test run case
 	if len(k6.GetSpec().TestRunID) > 0 {
-		UpdateCondition(k6, CloudTestRun, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudPLZTestRun, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudTestRunCreated, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudTestRunFinalized, metav1.ConditionFalse)
