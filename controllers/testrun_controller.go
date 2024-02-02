@@ -80,9 +80,13 @@ func (r *TestRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return r.reconcile(ctx, req, log, k6)
 }
 
+func isCloudTestRun(k6 v1alpha1.TestRunI) bool {
+	return v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) || v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun)
+}
+
 func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log logr.Logger, k6 v1alpha1.TestRunI) (ctrl.Result, error) {
 	var err error
-	if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
+	if isCloudTestRun(k6) {
 		// bootstrap the client
 		found, err := r.createClient(ctx, k6, log)
 		if err != nil {
@@ -100,7 +104,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 	// Decision making here is now a mix between stages and conditions.
 	// TODO: refactor further.
 
-	if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) {
+	if isCloudTestRun(k6) && v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) {
 		// check in with the BE for status
 		if r.ShouldAbort(ctx, k6, log) {
 			log.Info("Received an abort signal from the k6 Cloud: stopping the test.")
@@ -141,7 +145,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 					msg := fmt.Sprintf(errMessageTooLong, "initializer pod", "initializer job and pod")
 					log.Info(msg)
 
-					if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
+					if isCloudTestRun(k6) {
 						events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 							WithDetail(msg).
 							WithAbort()
