@@ -1,6 +1,6 @@
 # k6-operator
 
-![Version: 3.4.0](https://img.shields.io/badge/Version-3.4.0-informational?style=flat-square) ![AppVersion: 0.0.12](https://img.shields.io/badge/AppVersion-0.0.12-informational?style=flat-square)
+![Version: 3.5.0](https://img.shields.io/badge/Version-3.5.0-informational?style=flat-square) ![AppVersion: 0.0.13](https://img.shields.io/badge/AppVersion-0.0.13-informational?style=flat-square)
 
 A Helm chart to install the k6-operator
 
@@ -26,19 +26,23 @@ Kubernetes: `>=1.16.0-0`
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Affinity to be applied on all containers |
 | authProxy.enabled | bool | `true` | enables the protection of /metrics endpoint. (https://github.com/brancz/kube-rbac-proxy) |
-| authProxy.image.name | string | `"gcr.io/kubebuilder/kube-rbac-proxy"` | rbac-proxy image name |
 | authProxy.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent) |
+| authProxy.image.registry | string | `"gcr.io"` |  |
+| authProxy.image.repository | string | `"kubebuilder/kube-rbac-proxy"` | rbac-proxy image repository |
 | authProxy.image.tag | string | `"v0.8.0"` | rbac-proxy image tag |
 | authProxy.livenessProbe | object | `{}` | Liveness probe in Probe format |
 | authProxy.readinessProbe | object | `{}` | Readiness probe in Probe format |
 | authProxy.resources | object | `{}` | rbac-proxy resource limitation/request |
 | customAnnotations | object | `{}` | Custom Annotations to be applied on all resources |
 | customLabels | object | `{}` | Custom Label to be applied on all resources |
+| global.image.pullSecrets | list | `[]` | Optional set of global image pull secrets |
+| global.image.registry | string | `""` | Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...) |
 | installCRDs | bool | `true` | Installs CRDs as part of the release |
 | manager.env | object | `{}` | Environment variables to be applied on the controller |
-| manager.image.name | string | `"ghcr.io/grafana/k6-operator"` | controller-manager image name |
-| manager.image.pullPolicy | string | `"Always"` | pull policy for the image possible values Always, Never, IfNotPresent (default: Always) |
-| manager.image.tag | string | `"controller-v0.0.12"` | controller-manager image tag |
+| manager.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent) |
+| manager.image.registry | string | `"ghcr.io"` |  |
+| manager.image.repository | string | `"grafana/k6-operator"` | controller-manager image repository |
+| manager.image.tag | string | `"controller-v0.0.13"` | controller-manager image tag |
 | manager.livenessProbe | object | `{}` | Liveness probe in Probe format |
 | manager.readinessProbe | object | `{}` | Readiness probe in Probe format |
 | manager.replicas | int | `1` | number of controller-manager replicas (default: 1) |
