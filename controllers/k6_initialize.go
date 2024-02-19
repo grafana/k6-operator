@@ -45,7 +45,8 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 }
 
 func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (
-	res ctrl.Result, ready bool, err error) {
+	res ctrl.Result, ready bool, err error,
+) {
 	// initializer is a quick job so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
@@ -150,11 +151,11 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 			return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 		}
 
-		if len(inspectOutput.External.Loadimpact.Name) < 1 {
+		if len(inspectOutput.TestName()) < 1 {
 			// script has already been parsed for initializer job definition,
 			// so this is safe
 			script, _ := k6.GetSpec().ParseScript()
-			inspectOutput.External.Loadimpact.Name = script.Filename
+			inspectOutput.SetTestName(script.Filename)
 		}
 
 		if testRunData, err := cloud.CreateTestRun(inspectOutput, k6.GetSpec().Parallelism, host, token, log); err != nil {
