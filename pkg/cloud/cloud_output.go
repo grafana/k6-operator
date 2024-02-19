@@ -49,8 +49,8 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 
 	cloudConfig := cloudapi.NewConfig()
 
-	if opts.External.Loadimpact.ProjectID > 0 {
-		cloudConfig.ProjectID = null.NewInt(opts.External.Loadimpact.ProjectID, true)
+	if opts.ProjectID() > 0 {
+		cloudConfig.ProjectID = null.NewInt(opts.ProjectID(), true)
 	}
 
 	thresholds := make(map[string][]string, len(opts.Thresholds))
@@ -69,7 +69,7 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 	}
 
 	tr := TestRun{
-		Name:              opts.External.Loadimpact.Name,
+		Name:              opts.TestName(),
 		ProjectID:         cloudConfig.ProjectID.Int64,
 		VUsMax:            int64(opts.MaxVUs),
 		Thresholds:        thresholds,
