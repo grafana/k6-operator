@@ -67,7 +67,7 @@ func NewStarterJob(k6 v1alpha1.TestRunI, hostname []string) *batchv1.Job {
 					SecurityContext:              &k6.GetSpec().Starter.SecurityContext,
 					ImagePullSecrets:             k6.GetSpec().Starter.ImagePullSecrets,
 					Containers: []corev1.Container{
-						containers.NewStartContainer(hostname, starterImage, k6.GetSpec().Starter.ImagePullPolicy, command, env),
+						containers.NewStartContainer(hostname, starterImage, k6.GetSpec().Starter.ImagePullPolicy, command, env, k6.GetSpec().Starter.ContainerSecurityContext),
 					},
 				},
 			},

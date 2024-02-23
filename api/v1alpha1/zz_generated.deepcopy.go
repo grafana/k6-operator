@@ -237,6 +237,7 @@ func (in *Pod) DeepCopyInto(out *Pod) {
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
 	in.SecurityContext.DeepCopyInto(&out.SecurityContext)
+	in.ContainerSecurityContext.DeepCopyInto(&out.ContainerSecurityContext)
 	if in.EnvFrom != nil {
 		in, out := &in.EnvFrom, &out.EnvFrom
 		*out = make([]v1.EnvFromSource, len(*in))

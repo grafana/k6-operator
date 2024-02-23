@@ -88,8 +88,11 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 		log.Info(err.Error())
 
 		// is it possible to implement this delay with resourceVersion of the job?
-		t, _ := v1alpha1.LastUpdate(k6, v1alpha1.CloudTestRun)
-		if time.Since(t).Seconds() <= 30 {
+
+		t, condUpdated := v1alpha1.LastUpdate(k6, v1alpha1.CloudTestRun)
+		// If condition is unknown then resource hasn't been updated with `k6 inspect` results.
+		// If it has been updated but very recently, wait a bit before throwing an error.
+		if v1alpha1.IsUnknown(k6, v1alpha1.CloudTestRun) || !condUpdated || time.Since(t).Seconds() <= 30 {
 			// try again before returning an error
 			return ctrl.Result{RequeueAfter: time.Second * 10}, true, nil
 		}

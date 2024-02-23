@@ -1,3 +1,10 @@
+global:
+  image:
+    # global.image.registry -- Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)
+    registry: ""
+    # global.image.pullSecrets -- Optional set of global image pull secrets
+    pullSecrets: []
+
 # customAnnotations -- Custom Annotations to be applied on all resources
 customAnnotations: {}
 
@@ -31,8 +38,10 @@ authProxy:
   # authProxy.enabled -- enables the protection of /metrics endpoint. (https://github.com/brancz/kube-rbac-proxy)
   enabled: true
   image:
-    # authProxy.image.name -- rbac-proxy image name
-    name: gcr.io/kubebuilder/kube-rbac-proxy
+    # authProxy.image.registry
+    registry: gcr.io
+    # authProxy.image.repository -- rbac-proxy image repository
+    repository: kubebuilder/kube-rbac-proxy
     # authProxy.image.tag -- rbac-proxy image tag
     tag: v0.8.0
     # authProxy.image.pullPolicy -- pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent)
@@ -53,12 +62,14 @@ manager:
     # manager.serviceAccount.create -- create the service account (default: true)
     create: true
   image:
-    # manager.image.name -- controller-manager image name
-    name: ghcr.io/grafana/k6-operator
+    # manager.image.registry
+    registry: ghcr.io
+    # manager.image.repository -- controller-manager image repository
+    repository: grafana/k6-operator
     # manager.image.tag -- controller-manager image tag
-    tag: controller-v0.0.12
-    # manager.image.pullPolicy -- pull policy for the image possible values Always, Never, IfNotPresent (default: Always)
-    pullPolicy: Always
+    tag: controller-v0.0.13
+    # manager.image.pullPolicy -- pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent)
+    pullPolicy: IfNotPresent
   # manager.livenessProbe -- Liveness probe in Probe format
   livenessProbe: {}
   # manager.readinessProbe -- Readiness probe in Probe format

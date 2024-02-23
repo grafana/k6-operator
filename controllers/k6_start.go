@@ -13,9 +13,7 @@ import (
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func isServiceReady(log logr.Logger, service *v1.Service) bool {
@@ -40,13 +38,8 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Te
 
 	log.Info("Waiting for pods to get ready")
 
-	selector := labels.SelectorFromSet(map[string]string{
-		"app":    "k6",
-		"k6_cr":  k6.NamespacedName().Name,
-		"runner": "true",
-	})
+	opts := v1alpha1.ListOptions(k6)
 
-	opts := &client.ListOptions{LabelSelector: selector, Namespace: k6.NamespacedName().Namespace}
 	pl := &v1.PodList{}
 	if err = r.List(ctx, pl, opts); err != nil {
 		log.Error(err, "Could not list pods")
@@ -85,24 +78,27 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Te
 		return res, nil
 	}
 
-	var hostnames []string
-	sl := &v1.ServiceList{}
+	// services
 
-	if err = r.List(ctx, sl, opts); err != nil {
-		log.Error(err, "Could not list services")
-		return res, nil
+	log.Info("Waiting for services to get ready")
+
+	hostnames, err := r.hostnames(ctx, log, true, opts)
+	log.Info(fmt.Sprintf("err: %v, hostnames: %v", err, hostnames))
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
-	for _, service := range sl.Items {
-		hostnames = append(hostnames, service.Spec.ClusterIP)
+	log.Info(fmt.Sprintf("%d/%d services ready", len(hostnames), k6.GetSpec().Parallelism))
 
-		if !isServiceReady(log, &service) {
-			log.Info(fmt.Sprintf("%v service is not ready, aborting", service.ObjectMeta.Name))
-			return res, nil
-		} else {
-			log.Info(fmt.Sprintf("%v service is ready", service.ObjectMeta.Name))
+	// setup
+
+	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+		if err := runSetup(ctx, hostnames, log); err != nil {
+			return ctrl.Result{}, err
 		}
 	}
+
+	// starter
 
 	starter := jobs.NewStarterJob(k6, hostnames)
 

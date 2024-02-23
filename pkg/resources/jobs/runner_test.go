@@ -356,6 +356,7 @@ func TestNewRunnerJob(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -479,6 +480,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -593,6 +595,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -707,6 +710,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -822,6 +826,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -951,6 +956,7 @@ func TestNewRunnerJobIstio(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -1075,6 +1081,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -1191,6 +1198,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -1293,6 +1301,7 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 									},
 								},
 							},
+							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
 					Containers: []corev1.Container{{
@@ -1331,6 +1340,7 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       script.Volume(),
@@ -1470,6 +1480,7 @@ func TestNewRunnerJobWithVolume(t *testing.T) {
 									},
 								},
 							},
+							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
 					Containers: []corev1.Container{{
@@ -1508,6 +1519,7 @@ func TestNewRunnerJobWithVolume(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{},
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       expectedVolumes,
@@ -1580,6 +1592,150 @@ func TestNewRunnerJobWithVolume(t *testing.T) {
 						Name:      "k6-test-volume",
 						MountPath: "/test/location",
 					},
+				},
+			},
+		},
+	}
+
+	job, err := NewRunnerJob(k6, 1, "")
+	if err != nil {
+		t.Errorf("NewRunnerJob errored, got: %v", err)
+	}
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Errorf("NewRunnerJob returned unexpected data, diff: %s", diff)
+	}
+}
+
+func TestNewRunnerJobPLZTestRun(t *testing.T) {
+	// NewRunnerJob does not validate the type of Script for
+	// internal consistency (like in PLZ case) so it can be anything.
+	script := &types.Script{
+		Name:     "test",
+		Filename: "thing.js",
+		Type:     "ConfigMap",
+	}
+
+	var zero int64 = 0
+	automountServiceAccountToken := true
+
+	expectedLabels := map[string]string{
+		"app":    "k6",
+		"k6_cr":  "test",
+		"runner": "true",
+		"label1": "awesome",
+	}
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-1",
+			Namespace: "test",
+			Labels:    expectedLabels,
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: expectedLabels,
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Hostname:                     "test-1",
+					RestartPolicy:                corev1.RestartPolicyNever,
+					SecurityContext:              &corev1.PodSecurityContext{},
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					Tolerations:                  nil,
+					TopologySpreadConstraints:    nil,
+					ServiceAccountName:           "default",
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					Containers: []corev1.Container{{
+						Image:           "ghcr.io/grafana/k6-operator:latest-runner",
+						ImagePullPolicy: corev1.PullNever,
+						Name:            "k6",
+						Command:         []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused", "--tag", "instance_id=1", "--tag", "job_name=test-1", "--no-setup", "--no-teardown", "--linger"},
+						Env:             []corev1.EnvVar{},
+						Resources:       corev1.ResourceRequirements{},
+						VolumeMounts:    script.VolumeMount(),
+						Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
+						EnvFrom: []corev1.EnvFromSource{
+							{
+								ConfigMapRef: &corev1.ConfigMapEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "env",
+									},
+								},
+							},
+						},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						SecurityContext: &corev1.SecurityContext{},
+					}},
+					TerminationGracePeriodSeconds: &zero,
+					Volumes:                       script.Volume(),
+				},
+			},
+		},
+	}
+	k6 := &v1alpha1.TestRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.TestRunSpec{
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Runner: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				EnvFrom: []corev1.EnvFromSource{
+					{
+						ConfigMapRef: &corev1.ConfigMapEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "env",
+							},
+						},
+					},
+				},
+				ImagePullPolicy: corev1.PullNever,
+			},
+		},
+		Status: v1alpha1.TestRunStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:               v1alpha1.CloudPLZTestRun,
+					Status:             metav1.ConditionTrue,
+					LastTransitionTime: metav1.Now(),
 				},
 			},
 		},

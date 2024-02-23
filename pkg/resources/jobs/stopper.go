@@ -25,7 +25,7 @@ func NewStopJob(k6 v1alpha1.TestRunI, hostname []string) *batchv1.Job {
 	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
 
 	job.Spec.Template.Spec.Containers = []corev1.Container{
-		containers.NewStopContainer(hostname, image, k6.GetSpec().Starter.ImagePullPolicy, command, env),
+		containers.NewStopContainer(hostname, image, k6.GetSpec().Starter.ImagePullPolicy, command, env, k6.GetSpec().Starter.ContainerSecurityContext),
 	}
 
 	return job

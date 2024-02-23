@@ -44,7 +44,7 @@ func isJobRunning(log logr.Logger, service *v1.Service) bool {
 		return true
 	}
 
-	return status.Status().Stopped
+	return status.Status().Running
 }
 
 // StoppedJobs checks if the runners pods have stopped execution.
@@ -70,17 +70,17 @@ func StoppedJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *
 		return
 	}
 
-	var count int32
+	var runningJobs int32
 	for _, service := range sl.Items {
 
 		if isJobRunning(log, &service) {
-			count++
+			runningJobs++
 		}
 	}
 
-	log.Info(fmt.Sprintf("%d/%d runners stopped execution", k6.GetSpec().Parallelism-count, k6.GetSpec().Parallelism))
+	log.Info(fmt.Sprintf("%d/%d runners stopped execution", k6.GetSpec().Parallelism-runningJobs, k6.GetSpec().Parallelism))
 
-	if count > 0 {
+	if runningJobs > 0 {
 		return
 	}
 

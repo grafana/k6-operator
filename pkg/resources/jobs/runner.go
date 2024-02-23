@@ -73,6 +73,10 @@ func NewRunnerJob(k6 v1alpha1.TestRunI, index int, token string) (*batchv1.Job, 
 	// Add an job tag: in case metrics are stored, they need to be distinguished by job
 	command = append(command, "--tag", fmt.Sprintf("job_name=%s", name))
 
+	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+		command = append(command, "--no-setup", "--no-teardown", "--linger")
+	}
+
 	command = script.UpdateCommand(command)
 
 	var (
@@ -119,7 +123,7 @@ func NewRunnerJob(k6 v1alpha1.TestRunI, index int, token string) (*batchv1.Job, 
 	if len(k6.GetStatus().TestRunID) > 0 {
 		// temporary hack
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
-			k6.GetStatus().AggregationVars = "50|3s|8s|6s|10000|10"
+			k6.GetStatus().AggregationVars = "2|5s|3s|10s|10"
 		}
 
 		aggregationVars, err := cloud.DecodeAggregationConfig(k6.GetStatus().AggregationVars)
@@ -183,6 +187,7 @@ func NewRunnerJob(k6 v1alpha1.TestRunI, index int, token string) (*batchv1.Job, 
 						EnvFrom:         k6.GetSpec().Runner.EnvFrom,
 						LivenessProbe:   generateProbe(k6.GetSpec().Runner.LivenessProbe),
 						ReadinessProbe:  generateProbe(k6.GetSpec().Runner.ReadinessProbe),
+						SecurityContext: &k6.GetSpec().Runner.ContainerSecurityContext,
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       volumes,

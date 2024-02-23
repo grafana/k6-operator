@@ -16,6 +16,10 @@ const (
 	// - if True, it's after successful starter but before all runners have finished
 	TestRunRunning = "TestRunRunning"
 
+	// TeardownExecuted indicates whether the `teardown()` has been executed on one of the runners.
+	// This condition can be used only in PLZ test runs.
+	TeardownExecuted = "TeardownExecuted"
+
 	// CloudTestRun indicates if this test run is supposed to be a cloud test run
 	// (i.e. with `--out cloud` option).
 	// - if empty / Unknown, the type of test is unknown yet
@@ -71,13 +75,19 @@ func Initialize(k6 TestRunI) {
 			Reason:             "TestRunPreparation",
 			Message:            "",
 		},
+		metav1.Condition{
+			Type:               TeardownExecuted,
+			Status:             metav1.ConditionFalse,
+			LastTransitionTime: t,
+			Reason:             "TeardownExecutedFalse",
+			Message:            "",
+		},
 	}
 
 	UpdateCondition(k6, CloudTestRunAborted, metav1.ConditionFalse)
 
 	// PLZ test run case
 	if len(k6.GetSpec().TestRunID) > 0 {
-		UpdateCondition(k6, CloudTestRun, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudPLZTestRun, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudTestRunCreated, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudTestRunFinalized, metav1.ConditionFalse)

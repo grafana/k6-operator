@@ -50,7 +50,7 @@ func TestNewStopperJob(t *testing.T) {
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
 						containers.NewStopContainer([]string{"testing"}, "image", corev1.PullNever, []string{"sh", "-c"},
-							[]corev1.EnvVar{}),
+							[]corev1.EnvVar{}, corev1.SecurityContext{}),
 					},
 				},
 			},
@@ -141,7 +141,9 @@ func TestNewStopJobIstio(t *testing.T) {
 							{
 								Name:  "WAIT_FOR_ENVOY_TIMEOUT",
 								Value: "15",
-							}}),
+							}},
+							corev1.SecurityContext{},
+						),
 					},
 				},
 			},
