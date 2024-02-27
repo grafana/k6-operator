@@ -43,7 +43,7 @@ authProxy:
     # authProxy.image.repository -- rbac-proxy image repository
     repository: kubebuilder/kube-rbac-proxy
     # authProxy.image.tag -- rbac-proxy image tag
-    tag: v0.8.0
+    tag: v0.15.0
     # authProxy.image.pullPolicy -- pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent)
     pullPolicy: IfNotPresent
   # authProxy.resources -- rbac-proxy resource limitation/request
