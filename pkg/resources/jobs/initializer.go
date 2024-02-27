@@ -113,7 +113,7 @@ func NewInitializerJob(k6 v1alpha1.TestRunI, argLine string) (*batchv1.Job, erro
 					SecurityContext:              &k6.GetSpec().Initializer.SecurityContext,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					ImagePullSecrets:             k6.GetSpec().Initializer.ImagePullSecrets,
-					InitContainers:               getInitContainers(k6.GetSpec(), script),
+					InitContainers:               getInitContainers(k6.GetSpec().Initializer, script),
 					Containers: []corev1.Container{
 						{
 							Image:           image,
