@@ -1,0 +1,28 @@
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: k6-test
+  namespace: k6-operator-system
+spec:
+  parallelism: 5
+  script:
+    configMap:
+      name: crocodile-stress-test
+      file: script.js
+  runner:
+    image: loadimpact/k6:master
+    nodeSelector:
+      alpha.eksctl.io/nodegroup-name: "managed-ng-k6"
+    resources:
+      requests:
+        cpu: 750m
+        memory: 500Mi
+    env:
+      - name: K6_OUT
+        value: experimental-prometheus-rw
+      - name: K6_PROMETHEUS_RW_SERVER_URL
+        value: https://prometheus.dev.sariska.io/api/v1/write
+  
+   
+
+    
