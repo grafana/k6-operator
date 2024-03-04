@@ -12,8 +12,8 @@ spec:
   initializer: 
     initContainers:
       - image: busybox:latest
-        command: [ "sh", "-c", "echo 'is part of initializer pod'" ]
+        command: ["sh", "-c", "echo 'is part of initializer pod'"]
   runner:
     initContainers:
       - image: busybox:latest
-        command: [ "sh", "-c", "echo 'is part of all 4 testrun pods'" ]
+        command: ["sh", "-c", "echo 'is part of all 4 testrun pods'"]
