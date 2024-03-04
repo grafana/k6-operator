@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         go-version: [1.19]
-        k8s_version: [1.24.1, 1.27.1, 1.28.3]
+        k8s_version: [1.19.2, 1.24.1, 1.27.1]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
