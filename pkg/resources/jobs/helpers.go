@@ -117,10 +117,10 @@ func newIstioEnvVar(istio v1alpha1.K6Scuttle, istioEnabled bool) []corev1.EnvVar
 }
 
 // TODO: Envoy variables are not passed to init containers
-func getInitContainers(k6Spec *v1alpha1.TestRunSpec, script *types.Script) []corev1.Container {
+func getInitContainers(pod *v1alpha1.Pod, script *types.Script) []corev1.Container {
 	var initContainers []corev1.Container
 
-	for i, k6InitContainer := range k6Spec.Runner.InitContainers {
+	for i, k6InitContainer := range pod.InitContainers {
 
 		name := fmt.Sprintf("k6-init-%d", i)
 		if k6InitContainer.Name != "" {
@@ -138,8 +138,8 @@ func getInitContainers(k6Spec *v1alpha1.TestRunSpec, script *types.Script) []cor
 			EnvFrom:         k6InitContainer.EnvFrom,
 			Env:             k6InitContainer.Env,
 			VolumeMounts:    volumeMounts,
-			ImagePullPolicy: k6Spec.Runner.ImagePullPolicy,
-			SecurityContext: &k6Spec.Runner.ContainerSecurityContext,
+			ImagePullPolicy: pod.ImagePullPolicy,
+			SecurityContext: &pod.ContainerSecurityContext,
 		}
 		initContainers = append(initContainers, initContainer)
 	}

@@ -1,0 +1,19 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: k6-sample
+spec:
+  parallelism: 4
+  script:
+    configMap:
+      name: k6-test
+      file: test.js
+  initializer: 
+    initContainers:
+      - image: busybox:latest
+        command: ["sh", "-c", "echo 'is part of initializer pod'"]
+  runner:
+    initContainers:
+      - image: busybox:latest
+        command: ["sh", "-c", "echo 'is part of all 4 testrun pods'"]
