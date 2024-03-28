@@ -1,6 +1,6 @@
 # k6-operator
 
-![Version: 3.5.0](https://img.shields.io/badge/Version-3.5.0-informational?style=flat-square) ![AppVersion: 0.0.13](https://img.shields.io/badge/AppVersion-0.0.13-informational?style=flat-square)
+![Version: 3.6.0](https://img.shields.io/badge/Version-3.6.0-informational?style=flat-square) ![AppVersion: 0.0.14](https://img.shields.io/badge/AppVersion-0.0.14-informational?style=flat-square)
 
 A Helm chart to install the k6-operator
 
@@ -29,7 +29,7 @@ Kubernetes: `>=1.16.0-0`
 | authProxy.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent) |
 | authProxy.image.registry | string | `"gcr.io"` |  |
 | authProxy.image.repository | string | `"kubebuilder/kube-rbac-proxy"` | rbac-proxy image repository |
-| authProxy.image.tag | string | `"v0.8.0"` | rbac-proxy image tag |
+| authProxy.image.tag | string | `"v0.15.0"` | rbac-proxy image tag |
 | authProxy.livenessProbe | object | `{}` | Liveness probe in Probe format |
 | authProxy.readinessProbe | object | `{}` | Readiness probe in Probe format |
 | authProxy.resources | object | `{}` | rbac-proxy resource limitation/request |
@@ -42,7 +42,7 @@ Kubernetes: `>=1.16.0-0`
 | manager.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent) |
 | manager.image.registry | string | `"ghcr.io"` |  |
 | manager.image.repository | string | `"grafana/k6-operator"` | controller-manager image repository |
-| manager.image.tag | string | `"controller-v0.0.13"` | controller-manager image tag |
+| manager.image.tag | string | `"controller-v0.0.14"` | controller-manager image tag |
 | manager.livenessProbe | object | `{}` | Liveness probe in Probe format |
 | manager.readinessProbe | object | `{}` | Readiness probe in Probe format |
 | manager.replicas | int | `1` | number of controller-manager replicas (default: 1) |
