@@ -30,6 +30,7 @@ endif
 all: manager
 
 # Run tests
+ENVTEST_VERSION ?= release-0.17
 ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
 ENVTEST_K8S_VERSION ?= 1.24.1
 GOOS=$(shell go env GOOS)
@@ -44,13 +45,13 @@ test-setup:
 	curl -L -O "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz"
 	tar -zxvf kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz
 	mv kubebuilder $(KUBEBUILDER_ASSETS_ROOT)
-	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION)
 
 test-setup-ci:
 	curl -L -O "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz"
 	tar -xvf kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz
 	mv kubebuilder $(KUBEBUILDER_ASSETS_ROOT)
-	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION)
 
 e2e: deploy
 	kubectl create configmap crocodile-stress-test --from-file e2e/test.js
