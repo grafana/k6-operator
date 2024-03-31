@@ -1,3 +1,5 @@
 FROM curlimages/curl:latest
 
+# as defined by distroless for nonroot
+USER 65532:65532
 COPY --from=kvij/scuttle:latest /scuttle /bin/scuttle
