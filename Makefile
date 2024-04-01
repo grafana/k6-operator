@@ -12,7 +12,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image to use for building Go
-GO_BUILDER_IMG ?= "golang:1.19"
+GO_BUILDER_IMG ?= "golang:1.21"
 # Image URL to use all building/pushing image targets
 IMG_NAME ?= ghcr.io/grafana/k6-operator
 IMG_TAG ?= latest
