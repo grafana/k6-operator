@@ -47,7 +47,7 @@ jobs:
           push: true
           file: Dockerfile.controller
           build-args: |
-            GO_BUILDER_IMG=golang:1.19
+            GO_BUILDER_IMG=golang:1.21
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/grafana/k6-operator:latest,ghcr.io/grafana/k6-operator:controller-${{env.IMAGETAG}}
       - name: "Build:dockerimage"
