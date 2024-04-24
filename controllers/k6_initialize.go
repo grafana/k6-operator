@@ -47,71 +47,10 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (
 	res ctrl.Result, ready bool, err error,
 ) {
-	// initializer is a quick job so check in frequently
-	res = ctrl.Result{RequeueAfter: time.Second * 5}
-
-	cli := types.ParseCLI(k6.GetSpec().Arguments)
-
-	inspectOutput, inspectReady, err := inspectTestRun(ctx, log, k6, r.Client)
-	if err != nil {
-		// Cloud output test run is not created yet at this point, so sending
-		// events is possible only for PLZ test run.
-		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
-			// This error won't allow to start a test so let k6 Cloud know of it
-			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
-				WithDetail(fmt.Sprintf("Failed to inspect the test script: %v", err)).
-				WithAbort()
-			cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
-		}
-
-		// inspectTestRun made a log message already so just return without requeue
-		return ctrl.Result{}, ready, err
-	}
-	if !inspectReady {
-		return res, ready, nil
-	}
-
-	log.Info(fmt.Sprintf("k6 inspect: %+v", inspectOutput))
-
-	if int32(inspectOutput.MaxVUs) < k6.GetSpec().Parallelism {
-		err = fmt.Errorf("number of instances > number of VUs")
-		// TODO maybe change this to a warning and simply set parallelism = maxVUs and proceed with execution?
-		// But logr doesn't seem to have warning level by default, only with V() method...
-		// It makes sense to return to this after / during logr VS logrus issue https://github.com/grafana/k6-operator/issues/84
-		log.Error(err, "Parallelism argument cannot be larger than maximum VUs in the script",
-			"maxVUs", inspectOutput.MaxVUs,
-			"parallelism", k6.GetSpec().Parallelism)
-
-		k6.GetStatus().Stage = "error"
-
-		if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
-			return ctrl.Result{}, ready, err
-		}
-
-		// Don't requeue in case of this error; unless it's made into a warning as described above.
-		return ctrl.Result{}, ready, nil
-	}
-
-	if cli.HasCloudOut {
-		v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRun, metav1.ConditionTrue)
-
-		if v1alpha1.IsUnknown(k6, v1alpha1.CloudTestRunCreated) {
-			// In case of PLZ test run, this is already set to true
-			v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRunCreated, metav1.ConditionFalse)
-		}
-
-		v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRunFinalized, metav1.ConditionFalse)
-	} else {
-		v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRun, metav1.ConditionFalse)
-	}
-
-	if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
-		return ctrl.Result{}, ready, err
-	}
-
-	ready = true
-
-	return res, ready, nil
+	ready = true // TODO: to be removed
+	rec := InitializerReconciler(r.Config)
+	res, err = rec.Reconcile(ctx, k6)
+	return
 }
 
 // SetupCloudTest inspects the output of initializer and creates a new

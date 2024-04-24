@@ -25,6 +25,39 @@ const (
 	errMessageTooLong = "Creation of %s takes too long: your configuration might be off. Check if %v were created successfully."
 )
 
+// injection for unit tests
+var (
+	getRestClientF = getRestClient
+	podLogsF       = podLogs
+)
+
+func getRestClient() (kubernetes.Interface, error) {
+	// TODO: if the below errors repeat several times, it'd be a real error case scenario.
+	// How likely is it? Should we track frequency of these errors here?
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return kubernetes.NewForConfig(config)
+}
+
+func podLogs(ctx context.Context, ns, name string) (io.ReadCloser, error) {
+	// Here we need to get the output of the pod
+	// pods/log is not currently supported by controller-runtime client and it is officially
+	// recommended to use REST client instead:
+	// https://github.com/kubernetes-sigs/controller-runtime/issues/1229
+	clientset, err := getRestClientF()
+	if err != nil {
+		return nil, err
+	}
+	req := clientset.CoreV1().Pods(ns).GetLogs(name, &corev1.PodLogOptions{
+		Container: "k6",
+	})
+
+	return req.Stream(ctx)
+}
+
 // It may take some time to retrieve inspect output so indicate with boolean if it's ready
 // and use returnErr only for errors that require a change of behaviour. All other errors
 // should just be logged.
@@ -59,42 +92,18 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 		return
 	}
 
-	// Here we need to get the output of the pod
-	// pods/log is not currently supported by controller-runtime client and it is officially
-	// recommended to use REST client instead:
-	// https://github.com/kubernetes-sigs/controller-runtime/issues/1229
-
-	// TODO: if the below errors repeat several times, it'd be a real error case scenario.
-	// How likely is it? Should we track frequency of these errors here?
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		log.Error(err, "unable to fetch in-cluster REST config")
-		returnErr = err
-		return
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Error(err, "unable to get access to clientset")
-		returnErr = err
-		return
-	}
-	req := clientset.CoreV1().Pods(k6.NamespacedName().Namespace).GetLogs(podList.Items[0].Name, &corev1.PodLogOptions{
-		Container: "k6",
-	})
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
-
-	podLogs, err := req.Stream(ctx)
+	logs, err := podLogsF(ctx, k6.NamespacedName().Namespace, podList.Items[0].Name)
 	if err != nil {
 		log.Error(err, "unable to stream logs from the pod")
 		returnErr = err
 		return
 	}
-	defer podLogs.Close()
+	defer logs.Close()
 
 	buf := new(bytes.Buffer)
-	_, returnErr = io.Copy(buf, podLogs)
+	_, returnErr = io.Copy(buf, logs)
 	if err != nil {
 		log.Error(err, "unable to copy logs from the pod")
 		return
