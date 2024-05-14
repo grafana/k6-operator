@@ -14,7 +14,14 @@ export const options = {
 };
 ```
 
-There are several ways this `test.js` can be configured by k6-operator. Let's look into some of them.
+Firstly, it is a recommended practice to set the default value of environment variable definition as here:
+```js
+const VUS = __ENV.TEST_VUS || 10000;
+```
+
+This way, the script won't break even if there are changes in the setup.
+
+Within k6-operator context, there are several ways the `TEST_VUS` can be configured for `test.js`. Let's look into some of them.
 
 ## ConfigMap with `test.js`
 
