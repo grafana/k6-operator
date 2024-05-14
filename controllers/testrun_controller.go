@@ -31,6 +31,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reconciler.io/runtime/reconcilers"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,6 +46,9 @@ type TestRunReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+	// TODO: remove this as it's temporary storage for config
+	// (until complete ResourceReconciler is implemented)
+	Config reconcilers.Config
 
 	// Note: here we assume that all users of the operator are allowed to use
 	// the same token / cloud client.
@@ -98,6 +102,8 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
 	}
+	ctx = reconcilers.WithStash(ctx)
+	reconcilers.StashValue(ctx, gck6ClientStashKey, r.k6CloudClient)
 
 	log.Info(fmt.Sprintf("Reconcile(); stage = %s", k6.GetStatus().Stage))
 
