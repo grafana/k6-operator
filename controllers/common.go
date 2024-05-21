@@ -56,7 +56,7 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 
 	// there should be only 1 initializer pod
 	if podList.Items[0].Status.Phase == corev1.PodFailed {
-		returnErr = errors.New("init job has failed")
+		returnErr = errors.New("initalizer job has failed")
 		log.Error(returnErr, "error:")
 		return
 	}
