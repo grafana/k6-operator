@@ -62,6 +62,14 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 				WithDetail(fmt.Sprintf("Failed to inspect the test script: %v", err)).
 				WithAbort()
 			cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
+		} else {
+			// if there is any error, we have to reflect it on the K6 manifest
+			k6.GetStatus().Stage = "error"
+			if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
+				return ctrl.Result{}, ready, err
+			}
+
+			return ctrl.Result{}, ready, nil
 		}
 
 		// inspectTestRun made a log message already so just return without requeue
