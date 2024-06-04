@@ -120,11 +120,7 @@ controller-gen:
 ifeq (, $(shell which controller-gen))
 	@{ \
 	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.13.0 ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0 ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
