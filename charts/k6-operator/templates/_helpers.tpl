@@ -88,6 +88,14 @@ Create the name of the service account to use
   {{- end }}
 {{- end -}}
 
+{{- define "k6-operator.podAnnotations" -}}
+  {{- if .Values.podAnnotations }}
+    {{- with .Values.podAnnotations }}
+      {{- toYaml . }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+
 {{- define "k6-operator.namespace" -}}
   {{- if eq .Release.Namespace "default" }}
     {{- printf "%v-system" .Release.Name | indent 1 }}

@@ -21,6 +21,10 @@ spec:
         control-plane: "controller-manager"
         {{- include "k6-operator.selectorLabels" . | nindent 8 }}
         {{- include "k6-operator.podLabels" . | nindent 8 }}
+      {{- if .Values.podAnnotations }}
+      annotations:
+        {{- include "k6-operator.podAnnotations" . | default "" | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         {{- if .Values.authProxy.enabled }}

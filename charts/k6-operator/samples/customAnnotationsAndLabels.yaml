@@ -8,6 +8,9 @@ podLabels:
   environment: production
   owner: development
 
+podAnnotations:
+  "customized-annotation": "k6-operator"
+
 certManager:
   enabled: true
 
