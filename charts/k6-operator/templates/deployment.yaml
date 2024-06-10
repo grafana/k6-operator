@@ -52,6 +52,10 @@ spec:
           ports:
             - containerPort: 8443
               name: https
+         {{- if .Values.authProxy.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.authProxy.containerSecurityContext | nindent 12 }}
+         {{- end }}            
         {{- end }}
         - name: manager
           image: "{{ .Values.global.image.registry | default .Values.manager.image.registry }}/{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
@@ -72,6 +76,10 @@ spec:
               {{- toYaml . | nindent 10 }}
             {{- end }}
           {{- end }}
+         {{- if .Values.manager.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.manager.containerSecurityContext | nindent 12 }}
+         {{- end }}
           command:
             - /manager
           args:
