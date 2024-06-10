@@ -8,6 +8,9 @@ global:
 # customAnnotations -- Custom Annotations to be applied on all resources
 customAnnotations: {}
 
+# podAnnotations -- Custom Annotations to be applied on all pods
+podAnnotations: {}
+
 # customLabels -- Custom Label to be applied on all resources
 customLabels: {}
 
@@ -52,6 +55,8 @@ authProxy:
   livenessProbe: {}
   # authProxy.readinessProbe -- Readiness probe in Probe format
   readinessProbe: {}
+  # authProxy.containerSecurityContext -- A security context defines privileges and access control settings for the container.
+  containerSecurityContext: {}
 
 manager:
   # manager.replicas -- number of controller-manager replicas (default: 1)
@@ -88,3 +93,5 @@ manager:
       cpu: 100m
       # manager.resources.requests.memory -- controller-manager Memory request (Min)
       memory: 50Mi
+  # manager.containerSecurityContext -- A security context defines privileges and access control settings for the container.
+  containerSecurityContext: {}

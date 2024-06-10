@@ -21,6 +21,10 @@ spec:
         control-plane: "controller-manager"
         {{- include "k6-operator.selectorLabels" . | nindent 8 }}
         {{- include "k6-operator.podLabels" . | nindent 8 }}
+      {{- if .Values.podAnnotations }}
+      annotations:
+        {{- include "k6-operator.podAnnotations" . | default "" | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - name: manager
@@ -42,6 +46,10 @@ spec:
               {{- toYaml . | nindent 10 }}
             {{- end }}
           {{- end }}
+         {{- if .Values.manager.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.manager.containerSecurityContext | nindent 12 }}
+         {{- end }}
           command:
             - /manager
           args:
@@ -74,6 +82,10 @@ spec:
           ports:
             - containerPort: 8443
               name: https
+         {{- if .Values.authProxy.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.authProxy.containerSecurityContext | nindent 12 }}
+         {{- end }}
         {{- end }}
       serviceAccountName: {{ include "k6-operator.serviceAccountName" . }}
       {{- if .Values.global.image.pullSecrets }}
