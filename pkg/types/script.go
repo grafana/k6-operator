@@ -10,6 +10,7 @@ import (
 // Internal type created to support Spec.script options
 type Script struct {
 	Name     string // Name of ConfigMap or VolumeClaim or "LocalFile"
+	ReadOnly bool
 	Filename string
 	Path     string
 	Type     string // ConfigMap | VolumeClaim | LocalFile
@@ -29,6 +30,7 @@ func (s *Script) Volume() []corev1.Volume {
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 						ClaimName: s.Name,
+						ReadOnly:  s.ReadOnly,
 					},
 				},
 			},
