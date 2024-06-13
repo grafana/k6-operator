@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - '**'
+    paths:
+      - 'charts/**'
   pull_request:
     branches-ignore:
       - 'release-**/bundle-update'
