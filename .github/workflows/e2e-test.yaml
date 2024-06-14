@@ -41,6 +41,7 @@ jobs:
           kustomize_build_dir: "config/default"
           kustomize_output_file: "rendered.yaml"
           kustomize_build_options: "--load_restrictor none"
+          token: ${{ github.token }} # ref: https://github.com/karancode/kustomize-github-action/issues/46
         # TODO: setup-kind seems to be not well maintained so check for alternatives
       - uses: engineerd/setup-kind@v0.5.0
         with:
