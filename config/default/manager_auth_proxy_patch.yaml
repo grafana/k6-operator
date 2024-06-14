@@ -10,6 +10,10 @@ spec:
   template:
     spec:
       containers:
+        - name: manager
+          args:
+            - "--metrics-addr=127.0.0.1:8080"
+            - "--enable-leader-election"
         - name: kube-rbac-proxy
           image: gcr.io/kubebuilder/kube-rbac-proxy:v0.15.0
           args:
@@ -20,7 +24,3 @@ spec:
           ports:
             - containerPort: 8443
               name: https
-        - name: manager
-          args:
-            - "--metrics-addr=127.0.0.1:8080"
-            - "--enable-leader-election"

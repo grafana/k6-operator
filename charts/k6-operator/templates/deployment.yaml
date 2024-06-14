@@ -27,36 +27,6 @@ spec:
       {{- end }}
     spec:
       containers:
-        {{- if .Values.authProxy.enabled }}
-        - name: kube-rbac-proxy
-          image: "{{ .Values.global.image.registry | default .Values.authProxy.image.registry }}/{{ .Values.authProxy.image.repository }}:{{ .Values.authProxy.image.tag }}"
-          imagePullPolicy: {{ .Values.authProxy.image.pullPolicy }}
-          {{- if .Values.authProxy.resources }}
-          resources:
-            {{- toYaml .Values.authProxy.resources | nindent 12 }}
-          {{- end }}
-          {{- if .Values.authProxy.livenessProbe }}
-          livenessProbe:
-            {{- toYaml .Values.authProxy.livenessProbe | nindent 12 }}
-          {{- end }}
-          {{- if .Values.authProxy.readinessProbe }}
-          readinessProbe:
-            {{- toYaml .Values.authProxy.readinessProbe | nindent 12 }}
-          {{- end }}
-          args:
-            - --secure-listen-address=0.0.0.0:8443
-            - --upstream=http://127.0.0.1:8080/
-            - --logtostderr=true
-            - --v=10
-          {{- include "k6-operator.readinessProbe" . }}
-          ports:
-            - containerPort: 8443
-              name: https
-         {{- if .Values.authProxy.containerSecurityContext }}
-          securityContext:
-            {{- toYaml .Values.authProxy.containerSecurityContext | nindent 12 }}
-         {{- end }}            
-        {{- end }}
         - name: manager
           image: "{{ .Values.global.image.registry | default .Values.manager.image.registry }}/{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
           imagePullPolicy: {{ .Values.manager.image.pullPolicy }}
@@ -87,6 +57,36 @@ spec:
             {{- if .Values.authProxy.enabled }}
             - --metrics-addr=127.0.0.1:8080
             {{- end }}
+        {{- if .Values.authProxy.enabled }}
+        - name: kube-rbac-proxy
+          image: "{{ .Values.global.image.registry | default .Values.authProxy.image.registry }}/{{ .Values.authProxy.image.repository }}:{{ .Values.authProxy.image.tag }}"
+          imagePullPolicy: {{ .Values.authProxy.image.pullPolicy }}
+          {{- if .Values.authProxy.resources }}
+          resources:
+            {{- toYaml .Values.authProxy.resources | nindent 12 }}
+          {{- end }}
+          {{- if .Values.authProxy.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.authProxy.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.authProxy.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.authProxy.readinessProbe | nindent 12 }}
+          {{- end }}
+          args:
+            - --secure-listen-address=0.0.0.0:8443
+            - --upstream=http://127.0.0.1:8080/
+            - --logtostderr=true
+            - --v=10
+          {{- include "k6-operator.readinessProbe" . }}
+          ports:
+            - containerPort: 8443
+              name: https
+         {{- if .Values.authProxy.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.authProxy.containerSecurityContext | nindent 12 }}
+         {{- end }}
+        {{- end }}
       serviceAccountName: {{ include "k6-operator.serviceAccountName" . }}
       {{- if .Values.global.image.pullSecrets }}
       imagePullSecrets:
