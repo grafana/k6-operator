@@ -5,6 +5,8 @@ on:
     # run only on branches and not tags
     branches:
       - '**'
+    paths:
+      - 'charts/**'
   pull_request:
     branches-ignore:
       - 'release-**/bundle-update'
