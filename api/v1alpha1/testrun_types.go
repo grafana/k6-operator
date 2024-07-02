@@ -65,6 +65,7 @@ func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 		s.Name = spec.VolumeClaim.Name
 		if spec.VolumeClaim.File != "" {
 			s.Filename = spec.VolumeClaim.File
+			s.ReadOnly = spec.VolumeClaim.ReadOnly
 		}
 
 		s.Type = "VolumeClaim"

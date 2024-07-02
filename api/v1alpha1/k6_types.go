@@ -100,8 +100,9 @@ type K6Script struct {
 
 // K6VolumeClaim describes the volume claim script location
 type K6VolumeClaim struct {
-	Name string `json:"name"`
-	File string `json:"file,omitempty"`
+	Name     string `json:"name"`
+	File     string `json:"file,omitempty"`
+	ReadOnly bool   `json:"readOnly,omitempty"`
 }
 
 // K6Configmap describes the config map script location
