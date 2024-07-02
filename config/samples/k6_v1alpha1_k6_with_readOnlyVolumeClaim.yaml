@@ -1,0 +1,14 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: k6-sample
+  namespace: load-test
+spec:
+  parallelism: 4
+  script:
+    volumeClaim:
+      name: stress-test-volumeClaim
+      file: test.js
+      # If ReadOnly is set to true, PVCs are mounted in Pods on a ReadOnly basis.
+      readOnly: true
