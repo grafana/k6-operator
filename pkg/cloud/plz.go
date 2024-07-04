@@ -15,6 +15,10 @@ const (
 func RegisterPLZ(client *cloudapi.Client, data PLZRegistrationData) error {
 	url := fmt.Sprintf("%s/cloud-resources/v1/load-zones", strings.TrimSuffix(client.BaseURL(), "/v1"))
 
+	data.LZConfig = LZConfig{
+		RunnerImage: data.RunnerImage,
+	}
+
 	req, err := client.NewRequest("POST", url, data)
 	if err != nil {
 		return err
