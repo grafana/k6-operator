@@ -34,6 +34,11 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 		volumeMount,
 	)
 
+	envVars := append(trData.EnvVars(), corev1.EnvVar{
+		Name:  "K6_CLOUD_HOST",
+		Value: ingestUrl,
+	})
+
 	return &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      TestName(trData.TestRunID()),
@@ -54,10 +59,7 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 				InitContainers: []v1alpha1.InitContainer{
 					initContainer,
 				},
-				Env: []corev1.EnvVar{{
-					Name:  "K6_CLOUD_HOST",
-					Value: ingestUrl,
-				}},
+				Env: envVars,
 			},
 			Starter: v1alpha1.Pod{
 				ServiceAccountName: plz.Spec.ServiceAccountName,
