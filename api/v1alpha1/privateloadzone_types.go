@@ -36,6 +36,7 @@ type PrivateLoadZoneSpec struct {
 	Resources          corev1.ResourceRequirements `json:"resources"`
 	ServiceAccountName string                      `json:"serviceAccountName,omitempty"`
 	NodeSelector       map[string]string           `json:"nodeSelector,omitempty"`
+	Image              string                      `json:"image,omitempty"`
 }
 
 // PrivateLoadZoneStatus defines the observed state of PrivateLoadZone
@@ -80,6 +81,9 @@ func (plz *PrivateLoadZone) Register(ctx context.Context, logger logr.Logger, cl
 		Resources: cloud.PLZResources{
 			CPU:    plz.Spec.Resources.Limits.Cpu().String(),
 			Memory: plz.Spec.Resources.Limits.Memory().String(),
+		},
+		LZConfig: cloud.LZConfig{
+			RunnerImage: plz.Spec.Image,
 		},
 		UID: uid,
 	}
