@@ -6,6 +6,7 @@ import (
 	"go.k6.io/k6/cloudapi"
 	"go.k6.io/k6/lib/types"
 	"go.k6.io/k6/metrics"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // InspectOutput is the parsed output from `k6 inspect --execution-requirements`.
@@ -65,13 +66,27 @@ type TestRunData struct {
 }
 
 type LZConfig struct {
-	RunnerImage   string `json:"load_runner_image"`
-	InstanceCount int    `json:"instance_count"`
-	ArchiveURL    string `json:"k6_archive_temp_public_url"`
+	RunnerImage   string            `json:"load_runner_image"`
+	InstanceCount int               `json:"instance_count"`
+	ArchiveURL    string            `json:"k6_archive_temp_public_url"`
+	Environment   map[string]string `json:"environment"`
 }
 
 func (trd *TestRunData) TestRunID() string {
 	return fmt.Sprintf("%d", trd.TestRunId)
+}
+
+func (lz *LZConfig) EnvVars() []corev1.EnvVar {
+	ev := make([]corev1.EnvVar, len(lz.Environment))
+	i := 0
+	for k, v := range lz.Environment {
+		ev[i] = corev1.EnvVar{
+			Name:  k,
+			Value: v,
+		}
+		i++
+	}
+	return ev
 }
 
 type TestRunStatus cloudapi.RunStatus
