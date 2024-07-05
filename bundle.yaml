@@ -10,7 +10,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: k6s.k6.io
 spec:
   group: k6.io
@@ -3544,6 +3544,8 @@ spec:
                         type: string
                       name:
                         type: string
+                      readOnly:
+                        type: boolean
                     required:
                     - name
                     type: object
@@ -5367,7 +5369,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: privateloadzones.k6.io
 spec:
   group: k6.io
@@ -5482,7 +5484,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: testruns.k6.io
 spec:
   group: k6.io
@@ -9014,6 +9016,8 @@ spec:
                         type: string
                       name:
                         type: string
+                      readOnly:
+                        type: boolean
                     required:
                     - name
                     type: object
@@ -11114,6 +11118,20 @@ spec:
     spec:
       containers:
       - args:
+        - --metrics-addr=127.0.0.1:8080
+        - --enable-leader-election
+        command:
+        - /manager
+        image: ghcr.io/grafana/k6-operator:controller-v0.0.15
+        name: manager
+        resources:
+          limits:
+            cpu: 100m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 50Mi
+      - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
@@ -11123,19 +11141,5 @@ spec:
         ports:
         - containerPort: 8443
           name: https
-      - args:
-        - --metrics-addr=127.0.0.1:8080
-        - --enable-leader-election
-        command:
-        - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v0.0.14
-        name: manager
-        resources:
-          limits:
-            cpu: 100m
-            memory: 100Mi
-          requests:
-            cpu: 100m
-            memory: 50Mi
       serviceAccountName: k6-operator-controller
       terminationGracePeriodSeconds: 10
