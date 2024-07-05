@@ -17,23 +17,20 @@ import (
 
 // these are default values hard-coded in k6
 var aggregationEnvVars = []corev1.EnvVar{
-	corev1.EnvVar{
-		Name:  "K6_CLOUD_AGGREGATION_MIN_SAMPLES",
-		Value: "50",
-	}, corev1.EnvVar{
+	{
+		Name:  "K6_CLOUD_API_VERSION",
+		Value: "2",
+	}, {
 		Name:  "K6_CLOUD_AGGREGATION_PERIOD",
-		Value: "3s",
-	}, corev1.EnvVar{
+		Value: "5s",
+	}, {
 		Name:  "K6_CLOUD_AGGREGATION_WAIT_PERIOD",
-		Value: "8s",
-	}, corev1.EnvVar{
+		Value: "3s",
+	}, {
 		Name:  "K6_CLOUD_METRIC_PUSH_INTERVAL",
-		Value: "6s",
-	}, corev1.EnvVar{
-		Name:  "K6_CLOUD_MAX_METRIC_SAMPLES_PER_PACKAGE",
-		Value: "10000",
-	}, corev1.EnvVar{
-		Name:  "K6_CLOUD_MAX_METRIC_PUSH_CONCURRENCY",
+		Value: "10s",
+	}, {
+		Name:  "K6_CLOUD_METRIC_PUSH_CONCURRENCY",
 		Value: "10",
 	},
 }
@@ -1114,7 +1111,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 		// testrunid has to be set hard-coded here.
 		Status: v1alpha1.TestRunStatus{
 			TestRunID:       "testrunid",
-			AggregationVars: "50|3s|8s|6s|10000|10",
+			AggregationVars: "2|5s|3s|10s|10",
 		},
 	}
 
