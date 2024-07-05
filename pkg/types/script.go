@@ -10,7 +10,7 @@ import (
 // Internal type created to support Spec.script options
 type Script struct {
 	Name     string // Name of ConfigMap or VolumeClaim or "LocalFile"
-	ReadOnly bool // VolumeClaim only
+	ReadOnly bool   // VolumeClaim only
 	Filename string
 	Path     string
 	Type     string // ConfigMap | VolumeClaim | LocalFile
