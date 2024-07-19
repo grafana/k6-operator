@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"sort"
 
 	"go.k6.io/k6/cloudapi"
 	"go.k6.io/k6/lib/types"
@@ -86,6 +87,11 @@ func (lz *LZConfig) EnvVars() []corev1.EnvVar {
 		}
 		i++
 	}
+	// to have deterministic order in the array
+	sort.Slice(ev, func(i, j int) bool {
+		return ev[i].Name < ev[j].Name
+	})
+
 	return ev
 }
 
