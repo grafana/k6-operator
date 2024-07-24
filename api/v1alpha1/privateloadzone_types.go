@@ -32,11 +32,12 @@ import (
 
 // PrivateLoadZoneSpec defines the desired state of PrivateLoadZone
 type PrivateLoadZoneSpec struct {
-	Token              string                      `json:"token"`
-	Resources          corev1.ResourceRequirements `json:"resources"`
-	ServiceAccountName string                      `json:"serviceAccountName,omitempty"`
-	NodeSelector       map[string]string           `json:"nodeSelector,omitempty"`
-	Image              string                      `json:"image,omitempty"`
+	Token              string                        `json:"token"`
+	Resources          corev1.ResourceRequirements   `json:"resources"`
+	ServiceAccountName string                        `json:"serviceAccountName,omitempty"`
+	NodeSelector       map[string]string             `json:"nodeSelector,omitempty"`
+	Image              string                        `json:"image,omitempty"`
+	ImagePullSecrets   []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 // PrivateLoadZoneStatus defines the observed state of PrivateLoadZone
