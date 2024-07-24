@@ -28,6 +28,14 @@ spec:
             properties:
               image:
                 type: string
+              imagePullSecrets:
+                items:
+                  properties:
+                    name:
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               nodeSelector:
                 additionalProperties:
                   type: string

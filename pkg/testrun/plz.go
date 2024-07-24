@@ -47,6 +47,7 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 		Spec: v1alpha1.TestRunSpec{
 			Runner: v1alpha1.Pod{
 				Image:              trData.RunnerImage,
+				ImagePullSecrets:   plz.Spec.ImagePullSecrets,
 				ServiceAccountName: plz.Spec.ServiceAccountName,
 				NodeSelector:       plz.Spec.NodeSelector,
 				Resources:          plz.Spec.Resources,
@@ -64,6 +65,7 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 			Starter: v1alpha1.Pod{
 				ServiceAccountName: plz.Spec.ServiceAccountName,
 				NodeSelector:       plz.Spec.NodeSelector,
+				ImagePullSecrets:   plz.Spec.ImagePullSecrets,
 			},
 			Script: v1alpha1.K6Script{
 				LocalFile: "/test/archive.tar",
