@@ -10,7 +10,38 @@ on:
       - 'charts/k6-operator/Chart.yaml'
 
 jobs:
+  generate-chart-schema:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Make changes to the file
+        run: |
+          make helm-schema
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Commit and push changes
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git add charts/k6-operator/values.schema.json
+          
+          if git diff-index --quiet HEAD; then
+            echo "No updates to helm values schema"
+          else
+            git commit -m "gen schema json"
+            git push origin HEAD:helm-schema
+          fi
+
   call-update-helm-repo:
+    needs:
+      - generate-chart-schema
     permissions:
       contents: write
     uses: grafana/helm-charts/.github/workflows/update-helm-repo.yaml@main

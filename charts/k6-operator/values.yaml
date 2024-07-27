@@ -1,28 +1,61 @@
 global:
   image:
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # global.image.registry -- Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)
     registry: ""
+
     # global.image.pullSecrets -- Optional set of global image pull secrets
     pullSecrets: []
 
+# @schema
+# required: false
+# type: object
+# @schema
 # customAnnotations -- Custom Annotations to be applied on all resources
 customAnnotations: {}
 
+# @schema
+# required: false
+# type: object
+# @schema
 # podAnnotations -- Custom Annotations to be applied on all pods
 podAnnotations: {}
 
+# @schema
+# required: false
+# type: object
+# @schema
 # customLabels -- Custom Label to be applied on all resources
 customLabels: {}
 
+# @schema
+# required: false
+# type: object
+# @schema
 # podLabels -- Custom Label to be applied on all pods
 podLabels: {}
 
+# @schema
+# required: false
+# type: object
+# @schema
 # nodeSelector -- Node Selector to be applied on all containers
 nodeSelector: {}
 
+# @schema
+# required: false
+# type: object
+# @schema
 # affinity -- Affinity to be applied on all containers
 affinity: {}
 
+# @schema
+# required: false
+# type: object
+# @schema
 # tolerations -- Tolerations to be applied on all containers
 tolerations: {}
 
@@ -49,12 +82,32 @@ authProxy:
     tag: v0.15.0
     # authProxy.image.pullPolicy -- pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent)
     pullPolicy: IfNotPresent
+
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   # authProxy.resources -- rbac-proxy resource limitation/request
   resources: {}
+
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   # authProxy.livenessProbe -- Liveness probe in Probe format
   livenessProbe: {}
+
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   # authProxy.readinessProbe -- Readiness probe in Probe format
   readinessProbe: {}
+
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   # authProxy.containerSecurityContext -- A security context defines privileges and access control settings for the container.
   containerSecurityContext: {}
 
@@ -75,10 +128,25 @@ manager:
     tag: controller-v0.0.15
     # manager.image.pullPolicy -- pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent)
     pullPolicy: IfNotPresent
+
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   # manager.livenessProbe -- Liveness probe in Probe format
   livenessProbe: {}
+
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   # manager.readinessProbe -- Readiness probe in Probe format
   readinessProbe: {}
+
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   # manager.env -- Environment variables to be applied on the controller
   env: {}
   # manager.resources -- controller-manager Resources definition
@@ -93,5 +161,10 @@ manager:
       cpu: 100m
       # manager.resources.requests.memory -- controller-manager Memory request (Min)
       memory: 50Mi
+
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   # manager.containerSecurityContext -- A security context defines privileges and access control settings for the container.
   containerSecurityContext: {}
