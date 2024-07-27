@@ -170,6 +170,10 @@ deploy-helm: manifests helm
 helm-template: manifests helm
 	$(HELM) template k6-operator ./charts/k6-operator -f ./charts/k6-operator/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
 
+helm-schema:
+	go install github.com/dadav/helm-schema/cmd/helm-schema@0.12.0
+	$(shell go env GOPATH)/bin/helm-schema --chart-search-root ./charts/k6-operator
+
 # Delete operator from a cluster
 delete-helm: manifests helm
 	$(HELM) uninstall k6-operator
