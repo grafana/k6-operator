@@ -8,7 +8,7 @@ metadata:
     {{- include "k6-operator.customLabels" . | nindent 4 }}
   annotations:
     {{- include "k6-operator.customAnnotations" . | nindent 4 }}
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: privateloadzones.k6.io
 spec:
   group: k6.io
@@ -31,6 +31,16 @@ spec:
             type: object
           spec:
             properties:
+              image:
+                type: string
+              imagePullSecrets:
+                items:
+                  properties:
+                    name:
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               nodeSelector:
                 additionalProperties:
                   type: string
