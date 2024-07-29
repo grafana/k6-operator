@@ -5392,6 +5392,16 @@ spec:
             type: object
           spec:
             properties:
+              image:
+                type: string
+              imagePullSecrets:
+                items:
+                  properties:
+                    name:
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               nodeSelector:
                 additionalProperties:
                   type: string
@@ -11122,7 +11132,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v0.0.15
+        image: ghcr.io/grafana/k6-operator:controller-v0.0.16
         name: manager
         resources:
           limits:
