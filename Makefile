@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.0.15
+VERSION ?= 0.0.16
 # Default bundle image tag
 BUNDLE_IMG ?= k6-controller-bundle:$(VERSION)
 # Options for 'bundle-build'
