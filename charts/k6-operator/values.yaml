@@ -72,7 +72,7 @@ manager:
     # manager.image.repository -- controller-manager image repository
     repository: grafana/k6-operator
     # manager.image.tag -- controller-manager image tag
-    tag: controller-v0.0.15
+    tag: controller-v0.0.16
     # manager.image.pullPolicy -- pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent)
     pullPolicy: IfNotPresent
   # manager.livenessProbe -- Liveness probe in Probe format
