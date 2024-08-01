@@ -2,7 +2,6 @@ package testrun
 
 import (
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -237,7 +236,6 @@ func Test_NewPLZTestRun(t *testing.T) {
 			t.Parallel()
 			got := NewPLZTestRun(testCase.plz, testCase.cloudData, testCase.ingestUrl)
 			if diff := deep.Equal(got, testCase.expected); diff != nil {
-				log.Println(testCase.name)
 				t.Errorf("NewPLZTestRun returned unexpected data, diff: %s", diff)
 			}
 		})
