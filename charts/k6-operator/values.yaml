@@ -7,6 +7,10 @@ global:
     # global.image.registry -- Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)
     registry: ""
 
+    # @schema
+    # required: false
+    # type: array
+    # @schema
     # global.image.pullSecrets -- Optional set of global image pull secrets
     pullSecrets: []
 
