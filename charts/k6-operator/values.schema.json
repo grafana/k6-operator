@@ -1,0 +1,363 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "affinity": {
+      "additionalProperties": false,
+      "description": "affinity -- Affinity to be applied on all containers",
+      "title": "affinity",
+      "type": "object"
+    },
+    "authProxy": {
+      "additionalProperties": false,
+      "properties": {
+        "containerSecurityContext": {
+          "additionalProperties": false,
+          "description": "authProxy.containerSecurityContext -- A security context defines privileges and access control settings for the container.",
+          "title": "containerSecurityContext",
+          "type": "object"
+        },
+        "enabled": {
+          "default": true,
+          "description": "authProxy.enabled -- enables the protection of /metrics endpoint. (https://github.com/brancz/kube-rbac-proxy)",
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "image": {
+          "additionalProperties": false,
+          "properties": {
+            "pullPolicy": {
+              "default": "IfNotPresent",
+              "description": "authProxy.image.pullPolicy -- pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent)",
+              "title": "pullPolicy",
+              "type": "string"
+            },
+            "registry": {
+              "default": "gcr.io",
+              "description": "authProxy.image.registry",
+              "title": "registry",
+              "type": "string"
+            },
+            "repository": {
+              "default": "kubebuilder/kube-rbac-proxy",
+              "description": "authProxy.image.repository -- rbac-proxy image repository",
+              "title": "repository",
+              "type": "string"
+            },
+            "tag": {
+              "default": "v0.15.0",
+              "description": "authProxy.image.tag -- rbac-proxy image tag",
+              "title": "tag",
+              "type": "string"
+            }
+          },
+          "title": "image",
+          "type": "object",
+          "required": [
+            "registry",
+            "repository",
+            "tag",
+            "pullPolicy"
+          ]
+        },
+        "livenessProbe": {
+          "additionalProperties": false,
+          "description": "authProxy.livenessProbe -- Liveness probe in Probe format",
+          "title": "livenessProbe",
+          "type": "object"
+        },
+        "readinessProbe": {
+          "additionalProperties": false,
+          "description": "authProxy.readinessProbe -- Readiness probe in Probe format",
+          "title": "readinessProbe",
+          "type": "object"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "description": "authProxy.resources -- rbac-proxy resource limitation/request",
+          "title": "resources",
+          "type": "object"
+        }
+      },
+      "title": "authProxy",
+      "type": "object",
+      "required": [
+        "enabled",
+        "image"
+      ]
+    },
+    "customAnnotations": {
+      "additionalProperties": false,
+      "description": "customAnnotations -- Custom Annotations to be applied on all resources",
+      "title": "customAnnotations",
+      "type": "object"
+    },
+    "customLabels": {
+      "additionalProperties": false,
+      "description": "customLabels -- Custom Label to be applied on all resources",
+      "title": "customLabels",
+      "type": "object"
+    },
+    "global": {
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "additionalProperties": false,
+          "properties": {
+            "pullSecrets": {
+              "items": {},
+              "description": "global.image.pullSecrets -- Optional set of global image pull secrets",
+              "title": "pullSecrets",
+              "type": "array"
+            },
+            "registry": {
+              "default": "",
+              "description": "global.image.registry -- Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)",
+              "title": "registry",
+              "type": "string"
+            }
+          },
+          "title": "image",
+          "type": "object"
+        }
+      },
+      "title": "global",
+      "type": "object",
+      "required": [
+        "image"
+      ]
+    },
+    "installCRDs": {
+      "default": true,
+      "description": "installCRDs -- Installs CRDs as part of the release",
+      "title": "installCRDs",
+      "type": "boolean"
+    },
+    "manager": {
+      "additionalProperties": false,
+      "properties": {
+        "containerSecurityContext": {
+          "additionalProperties": false,
+          "description": "manager.containerSecurityContext -- A security context defines privileges and access control settings for the container.",
+          "title": "containerSecurityContext",
+          "type": "object"
+        },
+        "env": {
+          "additionalProperties": false,
+          "description": "manager.env -- Environment variables to be applied on the controller",
+          "title": "env",
+          "type": "object"
+        },
+        "image": {
+          "additionalProperties": false,
+          "properties": {
+            "pullPolicy": {
+              "default": "IfNotPresent",
+              "description": "manager.image.pullPolicy -- pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent)",
+              "title": "pullPolicy",
+              "type": "string"
+            },
+            "registry": {
+              "default": "ghcr.io",
+              "description": "manager.image.registry",
+              "title": "registry",
+              "type": "string"
+            },
+            "repository": {
+              "default": "grafana/k6-operator",
+              "description": "manager.image.repository -- controller-manager image repository",
+              "title": "repository",
+              "type": "string"
+            },
+            "tag": {
+              "default": "controller-v0.0.15",
+              "description": "manager.image.tag -- controller-manager image tag",
+              "title": "tag",
+              "type": "string"
+            }
+          },
+          "title": "image",
+          "type": "object",
+          "required": [
+            "registry",
+            "repository",
+            "tag",
+            "pullPolicy"
+          ]
+        },
+        "livenessProbe": {
+          "additionalProperties": false,
+          "description": "manager.livenessProbe -- Liveness probe in Probe format",
+          "title": "livenessProbe",
+          "type": "object"
+        },
+        "readinessProbe": {
+          "additionalProperties": false,
+          "description": "manager.readinessProbe -- Readiness probe in Probe format",
+          "title": "readinessProbe",
+          "type": "object"
+        },
+        "replicas": {
+          "default": 1,
+          "description": "manager.replicas -- number of controller-manager replicas (default: 1)",
+          "title": "replicas",
+          "type": "integer"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "description": "manager.resources.limits.cpu -- controller-manager CPU limit (Max)",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "100Mi",
+                  "description": "manager.resources.limits.memory -- controller-manager Memory limit (Max)",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "title": "limits",
+              "type": "object",
+              "required": [
+                "cpu",
+                "memory"
+              ]
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "description": "manager.resources.requests.cpu -- controller-manager CPU request (Min)",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "50Mi",
+                  "description": "manager.resources.requests.memory -- controller-manager Memory request (Min)",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "title": "requests",
+              "type": "object",
+              "required": [
+                "cpu",
+                "memory"
+              ]
+            }
+          },
+          "description": "manager.resources -- controller-manager Resources definition",
+          "title": "resources",
+          "type": "object",
+          "required": [
+            "limits",
+            "requests"
+          ]
+        },
+        "serviceAccount": {
+          "additionalProperties": false,
+          "properties": {
+            "create": {
+              "default": true,
+              "description": "manager.serviceAccount.create -- create the service account (default: true)",
+              "title": "create",
+              "type": "boolean"
+            },
+            "name": {
+              "default": "k6-operator-controller",
+              "description": "manager.serviceAccount.name -- kubernetes service account for the k6 manager",
+              "title": "name",
+              "type": "string"
+            }
+          },
+          "title": "serviceAccount",
+          "type": "object",
+          "required": [
+            "name",
+            "create"
+          ]
+        }
+      },
+      "title": "manager",
+      "type": "object",
+      "required": [
+        "replicas",
+        "serviceAccount",
+        "image",
+        "resources"
+      ]
+    },
+    "namespace": {
+      "additionalProperties": false,
+      "properties": {
+        "create": {
+          "default": true,
+          "description": "namespace.create -- create the namespace (default: true)",
+          "title": "create",
+          "type": "boolean"
+        }
+      },
+      "title": "namespace",
+      "type": "object",
+      "required": [
+        "create"
+      ]
+    },
+    "nodeSelector": {
+      "additionalProperties": false,
+      "description": "nodeSelector -- Node Selector to be applied on all containers",
+      "title": "nodeSelector",
+      "type": "object"
+    },
+    "podAnnotations": {
+      "additionalProperties": false,
+      "description": "podAnnotations -- Custom Annotations to be applied on all pods",
+      "title": "podAnnotations",
+      "type": "object"
+    },
+    "podLabels": {
+      "additionalProperties": false,
+      "description": "podLabels -- Custom Label to be applied on all pods",
+      "title": "podLabels",
+      "type": "object"
+    },
+    "prometheus": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": false,
+          "description": "prometheus.enabled -- enables the prometheus metrics scraping (default: false)",
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "title": "prometheus",
+      "type": "object",
+      "required": [
+        "enabled"
+      ]
+    },
+    "tolerations": {
+      "additionalProperties": false,
+      "description": "tolerations -- Tolerations to be applied on all containers",
+      "title": "tolerations",
+      "type": "object"
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "global",
+    "installCRDs",
+    "namespace",
+    "prometheus",
+    "authProxy",
+    "manager"
+  ]
+}
