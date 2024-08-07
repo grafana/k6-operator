@@ -3,6 +3,7 @@ package containers
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/grafana/k6-operator/pkg/types"
@@ -26,7 +27,7 @@ func NewStartContainer(hostnames []string, image string, imagePullPolicy corev1.
 
 	var parts []string
 	for _, hostname := range hostnames {
-		parts = append(parts, fmt.Sprintf("curl --retry 3 -X PATCH -H 'Content-Type: application/json' http://%s:6565/v1/status -d '%s'", hostname, req))
+		parts = append(parts, fmt.Sprintf("curl --retry 3 -X PATCH -H 'Content-Type: application/json' http://%s/v1/status -d '%s'", net.JoinHostPort(hostname, "6565"), req))
 	}
 
 	return corev1.Container{
