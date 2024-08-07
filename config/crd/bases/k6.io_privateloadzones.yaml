@@ -71,6 +71,10 @@ spec:
                       x-kubernetes-int-or-string: true
                     type: object
                 type: object
+              serviceAccountName:
+                type: string
+              token:
+                type: string
               tolerations:
                 items:
                   properties:
@@ -87,10 +91,6 @@ spec:
                       type: string
                   type: object
                 type: array
-              serviceAccountName:
-                type: string
-              token:
-                type: string
             required:
             - resources
             - token
