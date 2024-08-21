@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.1
   name: k6s.k6.io
 spec:
   group: k6.io
@@ -718,6 +718,7 @@ spec:
                             format: int32
                             type: integer
                           service:
+                            default: ""
                             type: string
                         required:
                         - port
@@ -811,6 +812,7 @@ spec:
                             format: int32
                             type: integer
                           service:
+                            default: ""
                             type: string
                         required:
                         - port
@@ -2468,6 +2470,7 @@ spec:
                             format: int32
                             type: integer
                           service:
+                            default: ""
                             type: string
                         required:
                         - port
@@ -2561,6 +2564,7 @@ spec:
                             format: int32
                             type: integer
                           service:
+                            default: ""
                             type: string
                         required:
                         - port
@@ -4241,6 +4245,7 @@ spec:
                             format: int32
                             type: integer
                           service:
+                            default: ""
                             type: string
                         required:
                         - port
@@ -4334,6 +4339,7 @@ spec:
                             format: int32
                             type: integer
                           service:
+                            default: ""
                             type: string
                         required:
                         - port
