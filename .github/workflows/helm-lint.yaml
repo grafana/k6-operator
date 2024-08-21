@@ -36,10 +36,4 @@ jobs:
 
       - name: Run chart-testing (lint)
         run: |
-          # is there a better way to get the right name for branch?
-          # for ref.: https://github.com/helm/chart-testing/issues/186#issuecomment-585595379
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            ct lint --target-branch ${{ github.head_ref }} --config ./charts/ct.yaml
-          else
-            ct lint --target-branch ${{ github.ref_name }} --config ./charts/ct.yaml
-          fi
+          ct lint --config ./charts/ct.yaml

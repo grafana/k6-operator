@@ -35,11 +35,7 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            changed=$(ct list-changed --config ./charts/ct.yaml --target-branch ${{ github.head_ref }})
-          else
-            changed=$(ct list-changed --config ./charts/ct.yaml --target-branch ${{ github.ref_name }})
-          fi
+          changed=$(ct list-changed --config ./charts/ct.yaml)
 
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -52,8 +48,4 @@ jobs:
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            ct install --target-branch ${{ github.head_ref }} --charts ./charts/
-          else
-            ct install --target-branch ${{ github.ref_name }} --charts ./charts/
-          fi
+            ct install --charts ./charts/
