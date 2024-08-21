@@ -11,6 +11,9 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+CONTROLLER_GEN_VERSION=v0.16.1
+CONTROLLER_GEN=$(GOBIN)/controller-gen
+
 # Image to use for building Go
 GO_BUILDER_IMG ?= "golang:1.22"
 # Image URL to use all building/pushing image targets
@@ -30,9 +33,9 @@ endif
 all: manager
 
 # Run tests
-ENVTEST_VERSION ?= release-0.17
+ENVTEST_VERSION ?= latest # ref. https://github.com/kubernetes-sigs/controller-runtime/tree/main/tools/setup-envtest
 ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
-ENVTEST_K8S_VERSION ?= 1.24.1
+ENVTEST_K8S_VERSION ?= 1.30.0
 GOOS=$(shell go env GOOS)
 GOARCH=$(shell go env GOARCH)
 KUBEBUILDER_ASSETS_ROOT=/tmp
@@ -117,15 +120,12 @@ docker-push:
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
-ifeq (, $(shell which controller-gen))
 	@{ \
-	set -e ;\
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0 ;\
+	if ! which $(CONTROLLER_GEN) || [ 'Version $(CONTROLLER_GEN_VERSION)' != "$$($(CONTROLLER_GEN) --version)" ]; then\
+		set -e ;\
+		go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_GEN_VERSION) ;\
+	fi;\
 	}
-CONTROLLER_GEN=$(GOBIN)/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
 
 kustomize:
 ifeq (, $(shell which kustomize))
