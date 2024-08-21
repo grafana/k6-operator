@@ -50,12 +50,6 @@ test-setup:
 	mv kubebuilder $(KUBEBUILDER_ASSETS_ROOT)
 	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION)
 
-test-setup-ci:
-	curl -L -O "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz"
-	tar -xvf kubebuilder-tools-$(ENVTEST_K8S_VERSION)-$(GOOS)-$(GOARCH).tar.gz
-	mv kubebuilder $(KUBEBUILDER_ASSETS_ROOT)
-	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS); go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION)
-
 e2e: deploy
 	kubectl create configmap crocodile-stress-test --from-file e2e/test.js
 	kubectl apply -f e2e/test.yaml
