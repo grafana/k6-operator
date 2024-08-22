@@ -1,24 +1,17 @@
 package controllers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/testrun"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -63,52 +56,6 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	if podList.Items[0].Status.Phase != corev1.PodSucceeded {
 		log.Info("Waiting for initializing pod to finish")
 		return
-	}
-
-	// Here we need to get the output of the pod
-	// pods/log is not currently supported by controller-runtime client and it is officially
-	// recommended to use REST client instead:
-	// https://github.com/kubernetes-sigs/controller-runtime/issues/1229
-
-	// TODO: if the below errors repeat several times, it'd be a real error case scenario.
-	// How likely is it? Should we track frequency of these errors here?
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		log.Error(err, "unable to fetch in-cluster REST config")
-		returnErr = err
-		return
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Error(err, "unable to get access to clientset")
-		returnErr = err
-		return
-	}
-	req := clientset.CoreV1().Pods(k6.NamespacedName().Namespace).GetLogs(podList.Items[0].Name, &corev1.PodLogOptions{
-		Container: "k6",
-	})
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
-
-	podLogs, err := req.Stream(ctx)
-	if err != nil {
-		log.Error(err, "unable to stream logs from the pod")
-		returnErr = err
-		return
-	}
-	defer podLogs.Close()
-
-	buf := new(bytes.Buffer)
-	_, returnErr = io.Copy(buf, podLogs)
-	if err != nil {
-		log.Error(err, "unable to copy logs from the pod")
-		return
-	}
-
-	if returnErr = json.Unmarshal(buf.Bytes(), &inspectOutput); returnErr != nil {
-		// this shouldn't normally happen but if it does, let's log output by default
-		log.Error(returnErr, fmt.Sprintf("unable to marshal: `%s`", buf.String()))
 	}
 
 	ready = true
@@ -201,7 +148,7 @@ func (r *TestRunReconciler) hostnames(ctx context.Context, log logr.Logger, abor
 		err       error
 	)
 
-	sl := &v1.ServiceList{}
+	sl := &corev1.ServiceList{}
 
 	if err = r.List(ctx, sl, opts); err != nil {
 		log.Error(err, "Could not list services")
