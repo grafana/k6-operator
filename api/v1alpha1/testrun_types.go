@@ -20,9 +20,10 @@ import (
 	"errors"
 	"path/filepath"
 
-	"github.com/grafana/k6-operator/pkg/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+
+	"github.com/grafana/k6-operator/pkg/types"
 )
 
 //+kubebuilder:object:root=true
@@ -51,6 +52,10 @@ type TestRunList struct {
 
 func init() {
 	SchemeBuilder.Register(&TestRun{}, &TestRunList{})
+}
+
+func (in *TestRun) IsPaused() bool {
+	return in.Spec.isPaused()
 }
 
 // Parse extracts Script data bits from K6 spec and performs basic validation

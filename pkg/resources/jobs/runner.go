@@ -3,17 +3,17 @@ package jobs
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"strings"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/segmentation"
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NewRunnerJob creates a new k6 job from a CRD
@@ -58,12 +58,7 @@ func NewRunnerJob(k6 v1alpha1.TestRunI, index int, token string) (*batchv1.Job, 
 		script.FullName(),
 		"--address=0.0.0.0:6565")
 
-	paused := true
-	if k6.GetSpec().Paused != "" {
-		paused, _ = strconv.ParseBool(k6.GetSpec().Paused)
-	}
-
-	if paused {
+	if k6.IsPaused() {
 		command = append(command, "--paused")
 	}
 

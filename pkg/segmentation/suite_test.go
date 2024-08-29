@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/grafana/k6-operator/pkg/segmentation"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/grafana/k6-operator/pkg/segmentation"
 )
 
 func TestSegmentation(t *testing.T) {

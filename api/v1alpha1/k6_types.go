@@ -15,6 +15,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strconv"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -91,6 +93,15 @@ type TestRunSpec struct {
 	Token     string `json:"token,omitempty"`     // PLZ reserved field (for now)
 }
 
+func (k6 TestRunSpec) isPaused() bool {
+	if k6.Paused == "" {
+		return true
+	}
+
+	paused, _ := strconv.ParseBool(k6.Paused)
+	return paused
+}
+
 // K6Script describes where the script to execute the tests is found
 type K6Script struct {
 	VolumeClaim K6VolumeClaim `json:"volumeClaim,omitempty"`
@@ -144,6 +155,11 @@ type K6 struct {
 
 	Spec   TestRunSpec   `json:"spec,omitempty"`
 	Status TestRunStatus `json:"status,omitempty"`
+}
+
+// IsPaused returns whether this K6 is paused or not
+func (in *K6) IsPaused() bool {
+	return in.Spec.isPaused()
 }
 
 // K6List contains a list of K6
