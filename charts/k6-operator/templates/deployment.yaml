@@ -53,7 +53,9 @@ spec:
           command:
             - /manager
           args:
+            {{- if gt .Values.manager.replicas 1 }}
             - --enable-leader-election
+            {{- end }}
             {{- if .Values.authProxy.enabled }}
             - --metrics-addr=127.0.0.1:8080
             {{- end }}
