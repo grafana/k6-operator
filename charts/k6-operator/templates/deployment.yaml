@@ -53,7 +53,7 @@ spec:
           command:
             - /manager
           args:
-            {{- if gt .Values.manager.replicas 1 }}
+            {{- if gt (int .Values.manager.replicas) 1 }}
             - --enable-leader-election
             {{- end }}
             {{- if .Values.authProxy.enabled }}
