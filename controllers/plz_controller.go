@@ -55,6 +55,7 @@ type PrivateLoadZoneReconciler struct {
 	// poller should be made PLZ specific;
 	// e.g. with a map: PLZ name -> poller.
 	poller *cloud.TestRunPoller
+	token  string // needed for cloud logs
 }
 
 //+kubebuilder:rbac:groups=k6.io,resources=privateloadzones,verbs=get;list;watch;create;update;patch;delete
@@ -88,6 +89,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 
 		r.poller = cloud.NewTestRunPoller(cloud.ApiURL(k6CloudHost()), token, plz.Name, logger)
+		r.token = token
 	}
 
 	if plz.DeletionTimestamp.IsZero() && (plz.IsUnknown(v1alpha1.PLZRegistered) || plz.IsFalse(v1alpha1.PLZRegistered)) {
