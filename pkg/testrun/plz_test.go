@@ -2,6 +2,7 @@ package testrun
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -53,7 +54,7 @@ func Test_NewPLZTestRun(t *testing.T) {
 				},
 				Parallelism: int32(0),
 				Separate:    false,
-				Arguments:   "--out cloud --no-thresholds",
+				Arguments:   "--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization=\"Token token\"",
 				Cleanup:     v1alpha1.Cleanup("post"),
 
 				TestRunID: "0",
@@ -101,6 +102,10 @@ func Test_NewPLZTestRun(t *testing.T) {
 	cloudFieldsTestRun = requiredFieldsTestRun // build up on top of required field case
 	cloudFieldsTestRun.ObjectMeta.Name = TestName(fmt.Sprintf("%d", someTestRunID))
 	cloudFieldsTestRun.Spec.TestRunID = fmt.Sprintf("%d", someTestRunID)
+	cloudFieldsTestRun.Spec.Arguments = strings.Replace(requiredFieldsTestRun.Spec.Arguments,
+		"test_run_id=0",
+		fmt.Sprintf("test_run_id=%d", someTestRunID),
+		1)
 	cloudFieldsTestRun.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		containers.NewS3InitContainer(
 			someArchiveURL,
@@ -223,7 +228,7 @@ func Test_NewPLZTestRun(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			got := NewPLZTestRun(testCase.plz, testCase.cloudData, testCase.ingestUrl)
+			got := NewPLZTestRun(testCase.plz, "token", testCase.cloudData, testCase.ingestUrl)
 			if diff := deep.Equal(got, testCase.expected); diff != nil {
 				t.Errorf("NewPLZTestRun returned unexpected data, diff: %s", diff)
 			}

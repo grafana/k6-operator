@@ -16,7 +16,7 @@ func TestName(testRunId string) string {
 }
 
 // ingestURL is a temp hack
-func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ingestUrl string) *v1alpha1.TestRun {
+func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, token string, trData *cloud.TestRunData, ingestUrl string) *v1alpha1.TestRun {
 	volume := corev1.Volume{
 		Name: "archive-volume",
 		VolumeSource: corev1.VolumeSource{
@@ -72,8 +72,11 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, trData *cloud.TestRunData, ing
 			},
 			Parallelism: int32(trData.InstanceCount),
 			Separate:    false,
-			Arguments:   "--out cloud --no-thresholds",
-			Cleanup:     v1alpha1.Cleanup("post"),
+			Arguments: fmt.Sprintf(`--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token %s"`,
+				plz.Name,
+				trData.TestRunID(),
+				token),
+			Cleanup: v1alpha1.Cleanup("post"),
 
 			TestRunID: trData.TestRunID(),
 			Token:     plz.Spec.Token,
