@@ -61,31 +61,29 @@ func NewInitializerJob(k6 v1alpha1.TestRunI, argLine string) (*batchv1.Job, erro
 	)
 	istioCommand, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, []string{"sh", "-c"})
 	command := append(istioCommand, fmt.Sprintf(
-		// There can be several scenarios from k6 command here:
-		// a) script is correct and `k6 inspect` outputs JSON
-		// b) script is partially incorrect and `k6` outputs a warning log message and
-		// then a JSON
-		// c) script is incorrect and `k6` outputs an error log message
-		// Warnings at this point are not necessary (warning messages will re-appear in
-		// runner's logs and the user can see them there) so we need a pure JSON here
-		// without any additional messages in cases a) and b). In case c), output should
-		// contain error message and the Job is to exit with non-zero code.
-		//
-		// Due to some pecularities of k6 logging, to achieve the above behaviour,
-		// we need to use a workaround to store all log messages in temp file while
-		// printing JSON as usual. Then parse temp file only for errors, ignoring
-		// any other log messages.
-		// Related: https://github.com/grafana/k6-docs/issues/877
-		"mkdir -p $(dirname %s) && k6 archive %s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
-		archiveName, scriptName, archiveName, argLine,
-		archiveName))
+		"k6 archive %s -O %s %s && k6 inspect --execution-requirements %s",
+		scriptName, archiveName, argLine, archiveName))
 
 	env := append(newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled), k6.GetSpec().Initializer.Env...)
 
 	volumes := script.Volume()
+	// emptyDir to hold our temporary data
+	tmpVolume := corev1.Volume{
+		Name: "tmpdir",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+	volumes = append(volumes, tmpVolume)
 	volumes = append(volumes, k6.GetSpec().Initializer.Volumes...)
 
 	volumeMounts := script.VolumeMount()
+	// make /tmp an EmptyDir
+	tmpVolumeMount := corev1.VolumeMount{
+		Name:      "tmpdir",
+		MountPath: "/tmp",
+	}
+	volumeMounts = append(volumeMounts, tmpVolumeMount)
 	volumeMounts = append(volumeMounts, k6.GetSpec().Initializer.VolumeMounts...)
 
 	var zero32 int32
@@ -116,16 +114,17 @@ func NewInitializerJob(k6 v1alpha1.TestRunI, argLine string) (*batchv1.Job, erro
 					InitContainers:               getInitContainers(k6.GetSpec().Initializer, script),
 					Containers: []corev1.Container{
 						{
-							Image:           image,
-							ImagePullPolicy: k6.GetSpec().Initializer.ImagePullPolicy,
-							Name:            "k6",
-							Command:         command,
-							Env:             env,
-							Resources:       k6.GetSpec().Initializer.Resources,
-							VolumeMounts:    volumeMounts,
-							EnvFrom:         k6.GetSpec().Initializer.EnvFrom,
-							Ports:           ports,
-							SecurityContext: &k6.GetSpec().Initializer.ContainerSecurityContext,
+							Image:                    image,
+							ImagePullPolicy:          k6.GetSpec().Initializer.ImagePullPolicy,
+							Name:                     "k6",
+							Command:                  command,
+							Env:                      env,
+							Resources:                k6.GetSpec().Initializer.Resources,
+							VolumeMounts:             volumeMounts,
+							EnvFrom:                  k6.GetSpec().Initializer.EnvFrom,
+							Ports:                    ports,
+							SecurityContext:          &k6.GetSpec().Initializer.ContainerSecurityContext,
+							TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 						},
 					},
 					Volumes: volumes,

@@ -21,6 +21,24 @@ func TestNewInitializerJob(t *testing.T) {
 	automountServiceAccountToken := true
 	zero := int32(0)
 
+	volumes := script.Volume()
+	// emptyDir to hold our temporary data
+	tmpVolume := corev1.Volume{
+		Name: "tmpdir",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+	volumes = append(volumes, tmpVolume)
+
+	volumeMounts := script.VolumeMount()
+	// make /tmp an EmptyDir
+	tmpVolumeMount := corev1.VolumeMount{
+		Name:      "tmpdir",
+		MountPath: "/tmp",
+	}
+	volumeMounts = append(volumeMounts, tmpVolumeMount)
+
 	expectedOutcome := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-initializer",
@@ -63,7 +81,7 @@ func TestNewInitializerJob(t *testing.T) {
 							Name:            "k6",
 							Command: []string{
 								"sh", "-c",
-								"mkdir -p $(dirname /tmp/test.js.archived.tar) && k6 archive /test/test.js -O /tmp/test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements /tmp/test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
+								"k6 archive /test/test.js -O /tmp/test.js.archived.tar --out cloud && k6 inspect --execution-requirements /tmp/test.js.archived.tar",
 							},
 							Env: []corev1.EnvVar{},
 							EnvFrom: []corev1.EnvFromSource{
@@ -75,13 +93,14 @@ func TestNewInitializerJob(t *testing.T) {
 									},
 								},
 							},
-							Resources:       corev1.ResourceRequirements{},
-							VolumeMounts:    script.VolumeMount(),
-							Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
-							SecurityContext: &corev1.SecurityContext{},
+							Resources:                corev1.ResourceRequirements{},
+							VolumeMounts:             volumeMounts,
+							Ports:                    []corev1.ContainerPort{{ContainerPort: 6565}},
+							SecurityContext:          &corev1.SecurityContext{},
+							TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 						},
 					},
-					Volumes: script.Volume(),
+					Volumes: volumes,
 				},
 			},
 		},
