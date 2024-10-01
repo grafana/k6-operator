@@ -100,7 +100,7 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	defer podLogs.Close()
 
 	buf := new(bytes.Buffer)
-	_, returnErr = io.Copy(buf, podLogs)
+	_, err = io.Copy(buf, podLogs)
 	if err != nil {
 		log.Error(err, "unable to copy logs from the pod")
 		return
