@@ -67,4 +67,3 @@ Kubernetes: `>=1.16.0-0`
 | podLabels | object | `{}` | Custom Label to be applied on all pods |
 | prometheus.enabled | bool | `false` | enables the prometheus metrics scraping (default: false) |
 | tolerations | list | `[]` | Tolerations to be applied on all containers |
-
