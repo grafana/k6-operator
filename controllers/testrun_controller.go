@@ -25,8 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
-	"github.com/grafana/k6-operator/api/v1alpha1"
-	"github.com/grafana/k6-operator/pkg/cloud"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,6 +36,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/pkg/cloud"
 )
 
 // TestRunReconciler reconciles a K6 object
@@ -194,6 +195,10 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		return CreateJobs(ctx, log, k6, r)
 
 	case "created":
+		if k6.IsPaused() {
+			// nothing to do. When the user updates spec.paused a new reconciliation will trigger and we'll check again
+			return ctrl.Result{}, nil
+		}
 		return StartJobs(ctx, log, k6, r)
 
 	case "started":
