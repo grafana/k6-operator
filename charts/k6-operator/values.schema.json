@@ -118,6 +118,12 @@
           },
           "title": "image",
           "type": "object"
+        },
+        "podSecurityContext": {
+          "additionalProperties": true,
+          "description": "global.podSecurityContext -- A security context defines privileges and access control settings for a Pod",
+          "title": "podSecurityContext",
+          "type": "object"
         }
       },
       "title": "global",
@@ -169,7 +175,7 @@
               "type": "string"
             },
             "tag": {
-              "default": "controller-v0.0.15",
+              "default": "controller-v0.0.16",
               "description": "manager.image.tag -- controller-manager image tag",
               "title": "tag",
               "type": "string"
