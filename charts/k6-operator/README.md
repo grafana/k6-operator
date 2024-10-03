@@ -1,6 +1,6 @@
 # k6-operator
 
-![Version: 3.8.0](https://img.shields.io/badge/Version-3.8.0-informational?style=flat-square) ![AppVersion: 0.0.16](https://img.shields.io/badge/AppVersion-0.0.16-informational?style=flat-square)
+![Version: 3.9.0](https://img.shields.io/badge/Version-3.9.0-informational?style=flat-square) ![AppVersion: 0.0.17](https://img.shields.io/badge/AppVersion-0.0.17-informational?style=flat-square)
 
 A Helm chart to install the k6-operator
 
@@ -44,7 +44,7 @@ Kubernetes: `>=1.16.0-0`
 | manager.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent) |
 | manager.image.registry | string | `"ghcr.io"` |  |
 | manager.image.repository | string | `"grafana/k6-operator"` | controller-manager image repository |
-| manager.image.tag | string | `"controller-v0.0.16"` | controller-manager image tag |
+| manager.image.tag | string | `"controller-v0.0.17"` | controller-manager image tag |
 | manager.livenessProbe | object | `{}` | Liveness probe in Probe format |
 | manager.readinessProbe | object | `{}` | Readiness probe in Probe format |
 | manager.replicas | int | `1` | number of controller-manager replicas (default: 1) |
