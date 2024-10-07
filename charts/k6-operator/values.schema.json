@@ -106,15 +106,13 @@
               "type": "string"
             }
           },
+          "description": "global.image -- Global image configuration",
           "title": "image",
           "type": "object"
         }
       },
       "title": "global",
-      "type": "object",
-      "required": [
-        "image"
-      ]
+      "type": "object"
     },
     "installCRDs": {
       "default": true,
@@ -171,6 +169,7 @@
               "type": "string"
             }
           },
+          "description": "manager.image -- controller-manager image configuration",
           "title": "image",
           "type": "object"
         },
@@ -260,11 +259,9 @@
           "type": "object"
         }
       },
+      "description": "manager -- controller-manager configuration",
       "title": "manager",
-      "type": "object",
-      "required": [
-        "image"
-      ]
+      "type": "object"
     },
     "namespace": {
       "additionalProperties": false,
@@ -319,10 +316,5 @@
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "global",
-    "prometheus",
-    "manager"
-  ]
+  "type": "object"
 }
