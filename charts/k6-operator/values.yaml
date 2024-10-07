@@ -1,4 +1,13 @@
+# @schema
+# required: false
+# type: object
+# @schema
 global:
+  # @schema
+  # required: false
+  # type: object
+  # @schema
+  # global.image -- Global image configuration
   image:
     # @schema
     # required: false
@@ -90,6 +99,10 @@ namespace:
   # namespace.create -- create the namespace (default: true)
   create: true
 
+# @schema
+# required: false
+# type: object
+# @schema
 prometheus:
   # @schema
   # required: false
@@ -171,6 +184,11 @@ authProxy:
   # authProxy.containerSecurityContext -- A security context defines privileges and access control settings for the container.
   containerSecurityContext: {}
 
+# @schema
+# required: false
+# type: object
+# @schema
+# manager -- controller-manager configuration
 manager:
   # @schema
   # required: false
@@ -195,6 +213,11 @@ manager:
     # @schema
     # manager.serviceAccount.create -- create the service account (default: true)
     create: true
+  # @schema
+  # required: false
+  # type: object
+  # @schema
+  # manager.image -- controller-manager image configuration
   image:
     # @schema
     # required: false
