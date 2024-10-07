@@ -11,7 +11,7 @@
       "additionalProperties": false,
       "properties": {
         "containerSecurityContext": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "authProxy.containerSecurityContext -- A security context defines privileges and access control settings for the container.",
           "title": "containerSecurityContext",
           "type": "object"
@@ -118,6 +118,12 @@
           },
           "title": "image",
           "type": "object"
+        },
+        "podSecurityContext": {
+          "additionalProperties": true,
+          "description": "global.podSecurityContext -- A security context defines privileges and access control settings for a Pod",
+          "title": "podSecurityContext",
+          "type": "object"
         }
       },
       "title": "global",
@@ -136,7 +142,7 @@
       "additionalProperties": false,
       "properties": {
         "containerSecurityContext": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "manager.containerSecurityContext -- A security context defines privileges and access control settings for the container.",
           "title": "containerSecurityContext",
           "type": "object"
@@ -169,7 +175,7 @@
               "type": "string"
             },
             "tag": {
-              "default": "controller-v0.0.15",
+              "default": "controller-v0.0.17",
               "description": "manager.image.tag -- controller-manager image tag",
               "title": "tag",
               "type": "string"
