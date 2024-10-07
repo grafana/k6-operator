@@ -2,7 +2,7 @@
   "additionalProperties": false,
   "properties": {
     "affinity": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "affinity -- Affinity to be applied on all containers",
       "title": "affinity",
       "type": "object"
@@ -11,7 +11,7 @@
       "additionalProperties": false,
       "properties": {
         "containerSecurityContext": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "authProxy.containerSecurityContext -- A security context defines privileges and access control settings for the container.",
           "title": "containerSecurityContext",
           "type": "object"
@@ -51,48 +51,38 @@
             }
           },
           "title": "image",
-          "type": "object",
-          "required": [
-            "registry",
-            "repository",
-            "tag",
-            "pullPolicy"
-          ]
+          "type": "object"
         },
         "livenessProbe": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "authProxy.livenessProbe -- Liveness probe in Probe format",
           "title": "livenessProbe",
           "type": "object"
         },
         "readinessProbe": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "authProxy.readinessProbe -- Readiness probe in Probe format",
           "title": "readinessProbe",
           "type": "object"
         },
         "resources": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "authProxy.resources -- rbac-proxy resource limitation/request",
           "title": "resources",
           "type": "object"
         }
       },
       "title": "authProxy",
-      "type": "object",
-      "required": [
-        "enabled",
-        "image"
-      ]
+      "type": "object"
     },
     "customAnnotations": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "customAnnotations -- Custom Annotations to be applied on all resources",
       "title": "customAnnotations",
       "type": "object"
     },
     "customLabels": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "customLabels -- Custom Label to be applied on all resources",
       "title": "customLabels",
       "type": "object"
@@ -136,16 +126,22 @@
       "additionalProperties": false,
       "properties": {
         "containerSecurityContext": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "manager.containerSecurityContext -- A security context defines privileges and access control settings for the container.",
           "title": "containerSecurityContext",
           "type": "object"
         },
         "env": {
-          "additionalProperties": false,
-          "description": "manager.env -- Environment variables to be applied on the controller",
+          "items": {},
+          "description": "manager.env -- List of environment variables to set in the controller",
           "title": "env",
-          "type": "object"
+          "type": "array"
+        },
+        "envFrom": {
+          "items": {},
+          "description": "manager.envFrom -- List of sources to populate environment variables in the controller",
+          "title": "envFrom",
+          "type": "array"
         },
         "image": {
           "additionalProperties": false,
@@ -169,29 +165,23 @@
               "type": "string"
             },
             "tag": {
-              "default": "controller-v0.0.15",
+              "default": "controller-v0.0.17",
               "description": "manager.image.tag -- controller-manager image tag",
               "title": "tag",
               "type": "string"
             }
           },
           "title": "image",
-          "type": "object",
-          "required": [
-            "registry",
-            "repository",
-            "tag",
-            "pullPolicy"
-          ]
+          "type": "object"
         },
         "livenessProbe": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "manager.livenessProbe -- Liveness probe in Probe format",
           "title": "livenessProbe",
           "type": "object"
         },
         "readinessProbe": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "description": "manager.readinessProbe -- Readiness probe in Probe format",
           "title": "readinessProbe",
           "type": "object"
@@ -221,12 +211,9 @@
                   "type": "string"
                 }
               },
+              "description": "manager.resources.limits -- controller-manager Resources limits",
               "title": "limits",
-              "type": "object",
-              "required": [
-                "cpu",
-                "memory"
-              ]
+              "type": "object"
             },
             "requests": {
               "additionalProperties": false,
@@ -244,21 +231,14 @@
                   "type": "string"
                 }
               },
+              "description": "manager.resources.requests -- controller-manager Resources requests",
               "title": "requests",
-              "type": "object",
-              "required": [
-                "cpu",
-                "memory"
-              ]
+              "type": "object"
             }
           },
           "description": "manager.resources -- controller-manager Resources definition",
           "title": "resources",
-          "type": "object",
-          "required": [
-            "limits",
-            "requests"
-          ]
+          "type": "object"
         },
         "serviceAccount": {
           "additionalProperties": false,
@@ -277,20 +257,13 @@
             }
           },
           "title": "serviceAccount",
-          "type": "object",
-          "required": [
-            "name",
-            "create"
-          ]
+          "type": "object"
         }
       },
       "title": "manager",
       "type": "object",
       "required": [
-        "replicas",
-        "serviceAccount",
-        "image",
-        "resources"
+        "image"
       ]
     },
     "namespace": {
@@ -303,26 +276,24 @@
           "type": "boolean"
         }
       },
+      "description": "namespace -- Namespace creation",
       "title": "namespace",
-      "type": "object",
-      "required": [
-        "create"
-      ]
+      "type": "object"
     },
     "nodeSelector": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "nodeSelector -- Node Selector to be applied on all containers",
       "title": "nodeSelector",
       "type": "object"
     },
     "podAnnotations": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "podAnnotations -- Custom Annotations to be applied on all pods",
       "title": "podAnnotations",
       "type": "object"
     },
     "podLabels": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "podLabels -- Custom Label to be applied on all pods",
       "title": "podLabels",
       "type": "object"
@@ -338,13 +309,10 @@
         }
       },
       "title": "prometheus",
-      "type": "object",
-      "required": [
-        "enabled"
-      ]
+      "type": "object"
     },
     "tolerations": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "description": "tolerations -- Tolerations to be applied on all containers",
       "title": "tolerations",
       "type": "object"
@@ -354,10 +322,7 @@
   "type": "object",
   "required": [
     "global",
-    "installCRDs",
-    "namespace",
     "prometheus",
-    "authProxy",
     "manager"
   ]
 }

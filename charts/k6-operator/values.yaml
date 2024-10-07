@@ -15,6 +15,7 @@ global:
     pullSecrets: []
 
 # @schema
+# additionalProperties: true
 # required: false
 # type: object
 # @schema
@@ -22,6 +23,7 @@ global:
 customAnnotations: {}
 
 # @schema
+# additionalProperties: true
 # required: false
 # type: object
 # @schema
@@ -29,6 +31,7 @@ customAnnotations: {}
 podAnnotations: {}
 
 # @schema
+# additionalProperties: true
 # required: false
 # type: object
 # @schema
@@ -36,6 +39,7 @@ podAnnotations: {}
 customLabels: {}
 
 # @schema
+# additionalProperties: true
 # required: false
 # type: object
 # @schema
@@ -43,6 +47,7 @@ customLabels: {}
 podLabels: {}
 
 # @schema
+# additionalProperties: true
 # required: false
 # type: object
 # @schema
@@ -50,6 +55,7 @@ podLabels: {}
 nodeSelector: {}
 
 # @schema
+# additionalProperties: true
 # required: false
 # type: object
 # @schema
@@ -57,37 +63,84 @@ nodeSelector: {}
 affinity: {}
 
 # @schema
+# additionalProperties: true
 # required: false
 # type: object
 # @schema
 # tolerations -- Tolerations to be applied on all containers
 tolerations: {}
 
+# @schema
+# required: false
+# type: boolean
+# @schema
 # installCRDs -- Installs CRDs as part of the release
 installCRDs: true
 
+# @schema
+# required: false
+# type: object
+# @schema
+# namespace -- Namespace creation
 namespace:
+  # @schema
+  # required: false
+  # type: boolean
+  # @schema
   # namespace.create -- create the namespace (default: true)
   create: true
 
 prometheus:
+  # @schema
+  # required: false
+  # type: boolean
+  # @schema
   # prometheus.enabled -- enables the prometheus metrics scraping (default: false)
   enabled: false
 
+# @schema
+# required: false
+# type: object
+# @schema
 authProxy:
+  # @schema
+  # required: false
+  # type: boolean
+  # @schema
   # authProxy.enabled -- enables the protection of /metrics endpoint. (https://github.com/brancz/kube-rbac-proxy)
   enabled: true
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   image:
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # authProxy.image.registry
     registry: gcr.io
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # authProxy.image.repository -- rbac-proxy image repository
     repository: kubebuilder/kube-rbac-proxy
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # authProxy.image.tag -- rbac-proxy image tag
     tag: v0.15.0
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # authProxy.image.pullPolicy -- pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent)
     pullPolicy: IfNotPresent
 
   # @schema
+  # additionalProperties: true
   # required: false
   # type: object
   # @schema
@@ -95,6 +148,7 @@ authProxy:
   resources: {}
 
   # @schema
+  # additionalProperties: true
   # required: false
   # type: object
   # @schema
@@ -102,6 +156,7 @@ authProxy:
   livenessProbe: {}
 
   # @schema
+  # additionalProperties: true
   # required: false
   # type: object
   # @schema
@@ -109,6 +164,7 @@ authProxy:
   readinessProbe: {}
 
   # @schema
+  # additionalProperties: true
   # required: false
   # type: object
   # @schema
@@ -116,24 +172,57 @@ authProxy:
   containerSecurityContext: {}
 
 manager:
+  # @schema
+  # required: false
+  # type: integer
+  # @schema
   # manager.replicas -- number of controller-manager replicas (default: 1)
   replicas: 1
+  # @schema
+  # required: false
+  # type: object
+  # @schema
   serviceAccount:
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # manager.serviceAccount.name -- kubernetes service account for the k6 manager
     name: k6-operator-controller
+    # @schema
+    # required: false
+    # type: boolean
+    # @schema
     # manager.serviceAccount.create -- create the service account (default: true)
     create: true
   image:
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # manager.image.registry
     registry: ghcr.io
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # manager.image.repository -- controller-manager image repository
     repository: grafana/k6-operator
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # manager.image.tag -- controller-manager image tag
     tag: controller-v0.0.17
+    # @schema
+    # required: false
+    # type: string
+    # @schema
     # manager.image.pullPolicy -- pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent)
     pullPolicy: IfNotPresent
 
   # @schema
+  # additionalProperties: true
   # required: false
   # type: object
   # @schema
@@ -141,6 +230,7 @@ manager:
   livenessProbe: {}
 
   # @schema
+  # additionalProperties: true
   # required: false
   # type: object
   # @schema
@@ -149,24 +239,63 @@ manager:
 
   # @schema
   # required: false
+  # type: array
+  # @schema
+  # manager.env -- List of environment variables to set in the controller
+  env: []
+
+  # @schema
+  # required: false
+  # type: array
+  # @schema
+  # manager.envFrom -- List of sources to populate environment variables in the controller
+  envFrom: []
+
+  # @schema
+  # required: false
   # type: object
   # @schema
-  # manager.env -- Environment variables to be applied on the controller
-  env: {}
   # manager.resources -- controller-manager Resources definition
   resources:
+    # @schema
+    # required: false
+    # type: object
+    # @schema
+    # manager.resources.limits -- controller-manager Resources limits
     limits:
+      # @schema
+      # required: false
+      # type: string
+      # @schema
       # manager.resources.limits.cpu -- controller-manager CPU limit (Max)
       cpu: 100m
+      # @schema
+      # required: false
+      # type: string
+      # @schema
       # manager.resources.limits.memory -- controller-manager Memory limit (Max)
       memory: 100Mi
+    # @schema
+    # required: false
+    # type: object
+    # @schema
+    # manager.resources.requests -- controller-manager Resources requests
     requests:
+      # @schema
+      # required: false
+      # type: string
+      # @schema
       # manager.resources.requests.cpu -- controller-manager CPU request (Min)
       cpu: 100m
+      # @schema
+      # required: false
+      # type: string
+      # @schema
       # manager.resources.requests.memory -- controller-manager Memory request (Min)
       memory: 50Mi
 
   # @schema
+  # additionalProperties: true
   # required: false
   # type: object
   # @schema
