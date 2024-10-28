@@ -73,6 +73,54 @@
         },
         "resources": {
           "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "description": "authProxy.resources.limits.cpu -- rbac-proxy CPU limit (Max)",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "100Mi",
+                  "description": "authProxy.resources.limits.memory -- rbac-proxy Memory limit (Max)",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "title": "limits",
+              "type": "object",
+              "required": [
+                "cpu",
+                "memory"
+              ]
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "description": "authProxy.resources.requests.cpu -- rbac-proxy CPU request (Min)",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "50Mi",
+                  "description": "authProxy.resources.requests.memory -- rbac-proxy Memory request (Min)",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "title": "requests",
+              "type": "object",
+              "required": [
+                "cpu",
+                "memory"
+              ]
+            }
+          },
           "description": "authProxy.resources -- rbac-proxy resource limitation/request",
           "title": "resources",
           "type": "object"
