@@ -1172,7 +1172,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 						Image:           "ghcr.io/grafana/k6-operator:latest-runner",
 						ImagePullPolicy: "",
 						Name:            "k6",
-						Command:         []string{"sh", "-c", "if [ ! -f /test/test.js ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\nk6 run --quiet /test/test.js --address=0.0.0.0:6565 --paused --tag instance_id=1 --tag job_name=test-1"},
+						Command:         []string{"sh", "-c", "if [ ! -f /test/test.js ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\nk6 run --quiet /test/test.js --address=0.0.0.0:6565 --paused --tag instance_id=1 --tag job_name=test-1 --tag base_job_name=test"},
 						Env:             []corev1.EnvVar{},
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
