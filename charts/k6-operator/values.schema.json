@@ -109,6 +109,12 @@
           "description": "global.image -- Global image configuration",
           "title": "image",
           "type": "object"
+        },
+        "podSecurityContext": {
+          "additionalProperties": true,
+          "description": "global.podSecurityContext -- A security context defines privileges and access control settings for a Pod",
+          "title": "podSecurityContext",
+          "type": "object"
         }
       },
       "title": "global",
