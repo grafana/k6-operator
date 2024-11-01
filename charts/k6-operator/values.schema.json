@@ -310,9 +310,10 @@
     },
     "tolerations": {
       "additionalProperties": true,
+      "items": {},
       "description": "tolerations -- Tolerations to be applied on all containers",
       "title": "tolerations",
-      "type": "object"
+      "type": "array"
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
