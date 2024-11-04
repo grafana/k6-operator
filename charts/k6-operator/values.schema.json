@@ -179,6 +179,12 @@
           "title": "livenessProbe",
           "type": "object"
         },
+        "podSecurityContext": {
+          "additionalProperties": true,
+          "description": "manager.podSecurityContext -- A security context defines privileges and access control settings for a Pod",
+          "title": "podSecurityContext",
+          "type": "object"
+        },
         "readinessProbe": {
           "additionalProperties": true,
           "description": "manager.readinessProbe -- Readiness probe in Probe format",
