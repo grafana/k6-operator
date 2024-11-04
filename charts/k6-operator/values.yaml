@@ -23,13 +23,6 @@ global:
     # global.image.pullSecrets -- Optional set of global image pull secrets
     pullSecrets: []
 
-  # @schema
-  # required: false
-  # type: object
-  # @schema
-  # global.podSecurityContext -- A security context defines privileges and access control settings for a Pod
-  podSecurityContext: {}
-
 # @schema
 # additionalProperties: true
 # required: false
@@ -331,3 +324,11 @@ manager:
   # @schema
   # manager.containerSecurityContext -- A security context defines privileges and access control settings for the container.
   containerSecurityContext: {}
+
+  # @schema
+  # additionalProperties: true
+  # required: false
+  # type: object
+  # @schema
+  # manager.podSecurityContext -- A security context defines privileges and access control settings for a pod.
+  podSecurityContext: {}

@@ -40,7 +40,7 @@ Kubernetes: `>=1.16.0-0`
 | global.image.pullSecrets | list | `[]` | Optional set of global image pull secrets |
 | global.image.registry | string | `""` | Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...) |
 | installCRDs | bool | `true` | Installs CRDs as part of the release |
-| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.17"},"livenessProbe":{},"readinessProbe":{},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
+| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.17"},"livenessProbe":{},"podSecurityContext":{},"readinessProbe":{},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
 | manager.containerSecurityContext | object | `{}` | A security context defines privileges and access control settings for the container. |
 | manager.env | list | `[]` | List of environment variables to set in the controller |
 | manager.envFrom | list | `[]` | List of sources to populate environment variables in the controller |
@@ -49,6 +49,7 @@ Kubernetes: `>=1.16.0-0`
 | manager.image.repository | string | `"grafana/k6-operator"` | controller-manager image repository |
 | manager.image.tag | string | `"controller-v0.0.17"` | controller-manager image tag |
 | manager.livenessProbe | object | `{}` | Liveness probe in Probe format |
+| manager.podSecurityContext | object | `{}` | A security context defines privileges and access control settings for a Pod |
 | manager.readinessProbe | object | `{}` | Readiness probe in Probe format |
 | manager.replicas | int | `1` | number of controller-manager replicas (default: 1) |
 | manager.resources | object | `{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}}` | controller-manager Resources definition |
@@ -67,3 +68,4 @@ Kubernetes: `>=1.16.0-0`
 | podLabels | object | `{}` | Custom Label to be applied on all pods |
 | prometheus.enabled | bool | `false` | enables the prometheus metrics scraping (default: false) |
 | tolerations | list | `[]` | Tolerations to be applied on all containers |
+
