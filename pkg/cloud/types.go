@@ -98,7 +98,9 @@ func (lz *LZConfig) EnvVars() []corev1.EnvVar {
 type TestRunStatus cloudapi.RunStatus
 
 func (trs TestRunStatus) Aborted() bool {
-	return cloudapi.RunStatus(trs) >= cloudapi.RunStatusAbortedUser
+	// Abort: on timeout, on any kind of abort and on archived.
+	// Ref.: https://github.com/grafana/k6/blob/master/cloudapi/run_status.go
+	return cloudapi.RunStatus(trs) >= cloudapi.RunStatusTimedOut
 }
 
 // func (trs TestRunStatus) String() string {
