@@ -11,7 +11,7 @@ import (
 )
 
 // NewInitializerJob builds a template used to initializefor creating a starter job
-func NewInitializerJob(k6 v1alpha1.TestRunI, argLine string) (*batchv1.Job, error) {
+func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, error) {
 	script, err := k6.GetSpec().ParseScript()
 	if err != nil {
 		return nil, err

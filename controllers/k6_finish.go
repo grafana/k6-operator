@@ -13,7 +13,7 @@ import (
 )
 
 // FinishJobs checks if the runners pods have finished execution.
-func FinishJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (allFinished bool) {
+func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (allFinished bool) {
 	if len(k6.GetStatus().TestRunID) > 0 {
 		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}
@@ -57,7 +57,7 @@ func FinishJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 		events := cloud.ErrorEvent(cloud.K6OperatorRunnerError).
 			WithDetail(msg).
 			WithAbort()
-		cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
+		cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
 	}
 
 	if finished < k6.GetSpec().Parallelism {

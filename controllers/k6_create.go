@@ -18,7 +18,7 @@ import (
 )
 
 // CreateJobs creates jobs that will spawn k6 pods for distributed test
-func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (ctrl.Result, error) {
+func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (ctrl.Result, error) {
 	var (
 		err   error
 		token string // only for cloud tests
@@ -55,7 +55,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 				WithDetail(fmt.Sprintf("Failed to create runner jobs: %v", err)).
 				WithAbort()
-			cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
+			cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
 		}
 
 		return res, err
@@ -74,7 +74,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *T
 	return ctrl.Result{}, nil
 }
 
-func createJobSpecs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler, token string) (ctrl.Result, bool, error) {
+func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, token string) (ctrl.Result, bool, error) {
 	found := &batchv1.Job{}
 	namespacedName := types.NamespacedName{
 		Name:      fmt.Sprintf("%s-1", k6.NamespacedName().Name),
@@ -108,7 +108,7 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	return ctrl.Result{}, false, nil
 }
 
-func launchTest(ctx context.Context, k6 v1alpha1.TestRunI, index int, log logr.Logger, r *TestRunReconciler, token string) error {
+func launchTest(ctx context.Context, k6 *v1alpha1.TestRun, index int, log logr.Logger, r *TestRunReconciler, token string) error {
 	var job *batchv1.Job
 	var service *corev1.Service
 	var err error

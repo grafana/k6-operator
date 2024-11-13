@@ -40,6 +40,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const (
+	k6CrLabelName = "k6_cr"
+)
+
 // TestRunReconciler reconciles a K6 object
 type TestRunReconciler struct {
 	client.Client
@@ -80,11 +84,11 @@ func (r *TestRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return r.reconcile(ctx, req, log, k6)
 }
 
-func isCloudTestRun(k6 v1alpha1.TestRunI) bool {
+func isCloudTestRun(k6 *v1alpha1.TestRun) bool {
 	return v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) || v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun)
 }
 
-func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log logr.Logger, k6 v1alpha1.TestRunI) (ctrl.Result, error) {
+func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log logr.Logger, k6 *v1alpha1.TestRun) (ctrl.Result, error) {
 	var err error
 	if isCloudTestRun(k6) {
 		// bootstrap the client
@@ -149,7 +153,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 						events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 							WithDetail(msg).
 							WithAbort()
-						cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
+						cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
 					}
 				}
 			}
@@ -219,7 +223,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 
 				// The test run reached a regular stop in execution so execute teardown
 				if v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) && allJobsStopped {
-					hostnames, err := r.hostnames(ctx, log, false, v1alpha1.ListOptions(k6))
+					hostnames, err := r.hostnames(ctx, log, false, k6.ListOptions())
 					if err != nil {
 						return ctrl.Result{}, nil
 					}
@@ -371,7 +375,7 @@ func (r *TestRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *TestRunReconciler) UpdateStatus(ctx context.Context, k6 v1alpha1.TestRunI, log logr.Logger) (updateHappened bool, err error) {
+func (r *TestRunReconciler) UpdateStatus(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) (updateHappened bool, err error) {
 	proposedStatus := k6.GetStatus().DeepCopy()
 
 	// re-fetch resource
@@ -413,14 +417,14 @@ func (r *TestRunReconciler) UpdateStatus(ctx context.Context, k6 v1alpha1.TestRu
 
 // ShouldAbort retrieves the status of test run from the Cloud and whether it should
 // cause a forced stop. It is meant to be used only by PLZ test runs.
-func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 v1alpha1.TestRunI, log logr.Logger) bool {
+func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) bool {
 	// sanity check
-	if len(v1alpha1.TestRunID(k6)) == 0 {
+	if len(k6.TestRunID()) == 0 {
 		// log.Error(errors.New("empty test run ID"), "Trying to get state of test run with empty test run ID")
 		return false
 	}
 
-	status, err := cloud.GetTestRunState(r.k6CloudClient, v1alpha1.TestRunID(k6), log)
+	status, err := cloud.GetTestRunState(r.k6CloudClient, k6.TestRunID(), log)
 	if err != nil {
 		log.Error(err, "Failed to get test run state.")
 		return false
@@ -433,7 +437,7 @@ func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 v1alpha1.TestRun
 	return isAborted
 }
 
-func (r *TestRunReconciler) createClient(ctx context.Context, k6 v1alpha1.TestRunI, log logr.Logger) (bool, error) {
+func (r *TestRunReconciler) createClient(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) (bool, error) {
 	if r.k6CloudClient == nil {
 		token, tokenReady, err := loadToken(ctx, log, r.Client, k6.GetSpec().Token, &client.ListOptions{Namespace: k6.NamespacedName().Namespace})
 		if err != nil {

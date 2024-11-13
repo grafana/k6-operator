@@ -12,7 +12,7 @@ import (
 )
 
 // NewStarterJob builds a template used for creating a starter job
-func NewStarterJob(k6 v1alpha1.TestRunI, hostname []string) *batchv1.Job {
+func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 
 	starterAnnotations := make(map[string]string)
 	if k6.GetSpec().Starter.Metadata.Annotations != nil {

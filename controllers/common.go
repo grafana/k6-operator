@@ -29,7 +29,7 @@ const (
 // It may take some time to retrieve inspect output so indicate with boolean if it's ready
 // and use returnErr only for errors that require a change of behaviour. All other errors
 // should just be logged.
-func inspectTestRun(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, c client.Client) (
+func inspectTestRun(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, c client.Client) (
 	inspectOutput cloud.InspectOutput, ready bool, returnErr error) {
 	var (
 		listOpts = &client.ListOptions{

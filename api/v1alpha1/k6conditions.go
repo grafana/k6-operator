@@ -58,7 +58,7 @@ const (
 )
 
 // Initialize defines only conditions common to all test runs.
-func Initialize(k6 TestRunI) {
+func Initialize(k6 *TestRun) {
 	t := metav1.Now()
 	k6.GetStatus().Conditions = []metav1.Condition{
 		metav1.Condition{
@@ -100,23 +100,23 @@ func Initialize(k6 TestRunI) {
 	}
 }
 
-func UpdateCondition(k6 TestRunI, conditionType string, conditionStatus metav1.ConditionStatus) {
+func UpdateCondition(k6 *TestRun, conditionType string, conditionStatus metav1.ConditionStatus) {
 	types.UpdateCondition(&k6.GetStatus().Conditions, conditionType, conditionStatus)
 }
 
-func IsTrue(k6 TestRunI, conditionType string) bool {
+func IsTrue(k6 *TestRun, conditionType string) bool {
 	return meta.IsStatusConditionTrue(k6.GetStatus().Conditions, conditionType)
 }
 
-func IsFalse(k6 TestRunI, conditionType string) bool {
+func IsFalse(k6 *TestRun, conditionType string) bool {
 	return meta.IsStatusConditionFalse(k6.GetStatus().Conditions, conditionType)
 }
 
-func IsUnknown(k6 TestRunI, conditionType string) bool {
+func IsUnknown(k6 *TestRun, conditionType string) bool {
 	return !IsFalse(k6, conditionType) && !IsTrue(k6, conditionType)
 }
 
-func LastUpdate(k6 TestRunI, conditionType string) (time.Time, bool) {
+func LastUpdate(k6 *TestRun, conditionType string) (time.Time, bool) {
 	cond := meta.FindStatusCondition(k6.GetStatus().Conditions, conditionType)
 	if cond != nil {
 		return cond.LastTransitionTime.Time, true
