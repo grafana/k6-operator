@@ -23,6 +23,7 @@ jobs:
 
       - name: Git diff
         id: git-diff
+        continue-on-error: true
         run: |
           git diff --exit-code
           if [ $? -eq 0 ]; then
