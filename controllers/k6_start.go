@@ -28,7 +28,7 @@ func isServiceReady(log logr.Logger, service *v1.Service) bool {
 }
 
 // StartJobs in the Ready phase using a curl container
-func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (res ctrl.Result, err error) {
+func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (res ctrl.Result, err error) {
 	// It may take some time to get Services up, so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second}
 
@@ -38,7 +38,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Te
 
 	log.Info("Waiting for pods to get ready")
 
-	opts := v1alpha1.ListOptions(k6)
+	opts := k6.ListOptions()
 
 	pl := &v1.PodList{}
 	if err = r.List(ctx, pl, opts); err != nil {
@@ -70,7 +70,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *Te
 					events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 						WithDetail(msg).
 						WithAbort()
-					cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
+					cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
 				}
 			}
 		}

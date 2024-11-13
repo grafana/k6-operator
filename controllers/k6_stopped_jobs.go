@@ -48,7 +48,7 @@ func isJobRunning(log logr.Logger, service *v1.Service) bool {
 }
 
 // StoppedJobs checks if the runners pods have stopped execution.
-func StoppedJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (allStopped bool) {
+func StoppedJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (allStopped bool) {
 	if len(k6.GetStatus().TestRunID) > 0 {
 		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}
@@ -92,7 +92,7 @@ func StoppedJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *
 // with propagation policy so that corresponding pods are deleted as well.
 // On failure, error is returned.
 // On success, error is nil and allDeleted shows if all retrieved jobs were deleted.
-func KillJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (allDeleted bool, err error) {
+func KillJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (allDeleted bool, err error) {
 	if len(k6.GetStatus().TestRunID) > 0 {
 		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}

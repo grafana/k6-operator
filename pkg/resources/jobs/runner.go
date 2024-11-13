@@ -17,7 +17,7 @@ import (
 )
 
 // NewRunnerJob creates a new k6 job from a CRD
-func NewRunnerJob(k6 v1alpha1.TestRunI, index int, token string) (*batchv1.Job, error) {
+func NewRunnerJob(k6 *v1alpha1.TestRun, index int, token string) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.NamespacedName().Name, index)
 	postCommand := []string{"k6", "run"}
 
@@ -203,7 +203,7 @@ func NewRunnerJob(k6 v1alpha1.TestRunI, index int, token string) (*batchv1.Job, 
 	return job, nil
 }
 
-func NewRunnerService(k6 v1alpha1.TestRunI, index int) (*corev1.Service, error) {
+func NewRunnerService(k6 *v1alpha1.TestRun, index int) (*corev1.Service, error) {
 	serviceName := fmt.Sprintf("%s-%s-%d", k6.NamespacedName().Name, "service", index)
 	runnerName := fmt.Sprintf("%s-%d", k6.NamespacedName().Name, index)
 

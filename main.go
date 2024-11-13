@@ -92,14 +92,6 @@ func main() {
 	_ = mgr.AddHealthzCheck("health", healthz.Ping)
 	_ = mgr.AddReadyzCheck("ready", healthz.Ping)
 
-	if err = (controllers.NewK6Reconciler(&controllers.TestRunReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("K6"),
-		Scheme: mgr.GetScheme(),
-	})).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "K6")
-		os.Exit(1)
-	}
 	if err = (&controllers.TestRunReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("TestRun"),

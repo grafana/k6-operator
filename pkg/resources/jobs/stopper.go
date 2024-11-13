@@ -10,7 +10,7 @@ import (
 )
 
 // NewStopJob builds a template used for creating a stop job
-func NewStopJob(k6 v1alpha1.TestRunI, hostname []string) *batchv1.Job {
+func NewStopJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 	// this job is almost identical to the starter so re-use the definitions
 	job := NewStarterJob(k6, hostname)
 
