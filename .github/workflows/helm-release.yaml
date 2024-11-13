@@ -32,7 +32,7 @@ jobs:
           fi
 
       - name: "Commit changes and make PR"
-        if: steps.git-diff.changes == 'true'
+        if: steps.git-diff.outputs.changes == 'true'
         run: |
           git checkout -b helm/schema-update
           git add charts/k6-operator/values.schema.json
