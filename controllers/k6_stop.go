@@ -17,7 +17,7 @@ import (
 // StopJobs in the Ready phase using a curl container
 // It assumes that Services of the runners are already up and
 // test is being executed.
-func StopJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (res ctrl.Result, err error) {
+func StopJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (res ctrl.Result, err error) {
 	if len(k6.GetStatus().TestRunID) > 0 {
 		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}
