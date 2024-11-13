@@ -69,7 +69,7 @@ jobs:
 
   bundle:
     name: "Generate bundle"
-    if: startsWith(github.ref_name, 'v') || github.event_name == "workflow_dispatch"
+    if: startsWith(github.ref_name, 'v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
