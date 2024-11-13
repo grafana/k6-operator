@@ -163,7 +163,7 @@
               "type": "string"
             },
             "tag": {
-              "default": "controller-v0.0.17",
+              "default": "controller-v0.0.18",
               "description": "manager.image.tag -- controller-manager image tag",
               "title": "tag",
               "type": "string"
@@ -181,7 +181,7 @@
         },
         "podSecurityContext": {
           "additionalProperties": true,
-          "description": "manager.podSecurityContext -- A security context defines privileges and access control settings for a Pod",
+          "description": "manager.podSecurityContext -- A security context defines privileges and access control settings for a pod.",
           "title": "podSecurityContext",
           "type": "object"
         },
