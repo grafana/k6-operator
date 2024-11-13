@@ -25,8 +25,7 @@ jobs:
         id: git-diff
         continue-on-error: true
         run: |
-          git diff --exit-code
-          if [ $? -eq 0 ]; then
+          if git diff --exit-code; then
             echo "changes=false" >> $GITHUB_OUTPUT
           else
             echo "changes=true" >> $GITHUB_OUTPUT
