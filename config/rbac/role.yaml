@@ -69,7 +69,6 @@ rules:
 - apiGroups:
   - k6.io
   resources:
-  - k6s
   - privateloadzones
   - testruns
   verbs:
@@ -83,8 +82,6 @@ rules:
 - apiGroups:
   - k6.io
   resources:
-  - k6s/finalizers
-  - k6s/status
   - privateloadzones/finalizers
   - privateloadzones/status
   - testruns/finalizers
