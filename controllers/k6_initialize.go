@@ -17,7 +17,7 @@ import (
 )
 
 // InitializeJobs creates jobs that will run initial checks for distributed test if any are necessary
-func InitializeJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (res ctrl.Result, err error) {
+func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (res ctrl.Result, err error) {
 	// initializer is a quick job so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
@@ -44,7 +44,7 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 	return res, nil
 }
 
-func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (
+func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (
 	res ctrl.Result, ready bool, err error,
 ) {
 	// initializer is a quick job so check in frequently
@@ -61,7 +61,7 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 				WithDetail(fmt.Sprintf("Failed to inspect the test script: %v", err)).
 				WithAbort()
-			cloud.SendTestRunEvents(r.k6CloudClient, v1alpha1.TestRunID(k6), log, events)
+			cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
 		} else {
 			// if there is any error, we have to reflect it on the K6 manifest
 			k6.GetStatus().Stage = "error"
@@ -124,7 +124,7 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, 
 
 // SetupCloudTest inspects the output of initializer and creates a new
 // test run. It is meant to be used only in cloud output mode.
-func SetupCloudTest(ctx context.Context, log logr.Logger, k6 v1alpha1.TestRunI, r *TestRunReconciler) (res ctrl.Result, err error) {
+func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (res ctrl.Result, err error) {
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
 	inspectOutput, inspectReady, err := inspectTestRun(ctx, log, k6, r.Client)
