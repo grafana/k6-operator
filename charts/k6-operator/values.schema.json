@@ -27,7 +27,11 @@
           "description": "service.annotations -- service custom annotations",
           "title": "labels",
           "type": "object"
-        },
+        }
+      },
+      "title": "service",
+      "type": "object"
+    },
     "authProxy": {
       "additionalProperties": false,
       "properties": {
