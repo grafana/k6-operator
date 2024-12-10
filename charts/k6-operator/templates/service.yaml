@@ -9,12 +9,12 @@ metadata:
     app.kubernetes.io/component: controller
     {{- include "k6-operator.labels" . | nindent 4 }}
     {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
-    {{- with .Values.metrics.service.annotations }}
+    {{- with .Values.service.annotations }}
     {{ toYaml . | nindent 4 }}
     {{- end }}
   annotations:
     {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
-    {{- with .Values.metrics.service.annotations }}
+    {{- with .Values.service.annotations }}
     {{ toYaml . | nindent 4 }}
     {{- end }}
 spec:
