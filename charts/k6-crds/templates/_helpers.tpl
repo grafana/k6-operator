@@ -2,7 +2,7 @@
 Common labels
 */}}
 {{- define "k6-crds.labels" -}}
-helm.sh/chart: {{ include "k6-operator.chart" . }}
+helm.sh/chart: {{ include "k6-crds.chart" . }}
 {{ include "k6-crds.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
