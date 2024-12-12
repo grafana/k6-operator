@@ -4,10 +4,10 @@ kind: CustomResourceDefinition
 metadata:
   labels:
     app.kubernetes.io/component: controller
-    {{- include "k6-operator.labels" . | nindent 4 }}
-    {{- include "k6-operator.customLabels" . | nindent 4 }}
+    {{- include "k6-crds.labels" . | nindent 4 }}
+    {{- include "k6-crds.customLabels" . | nindent 4 }}
   annotations:
-    {{- include "k6-operator.customAnnotations" . | nindent 4 }}
+    {{- include "k6-crds.customAnnotations" . | nindent 4 }}
     controller-gen.kubebuilder.io/version: v0.16.1
   name: testruns.k6.io
 spec:
