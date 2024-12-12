@@ -32,3 +32,19 @@ Selector labels
 app.kubernetes.io/name: {{ include "k6-crds.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{- define "k6-crds.customLabels" -}}
+  {{- if .Values.customLabels }}
+    {{- with .Values.customLabels }}
+      {{- toYaml . }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+
+{{- define "k6-crds.customAnnotations" -}}
+  {{- if .Values.customAnnotations }}
+    {{- with .Values.customAnnotations }}
+      {{- toYaml . }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
