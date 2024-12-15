@@ -132,6 +132,13 @@ bundle: manifests
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
+generate-crd-docs:
+	# Generate yamls with full desciption values
+	$(CONTROLLER_GEN) "crd" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	docker run -u $(id -u):$(id -g) --rm -v ${PWD}:/workdir ghcr.io/fybrik/crdoc:latest --resources /workdir/config/crd/bases --output /workdir/docs/crd-generated.md --template /workdir/docs/crd.tmpl
+	# Restore yamls to the original state
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
 # ===============================================================
 # This section is only about the HELM deployment of the operator
 # ===============================================================
