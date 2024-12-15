@@ -28,9 +28,9 @@ Kubernetes: `>=1.16.0-0`
 | authProxy.containerSecurityContext | object | `{}` | A security context defines privileges and access control settings for the container. |
 | authProxy.enabled | bool | `true` | enables the protection of /metrics endpoint. (https://github.com/brancz/kube-rbac-proxy) |
 | authProxy.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent) |
-| authProxy.image.registry | string | `"gcr.io"` |  |
-| authProxy.image.repository | string | `"kubebuilder/kube-rbac-proxy"` | rbac-proxy image repository |
-| authProxy.image.tag | string | `"v0.15.0"` | rbac-proxy image tag |
+| authProxy.image.registry | string | `"quay.io"` |  |
+| authProxy.image.repository | string | `"brancz/kube-rbac-proxy"` | rbac-proxy image repository |
+| authProxy.image.tag | string | `"v0.18.2"` | rbac-proxy image tag |
 | authProxy.livenessProbe | object | `{}` | Liveness probe in Probe format |
 | authProxy.readinessProbe | object | `{}` | Readiness probe in Probe format |
 | authProxy.resources | object | `{}` | rbac-proxy resource limitation/request |
@@ -68,4 +68,3 @@ Kubernetes: `>=1.16.0-0`
 | podLabels | object | `{}` | Custom Label to be applied on all pods |
 | prometheus.enabled | bool | `false` | enables the prometheus metrics scraping (default: false) |
 | tolerations | list | `[]` | Tolerations to be applied on all containers |
-
