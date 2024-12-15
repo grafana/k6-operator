@@ -132,19 +132,19 @@ authProxy:
     # type: string
     # @schema
     # authProxy.image.registry
-    registry: gcr.io
+    registry: quay.io
     # @schema
     # required: false
     # type: string
     # @schema
     # authProxy.image.repository -- rbac-proxy image repository
-    repository: kubebuilder/kube-rbac-proxy
+    repository: brancz/kube-rbac-proxy
     # @schema
     # required: false
     # type: string
     # @schema
     # authProxy.image.tag -- rbac-proxy image tag
-    tag: v0.15.0
+    tag: v0.18.2
     # @schema
     # required: false
     # type: string
