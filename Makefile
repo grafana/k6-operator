@@ -135,7 +135,8 @@ bundle-build:
 generate-crd-docs:
 	# Generate yamls with full desciption values
 	$(CONTROLLER_GEN) "crd" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	docker run -u $(id -u):$(id -g) --rm -v ${PWD}:/workdir ghcr.io/fybrik/crdoc:latest --resources /workdir/config/crd/bases --output /workdir/docs/crd-generated.md --template /workdir/docs/crd.tmpl
+	go install fybrik.io/crdoc@v0.6.4
+	crdoc --resources ./config/crd/bases --output ./docs/crd-generated.md --template ./docs/crd.tmpl
 	# Restore yamls to the original state
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
