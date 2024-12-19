@@ -52,7 +52,6 @@ Additionally, you'll need to install the following tooling:
 To execute unit tests, use these commands:
 
 ```bash
-make test-setup # only need to run once
 make test
 ```
 
