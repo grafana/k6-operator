@@ -23,7 +23,6 @@ jobs:
           persist-credentials: false
       - name: Test
         run: |
-          make test-setup
           make test
         env:
           ENVTEST_K8S_VERSION: ${{ matrix.k8s_version }}
