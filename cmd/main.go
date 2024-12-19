@@ -21,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/grafana/k6-operator/controllers"
+	controllers "github.com/grafana/k6-operator/internal/controller"
 	"github.com/grafana/k6-operator/pkg/plz"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -80,6 +80,7 @@ func main() {
 		LeaderElection:             enableLeaderElection,
 		LeaderElectionID:           "fcdfce80.io",
 		LeaderElectionResourceLock: "leases",
+		HealthProbeBindAddress:     healthAddr,
 	}
 
 	if watchNamespaces, multiNamespaced := getWatchNamespaces(); multiNamespaced {
@@ -94,7 +95,7 @@ func main() {
 	} else if watchNamespace, namespaced := getWatchNamespace(); namespaced {
 		mgrOpts.Cache = cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
-				watchNamespace: cache.Config{},
+				watchNamespace: {},
 			},
 		}
 		setupLog.Info("WATCH_NAMESPACE is configured", "ns", watchNamespace)
