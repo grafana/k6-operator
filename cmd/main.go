@@ -20,7 +20,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/grafana/k6-operator/controllers"
+	controllers "github.com/grafana/k6-operator/internal/controller"
 	"github.com/grafana/k6-operator/pkg/plz"
 
 	"k8s.io/apimachinery/pkg/runtime"
