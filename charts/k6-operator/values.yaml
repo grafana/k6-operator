@@ -1,5 +1,17 @@
 # @schema
 # required: false
+# type: string
+# @schema
+nameOverride: ""
+
+# @schema
+# required: false
+# type: string
+# @schema
+fullnameOverride: ""
+
+# @schema
+# required: false
 # type: object
 # @schema
 global:
