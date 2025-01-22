@@ -1,6 +1,6 @@
 # k6-operator
 
-![Version: 3.10.1](https://img.shields.io/badge/Version-3.10.1-informational?style=flat-square) ![AppVersion: 0.0.18](https://img.shields.io/badge/AppVersion-0.0.18-informational?style=flat-square)
+![Version: 3.10.2](https://img.shields.io/badge/Version-3.10.2-informational?style=flat-square) ![AppVersion: 0.0.18](https://img.shields.io/badge/AppVersion-0.0.18-informational?style=flat-square)
 
 A Helm chart to install the k6-operator
 
@@ -36,6 +36,7 @@ Kubernetes: `>=1.16.0-0`
 | authProxy.resources | object | `{}` | rbac-proxy resource limitation/request |
 | customAnnotations | object | `{}` | Custom Annotations to be applied on all resources |
 | customLabels | object | `{}` | Custom Label to be applied on all resources |
+| fullnameOverride | string | `""` |  |
 | global.image | object | `{"pullSecrets":[],"registry":""}` | Global image configuration |
 | global.image.pullSecrets | list | `[]` | Optional set of global image pull secrets |
 | global.image.registry | string | `""` | Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...) |
@@ -61,6 +62,7 @@ Kubernetes: `>=1.16.0-0`
 | manager.resources.requests.memory | string | `"50Mi"` | controller-manager Memory request (Min) |
 | manager.serviceAccount.create | bool | `true` | create the service account (default: true) |
 | manager.serviceAccount.name | string | `"k6-operator-controller"` | kubernetes service account for the k6 manager |
+| nameOverride | string | `""` |  |
 | namespace | object | `{"create":true}` | Namespace creation |
 | namespace.create | bool | `true` | create the namespace (default: true) |
 | nodeSelector | object | `{}` | Node Selector to be applied on all containers |
@@ -68,3 +70,4 @@ Kubernetes: `>=1.16.0-0`
 | podLabels | object | `{}` | Custom Label to be applied on all pods |
 | prometheus.enabled | bool | `false` | enables the prometheus metrics scraping (default: false) |
 | tolerations | list | `[]` | Tolerations to be applied on all containers |
+
