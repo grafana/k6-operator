@@ -87,6 +87,11 @@
       "title": "customLabels",
       "type": "object"
     },
+    "fullnameOverride": {
+      "default": "",
+      "title": "fullnameOverride",
+      "type": "string"
+    },
     "global": {
       "additionalProperties": false,
       "properties": {
@@ -268,6 +273,11 @@
       "description": "manager -- controller-manager configuration",
       "title": "manager",
       "type": "object"
+    },
+    "nameOverride": {
+      "default": "",
+      "title": "nameOverride",
+      "type": "string"
     },
     "namespace": {
       "additionalProperties": false,
