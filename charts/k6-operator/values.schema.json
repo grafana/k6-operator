@@ -168,7 +168,7 @@
               "type": "string"
             },
             "tag": {
-              "default": "controller-v0.0.18",
+              "default": "controller-v0.0.19",
               "description": "manager.image.tag -- controller-manager image tag",
               "title": "tag",
               "type": "string"
