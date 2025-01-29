@@ -1,6 +1,6 @@
 # k6-operator
 
-![Version: 3.10.2](https://img.shields.io/badge/Version-3.10.2-informational?style=flat-square) ![AppVersion: 0.0.18](https://img.shields.io/badge/AppVersion-0.0.18-informational?style=flat-square)
+![Version: 3.11.0](https://img.shields.io/badge/Version-3.11.0-informational?style=flat-square) ![AppVersion: 0.0.19](https://img.shields.io/badge/AppVersion-0.0.19-informational?style=flat-square)
 
 A Helm chart to install the k6-operator
 
@@ -41,14 +41,14 @@ Kubernetes: `>=1.16.0-0`
 | global.image.pullSecrets | list | `[]` | Optional set of global image pull secrets |
 | global.image.registry | string | `""` | Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...) |
 | installCRDs | bool | `true` | Installs CRDs as part of the release |
-| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.18"},"livenessProbe":{},"podSecurityContext":{},"readinessProbe":{},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
+| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.19"},"livenessProbe":{},"podSecurityContext":{},"readinessProbe":{},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
 | manager.containerSecurityContext | object | `{}` | A security context defines privileges and access control settings for the container. |
 | manager.env | list | `[]` | List of environment variables to set in the controller |
 | manager.envFrom | list | `[]` | List of sources to populate environment variables in the controller |
-| manager.image | object | `{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.18"}` | controller-manager image configuration |
+| manager.image | object | `{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.19"}` | controller-manager image configuration |
 | manager.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent) |
 | manager.image.repository | string | `"grafana/k6-operator"` | controller-manager image repository |
-| manager.image.tag | string | `"controller-v0.0.18"` | controller-manager image tag |
+| manager.image.tag | string | `"controller-v0.0.19"` | controller-manager image tag |
 | manager.livenessProbe | object | `{}` | Liveness probe in Probe format |
 | manager.podSecurityContext | object | `{}` | A security context defines privileges and access control settings for a pod. |
 | manager.readinessProbe | object | `{}` | Readiness probe in Probe format |
