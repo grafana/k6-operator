@@ -11,6 +11,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 # @schema
+# additionalProperties: true
 # required: false
 # type: object
 # @schema
