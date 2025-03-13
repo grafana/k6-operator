@@ -93,7 +93,7 @@
       "type": "string"
     },
     "global": {
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "image": {
           "additionalProperties": false,
