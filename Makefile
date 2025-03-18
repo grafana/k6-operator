@@ -15,7 +15,7 @@ CONTROLLER_GEN_VERSION=v0.16.1
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 
 # Image to use for building Go
-GO_BUILDER_IMG ?= "golang:1.22"
+GO_BUILDER_IMG ?= "golang:1.23"
 # Image URL to use all building/pushing image targets
 IMG_NAME ?= ghcr.io/grafana/k6-operator
 IMG_TAG ?= latest

@@ -1,6 +1,6 @@
 ARG GO_BUILDER_IMG
 # Build the manager binary
-FROM ${GO_BUILDER_IMG} as builder
+FROM ${GO_BUILDER_IMG} AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests

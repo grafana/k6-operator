@@ -25,7 +25,7 @@ jobs:
           file: Dockerfile.controller
           push: true
           build-args: |
-            GO_BUILDER_IMG=golang:1.22
+            GO_BUILDER_IMG=golang:1.23
           tags: |
             ghcr.io/grafana/k6-operator:${{ github.sha }}
 
