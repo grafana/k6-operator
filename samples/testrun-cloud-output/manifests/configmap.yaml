@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test
+  namespace: k6-tests
+data:
+  test.js: |
+    // base source: https://github.com/grafana/quickpizza/blob/main/k6/foundations/04.metrics.js
+    import http from "k6/http";
+    import { check, sleep } from "k6";
+    import { Trend, Counter } from "k6/metrics";
+
+    const BASE_URL = __ENV.BASE_URL || 'http://localhost:3333';
+
+    export const options = {
+      stages: [
+        { duration: '5s', target: 5 },
+        { duration: '10s', target: 5 },
+        { duration: '5s', target: 0 },
+      ],
+      cloud: {
+        projectID: 3756871,
+        name: 'k6-operator-e2e-cloud-output'
+      }
+    };
+
+    const pizzas = new Counter('quickpizza_number_of_pizzas');
+    const ingredients = new Trend('quickpizza_ingredients');
+
+    export function setup() {
+      // TODO: Send notification to Slack
+      console.log("Starting folks!")
+    }
+
+    export default function () {
+      let restrictions = {
+        maxCaloriesPerSlice: 500,
+        mustBeVegetarian: false,
+        excludedIngredients: ["pepperoni"],
+        excludedTools: ["knife"],
+        maxNumberOfToppings: 6,
+        minNumberOfToppings: 2
+      }
+      let res = http.post(`/api/pizza`, JSON.stringify(restrictions), {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-ID': 23423,
+        },
+      });
+      check(res, { "status is 200": (res) => res.status === 200 });
+      console.log(`${res.json().pizza.name} (${res.json().pizza.ingredients.length} ingredients)`);
+      pizzas.add(1);
+      ingredients.add(res.json().pizza.ingredients.length);
+      sleep(1);
+    }
+
+    export function teardown(){
+      // TODO: Send notification to Slack
+      console.log("That's all folks!")
+    }

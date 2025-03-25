@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ClusterRole-k6-operator-manager-role.yml
+- ClusterRole-k6-operator-metrics-reader.yml
+- ClusterRole-k6-operator-proxy-role.yml
+- ClusterRoleBinding-k6-operator-manager-rolebinding.yml
+- ClusterRoleBinding-k6-operator-proxy-rolebinding.yml
+- CustomResourceDefinition-privateloadzones.k6.io.yaml
+- CustomResourceDefinition-testruns.k6.io.yaml
+- Deployment-k6-operator-controller-manager.yml
+- Namespace-k6-operator-system.yml
+- Role-k6-operator-leader-election-role.yml
+- RoleBinding-k6-operator-leader-election-rolebinding.yml
+- Service-k6-operator-controller-manager-metrics-service.yml
+- ServiceAccount-k6-operator-controller.yml

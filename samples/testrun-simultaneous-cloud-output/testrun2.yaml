@@ -1,0 +1,13 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: t-3-runners
+  namespace: k6-tests
+spec:
+  parallelism: 3
+  script:
+    configMap:
+      name: "stress-test"
+      file: "test.js"
+  arguments: --out cloud

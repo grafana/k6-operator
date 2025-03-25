@@ -1,0 +1,11 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: multifile-test
+spec:
+  parallelism: 3
+  script:
+    configMap:
+      name: "multifile"
+      file: "test.js"

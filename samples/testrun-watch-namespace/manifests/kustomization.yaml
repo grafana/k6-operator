@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../latest
+  - configmap.yaml
+  - some-ns.yaml
+  - invisible-ns.yaml
+
+# Deployment does not have any env vars by default so to add an env var, 
+# we need to create a list. Reference:
+# https://github.com/kubernetes-sigs/kustomize/issues/1439#issuecomment-520614831
+patches:
+- patch: |-
+    - op: add
+      path: "/spec/template/spec/containers/0/env"
+      value:
+        - name: WATCH_NAMESPACE
+          value: "some-ns"
+  target:
+    kind: Deployment
+    namespace: k6-operator-system
+    name: k6-operator-controller-manager
