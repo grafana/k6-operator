@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: multifile
+data:
+  test.js: |
+    import http from 'k6/http';
+    import { fun } from './utils.js';
+
+    export const options = {
+      vus: 10,
+      duration: '30s',
+    };
+
+    export default function () {
+      http.get('https://quickpizza.grafana.com');
+      fun();
+    }
+  utils.js: |-
+    import { sleep } from 'k6';
+
+    export function fun() {
+        sleep(1)
+    }

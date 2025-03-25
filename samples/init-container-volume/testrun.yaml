@@ -1,0 +1,27 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: k6-init-container
+spec:
+  parallelism: 2
+  script:
+    localFile: /test/bar.js
+  runner:
+    initContainers:
+      - image: busybox:1.28
+        command: [
+          'sh', 
+          '-c', 
+          'echo "import http from \"k6/http\"; export const options = { iterations: 100, vus: 10 }; export default function () { const response = http.get(\"https://quickpizza.grafana.com\"); }" > /test/bar.js && cat /test/bar.js'
+          ]
+        workingDir: "/test"
+        volumeMounts:
+          - mountPath: /test
+            name: k6-provision-location
+    volumes:
+      - emptyDir: {}
+        name: k6-provision-location
+    volumeMounts:
+      - mountPath: /test
+        name: k6-provision-location

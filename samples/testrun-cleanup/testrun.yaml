@@ -1,0 +1,13 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: k6-sample
+  namespace: fancy-testing
+spec:
+  parallelism: 1
+  script:
+    configMap:
+      name: "test"
+      file: "test.js"
+  cleanup: "post"
