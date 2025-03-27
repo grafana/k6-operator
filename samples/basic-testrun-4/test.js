@@ -68,6 +68,8 @@ export default function () {
     interval: "10s",
   });
 
+  // TODO: add check for status of the pods
+
   if (err != null) {
     fail("wait for finished returns" + err);
   }
