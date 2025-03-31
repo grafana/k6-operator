@@ -69,11 +69,11 @@ if [ "$IMAGE" = "ghcr.io/grafana/k6-operator:latest" ]; then
   cd latest
 else
   cd ../config/default 
-  kustomize edit set image $IMAGE && kustomize build . > ../../samples/latest/bundle-to-test.yaml
-  cd ../../samples/latest
+  kustomize edit set image $IMAGE && kustomize build . > ../../e2e/latest/bundle-to-test.yaml
+  cd ../../e2e/latest
 fi
 
-# We're in samples/latest here and there is a bundle-to-test.yaml
+# We're in e2e/latest here and there is a bundle-to-test.yaml
 # Split the bundle and create a kustomize
 
 docker run --user="1001" --rm -v "${PWD}":/workdir mikefarah/yq --no-doc  -s  '.kind + "-" + .metadata.name' bundle-to-test.yaml
@@ -86,7 +86,7 @@ kustomize create --autodetect --recursive .
 # since CRDs are being extracted as k6.io, without yaml in the end, rename them:
 for f in $(find . -type f  -name '*.k6.io'); do mv $f ${f}.yaml; done
 
-# go back to samples/
+# go back to e2e/
 cd ..
 
 # TODO: add a proper build with xk6-environment (use new functionality?)
@@ -122,6 +122,7 @@ tests=(
   # "browser-1"
   # cloud abort
   # plz
+  # ipv6
   )
 
 for folder in "${tests[@]}"; do
