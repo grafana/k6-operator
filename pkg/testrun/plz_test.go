@@ -48,6 +48,7 @@ func Test_NewPLZTestRun(t *testing.T) {
 						Name:  "K6_CLOUD_HOST",
 						Value: mainIngest,
 					}},
+					EnvFrom: []corev1.EnvFromSource{},
 				},
 				Script: v1alpha1.K6Script{
 					LocalFile: "/test/archive.tar",

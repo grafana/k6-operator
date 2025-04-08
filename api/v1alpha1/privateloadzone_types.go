@@ -38,6 +38,8 @@ type PrivateLoadZoneSpec struct {
 	NodeSelector       map[string]string             `json:"nodeSelector,omitempty"`
 	Image              string                        `json:"image,omitempty"`
 	ImagePullSecrets   []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	Config PrivateLoadZoneConfig `json:"config,omitempty"`
 }
 
 // PrivateLoadZoneStatus defines the observed state of PrivateLoadZone
@@ -64,6 +66,17 @@ type PrivateLoadZoneList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []PrivateLoadZone `json:"items"`
+}
+
+type PrivateLoadZoneConfig struct {
+	Secrets []PLZSecretsConfig `json:"secrets,omitempty"`
+}
+
+type PLZSecretsConfig struct {
+	// these definitions are copies from corev1.EnvFromSource - to be
+	// re-packed into that struct during TestRun creation
+	ConfigMapRef *corev1.ConfigMapEnvSource `json:"configMapRef,omitempty"`
+	SecretRef    *corev1.SecretEnvSource    `json:"secretRef,omitempty"`
 }
 
 func init() {
@@ -114,4 +127,13 @@ func (plz *PrivateLoadZone) Deregister(ctx context.Context, logger logr.Logger, 
 
 func uuid() string {
 	return guuid.New().String()
+}
+
+func (plzConfig *PrivateLoadZoneConfig) ToEnvFromSource() []corev1.EnvFromSource {
+	envFromSource := make([]corev1.EnvFromSource, len(plzConfig.Secrets))
+	for i := range plzConfig.Secrets {
+		envFromSource[i].ConfigMapRef = plzConfig.Secrets[i].ConfigMapRef
+		envFromSource[i].SecretRef = plzConfig.Secrets[i].SecretRef
+	}
+	return envFromSource
 }
