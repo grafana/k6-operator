@@ -60,7 +60,8 @@ func NewPLZTestRun(plz *v1alpha1.PrivateLoadZone, token string, trData *cloud.Te
 				InitContainers: []v1alpha1.InitContainer{
 					initContainer,
 				},
-				Env: envVars,
+				Env:     envVars,
+				EnvFrom: plz.Spec.Config.ToEnvFromSource(),
 			},
 			Starter: v1alpha1.Pod{
 				ServiceAccountName: plz.Spec.ServiceAccountName,
