@@ -116,13 +116,73 @@ namespace:
 # required: false
 # type: object
 # @schema
-prometheus:
+metrics:
   # @schema
   # required: false
-  # type: boolean
-  # @schema
-  # prometheus.enabled -- enables the prometheus metrics scraping (default: false)
-  enabled: false
+  # type: object
+  # description: metrics -- serviceMonitor related (for now)
+  serviceMonitor:
+    # @schema
+    # required: false
+    # type: boolean
+    # description: Create ServiceMonitor Resource for scraping metrics using PrometheusOperator
+    enabled: true
+
+    # @schema
+    # required: false
+    # type: string
+    # description: Namespace which Prometheus is running in (e.g., "monitoring")
+    namespace: ""
+
+    # @schema
+    # required: false
+    # type: string
+    # description: The name of the label on the target service to use as the job name in Prometheus
+    jobLabel: ""
+
+    # @schema
+    # required: false
+    # type: string
+    # description: Interval at which metrics should be scraped
+    interval: ""
+
+    # @schema
+    # required: false
+    # type: string
+    # description: Timeout after which the scrape is ended
+    scrapeTimeout: ""
+
+    # @schema
+    # required: false
+    # type: list
+    # description: RelabelConfigs to apply to samples before scraping
+    relabelings: []
+
+    # @schema
+    # required: false
+    # type: list
+    # description: MetricRelabelConfigs to apply to samples before ingestion
+    metricRelabelings: []
+
+    # @schema
+    # required: false
+    # type: object
+    # description: ServiceMonitor selector labels
+    selector: {}
+
+    # @schema
+    # required: false
+    # type: object
+    # description: Extra labels for the ServiceMonitor
+    labels: {}
+
+    # @schema
+    # required: false
+    # type: boolean
+    # description: honorLabels chooses the metric's labels on collisions with target labels
+    honorLabels: false
+    
+
 
 # @schema
 # required: false
