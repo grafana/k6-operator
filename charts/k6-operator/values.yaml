@@ -182,8 +182,6 @@ metrics:
     # description: honorLabels chooses the metric's labels on collisions with target labels
     honorLabels: false
     
-
-
 # @schema
 # required: false
 # type: object
