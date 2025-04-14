@@ -12,7 +12,7 @@ Current release process is rather heavy on manual interventions:
 - Update `docs/versioning.md`.
 - Update CRDs in Helm chart if needed.
 - Update k6-operator's version in `values.yaml` and bump `Chart.yaml`
-- Run `helm-docs` to update the auto-generated documentation for the Chart
+- Run `make helm-docs` to update the auto-generated documentation for the Chart
 - Commit the changes:
     ```bash
     git add charts/k6-operator/Chart.yaml charts/k6-operator/README.md charts/k6-operator/values.yaml docs/versioning.md Makefile
