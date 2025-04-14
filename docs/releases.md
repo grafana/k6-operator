@@ -13,9 +13,10 @@ Current release process is rather heavy on manual interventions:
 - Update CRDs in Helm chart if needed.
 - Update k6-operator's version in `values.yaml` and bump `Chart.yaml`
 - Run `make helm-docs` to update the auto-generated documentation for the Chart
+- Run `make helm-schema` to update the schema file.
 - Commit the changes:
     ```bash
-    git add charts/k6-operator/Chart.yaml charts/k6-operator/README.md charts/k6-operator/values.yaml docs/versioning.md Makefile
+    git add charts/k6-operator/Chart.yaml charts/k6-operator/README.md charts/k6-operator/values.yaml charts/k6-operator/values.schema.json docs/versioning.md Makefile
     git commit -m 'release: update for v0.0.x'
     ```
 5. "Helm release" workflow is triggered, publishing to Helm Grafana repo.
