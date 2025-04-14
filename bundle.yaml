@@ -33,6 +33,32 @@ spec:
             type: object
           spec:
             properties:
+              config:
+                properties:
+                  secrets:
+                    items:
+                      properties:
+                        configMapRef:
+                          properties:
+                            name:
+                              default: ""
+                              type: string
+                            optional:
+                              type: boolean
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        secretRef:
+                          properties:
+                            name:
+                              default: ""
+                              type: string
+                            optional:
+                              type: boolean
+                          type: object
+                          x-kubernetes-map-type: atomic
+                      type: object
+                    type: array
+                type: object
               image:
                 type: string
               imagePullSecrets:
@@ -1163,6 +1189,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
@@ -3104,6 +3132,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
@@ -5068,6 +5098,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
@@ -6303,7 +6335,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v0.0.19
+        image: ghcr.io/grafana/k6-operator:controller-v0.0.20
         name: manager
         resources:
           limits:
