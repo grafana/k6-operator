@@ -17,7 +17,6 @@ You can find the latest k6 Operator documentation in the [Grafana k6 OSS docs](h
 
 For additional resources:
 
-- :book: A guide [Running distributed load tests on Kubernetes](https://grafana.com/blog/2022/06/23/running-distributed-load-tests-on-kubernetes/).
 - :book: A guide [Running distributed tests](https://grafana.com/docs/k6/latest/testing-guides/running-distributed-tests/).
 - :movie_camera: Grafana Office Hours [Load Testing on Kubernetes with k6 Private Load Zones](https://www.youtube.com/watch?v=RXLavQT58YA).
 
