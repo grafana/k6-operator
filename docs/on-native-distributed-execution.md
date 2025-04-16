@@ -58,6 +58,9 @@ Some notable points about implementation of tooling for distributed mode in k6-o
     - Subsequently, the difference in logic between OSS and Cloud test runs will also be minimized. This is not only about providing an OSS solution (like support for setup / teardown) but about simplifying the underlying code: there will be no need to have multiple scenarios at the level of k6-operator. The most complex issue k6-operator ever had, idempotency, was precisely because of this point.
 - Passing of the script is now native to Kubernetes, e.g. mounting a ConfigMap to the runners.
     - With NDE, the same pattern can still be supported but limited to a coordinator pod, if need be.
+- k6-operator is currently creating a Job for each k6 execution.
+    - The benefit of this is questionable, other than potential for [node failures](https://kubernetes.io/docs/concepts/workloads/controllers/job/#completion-mode) but OTOH, there was never any explicit user request to move from Jobs to simple Pods.
+    - NDE doesn't care which implementation will be used. But a move to NDE can be used to implement this change as well or at least propose it to the community. Specifically: coordinator is created as a Job with a Service attached (so that k6-operator can communicate with it) and agents as Pods and they connect to coordinator themselves.
 
 NDE might also unlock an easier implementation of some features in k6-operator, like support of externally-controlled executor.
 
