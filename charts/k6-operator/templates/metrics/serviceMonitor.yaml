@@ -20,13 +20,11 @@ spec:
     matchNames:
       - {{ .Values.metrics.serviceMonitor.namespace | default (include "k6-operator.namespace" .) }}
   selector:
-    {{- with .Values.metrics.serviceMonitor.selector }}
-    matchLabels:
-      {{- toYaml . | nindent 6 }}
-    {{- else }}
     matchLabels:
       control-plane: "controller-manager"
-    {{- end }}
+      {{- with .Values.metrics.serviceMonitor.selector }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
   endpoints:
     - port: https
       path: /metrics
