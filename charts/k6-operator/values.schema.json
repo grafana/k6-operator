@@ -343,7 +343,10 @@
           },
           "description": "related to ServiceMonitor",
           "title": "serviceMonitor",
-          "type": "object"
+          "type": "object",
+          "required": [
+            "enabled"
+          ]
         }
       },
       "title": "metrics",
