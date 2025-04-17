@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "additionalProperties": false,
   "properties": {
     "affinity": {
@@ -277,74 +275,79 @@
       "type": "object"
     },
     "metrics": {
-      "type": "object",
-      "title": "metrics",
-      "description": "metrics -- serviceMonitor related (for now)",
       "additionalProperties": false,
       "properties": {
         "serviceMonitor": {
-          "type": "object",
-          "title": "serviceMonitor",
-          "description": "metrics.serviceMonitor -- Configuration for Prometheus ServiceMonitor",
           "additionalProperties": false,
           "properties": {
             "enabled": {
-              "type": "boolean",
               "default": false,
-              "description": "metrics.serviceMonitor.enabled -- Create ServiceMonitor resource for scraping metrics using PrometheusOperator"
-            },
-            "namespace": {
-              "type": "string",
-              "default": "",
-              "description": "metrics.serviceMonitor.namespace -- Namespace where Prometheus is running (e.g., monitoring)"
-            },
-            "jobLabel": {
-              "type": "string",
-              "default": "",
-              "description": "metrics.serviceMonitor.jobLabel -- Label used as the job name in Prometheus"
-            },
-            "interval": {
-              "type": "string",
-              "default": "",
-              "description": "metrics.serviceMonitor.interval -- Interval at which metrics should be scraped"
-            },
-            "scrapeTimeout": {
-              "type": "string",
-              "default": "",
-              "description": "metrics.serviceMonitor.scrapeTimeout -- Timeout after which the scrape is ended"
-            },
-            "relabelings": {
-              "type": "array",
-              "items": {
-                "type": "object"
-              },
-              "description": "metrics.serviceMonitor.relabelings -- RelabelConfigs to apply to samples before scraping"
-            },
-            "metricRelabelings": {
-              "type": "array",
-              "items": {
-                "type": "object"
-              },
-              "description": "metrics.serviceMonitor.metricRelabelings -- MetricRelabelConfigs to apply to samples before ingestion"
-            },
-            "selector": {
-              "type": "object",
-              "additionalProperties": true,
-              "description": "metrics.serviceMonitor.selector -- ServiceMonitor selector labels"
-            },
-            "labels": {
-              "type": "object",
-              "additionalProperties": true,
-              "description": "metrics.serviceMonitor.labels -- Extra labels for the ServiceMonitor"
+              "description": "Create ServiceMonitor Resource for scraping metrics using PrometheusOperator",
+              "title": "enabled",
+              "type": "boolean"
             },
             "honorLabels": {
-              "type": "boolean",
               "default": false,
-              "description": "metrics.serviceMonitor.honorLabels -- Use metric's labels on collisions with target labels"
+              "description": "honorLabels chooses the metric's labels on collisions with target labels",
+              "title": "honorLabels",
+              "type": "boolean"
+            },
+            "interval": {
+              "default": "",
+              "description": "Interval at which metrics should be scraped",
+              "title": "interval",
+              "type": "string"
+            },
+            "jobLabel": {
+              "default": "",
+              "description": "The name of the label on the target service to use as the job name in Prometheus",
+              "title": "jobLabel",
+              "type": "string"
+            },
+            "labels": {
+              "additionalProperties": false,
+              "description": "Extra labels for the ServiceMonitor",
+              "title": "labels",
+              "type": "object"
+            },
+            "metricRelabelings": {
+              "items": {},
+              "description": "MetricRelabelConfigs to apply to samples before ingestion",
+              "title": "metricRelabelings",
+              "type": "array"
+            },
+            "namespace": {
+              "default": "",
+              "description": "Namespace which Prometheus is running in (e.g., \"monitoring\")",
+              "title": "namespace",
+              "type": "string"
+            },
+            "relabelings": {
+              "items": {},
+              "description": "RelabelConfigs to apply to samples before scraping",
+              "title": "relabelings",
+              "type": "array"
+            },
+            "scrapeTimeout": {
+              "default": "",
+              "description": "Timeout after which the scrape is ended",
+              "title": "scrapeTimeout",
+              "type": "string"
+            },
+            "selector": {
+              "additionalProperties": false,
+              "description": "ServiceMonitor selector labels",
+              "title": "selector",
+              "type": "object"
             }
-          }
+          },
+          "description": "related to ServiceMonitor",
+          "title": "serviceMonitor",
+          "type": "object"
         }
-      }
+      },
+      "title": "metrics",
+      "type": "object"
     },
     "nameOverride": {
       "default": "",
@@ -383,19 +386,6 @@
       "title": "podLabels",
       "type": "object"
     },
-    "prometheus": {
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "default": false,
-          "description": "prometheus.enabled -- enables the prometheus metrics scraping (default: false)",
-          "title": "enabled",
-          "type": "boolean"
-        }
-      },
-      "title": "prometheus",
-      "type": "object"
-    },
     "tolerations": {
       "additionalProperties": true,
       "items": {},
@@ -403,5 +393,7 @@
       "title": "tolerations",
       "type": "array"
     }
-  }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object"
 }
