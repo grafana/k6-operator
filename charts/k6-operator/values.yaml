@@ -124,7 +124,7 @@ metrics:
   # @schema
   serviceMonitor:
     # @schema
-    # required: false
+    # required: true
     # type: boolean
     # description: Create ServiceMonitor Resource for scraping metrics using PrometheusOperator
     # @schema
