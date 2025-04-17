@@ -173,6 +173,7 @@ metrics:
     metricRelabelings: []
 
     # @schema
+    # additionalProperties: true
     # required: false
     # type: object
     # description: ServiceMonitor selector labels
@@ -180,6 +181,7 @@ metrics:
     selector: {}
 
     # @schema
+    # additionalProperties: true
     # required: false
     # type: object
     # description: Extra labels for the ServiceMonitor

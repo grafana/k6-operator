@@ -305,7 +305,7 @@
               "type": "string"
             },
             "labels": {
-              "additionalProperties": false,
+              "additionalProperties": true,
               "description": "Extra labels for the ServiceMonitor",
               "title": "labels",
               "type": "object"
@@ -335,7 +335,7 @@
               "type": "string"
             },
             "selector": {
-              "additionalProperties": false,
+              "additionalProperties": true,
               "description": "ServiceMonitor selector labels",
               "title": "selector",
               "type": "object"
