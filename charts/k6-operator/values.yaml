@@ -120,7 +120,7 @@ metrics:
   # @schema
   # required: false
   # type: object
-  # description: metrics -- serviceMonitor related (for now)
+  # description: related to ServiceMonitor
   serviceMonitor:
     # @schema
     # required: false
