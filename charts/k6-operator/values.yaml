@@ -116,13 +116,84 @@ namespace:
 # required: false
 # type: object
 # @schema
-prometheus:
+metrics:
   # @schema
   # required: false
-  # type: boolean
+  # type: object
+  # description: related to ServiceMonitor
   # @schema
-  # prometheus.enabled -- enables the prometheus metrics scraping (default: false)
-  enabled: false
+  serviceMonitor:
+    # @schema
+    # required: true
+    # type: boolean
+    # description: Create ServiceMonitor Resource for scraping metrics using PrometheusOperator
+    # @schema
+    enabled: false
+
+    # @schema
+    # required: false
+    # type: string
+    # description: Namespace which Prometheus is running in (e.g., "monitoring")
+    # @schema
+    namespace: ""
+
+    # @schema
+    # required: false
+    # type: string
+    # description: The name of the label on the target service to use as the job name in Prometheus
+    # @schema
+    jobLabel: ""
+
+    # @schema
+    # required: false
+    # type: string
+    # description: Interval at which metrics should be scraped
+    # @schema
+    interval: ""
+
+    # @schema
+    # required: false
+    # type: string
+    # description: Timeout after which the scrape is ended
+    # @schema
+    scrapeTimeout: ""
+
+    # @schema
+    # required: false
+    # type: array
+    # description: RelabelConfigs to apply to samples before scraping
+    # @schema
+    relabelings: []
+
+    # @schema
+    # required: false
+    # type: array
+    # description: MetricRelabelConfigs to apply to samples before ingestion
+    # @schema
+    metricRelabelings: []
+
+    # @schema
+    # additionalProperties: true
+    # required: false
+    # type: object
+    # description: ServiceMonitor selector labels
+    # @schema
+    selector: {}
+
+    # @schema
+    # additionalProperties: true
+    # required: false
+    # type: object
+    # description: Extra labels for the ServiceMonitor
+    # @schema
+    labels: {}
+
+    # @schema
+    # required: false
+    # type: boolean
+    # description: honorLabels chooses the metric's labels on collisions with target labels
+    # @schema
+    honorLabels: false
 
 # @schema
 # required: false

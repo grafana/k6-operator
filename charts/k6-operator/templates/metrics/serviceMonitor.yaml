@@ -1,0 +1,49 @@
+{{- if .Values.metrics.serviceMonitor.enabled }}
+# Prometheus Monitor Service (Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: controller-manager-metrics-monitor
+  namespace: {{ .Values.metrics.serviceMonitor.namespace | default (include "k6-operator.namespace" .) }}
+  labels:
+    control-plane: "controller-manager"
+    app.kubernetes.io/component: monitoring
+    {{- include "k6-operator.labels" . | nindent 4 }}
+    {{- with .Values.metrics.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
+  annotations:
+    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames:
+      {{- include "k6-operator.namespace" . }}
+  selector:
+    matchLabels:
+      control-plane: "controller-manager"
+      {{- with .Values.metrics.serviceMonitor.selector }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+  endpoints:
+    - port: https
+      path: /metrics
+      {{- with .Values.metrics.serviceMonitor.interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .Values.metrics.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      honorLabels: {{ .Values.metrics.serviceMonitor.honorLabels | default false }}
+      {{- with .Values.metrics.serviceMonitor.relabelings }}
+      relabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.metrics.serviceMonitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- with .Values.metrics.serviceMonitor.jobLabel }}
+  jobLabel: {{ . }}
+  {{- end }}
+{{- end }}

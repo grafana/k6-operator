@@ -274,6 +274,84 @@
       "title": "manager",
       "type": "object"
     },
+    "metrics": {
+      "additionalProperties": false,
+      "properties": {
+        "serviceMonitor": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "Create ServiceMonitor Resource for scraping metrics using PrometheusOperator",
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "honorLabels": {
+              "default": false,
+              "description": "honorLabels chooses the metric's labels on collisions with target labels",
+              "title": "honorLabels",
+              "type": "boolean"
+            },
+            "interval": {
+              "default": "",
+              "description": "Interval at which metrics should be scraped",
+              "title": "interval",
+              "type": "string"
+            },
+            "jobLabel": {
+              "default": "",
+              "description": "The name of the label on the target service to use as the job name in Prometheus",
+              "title": "jobLabel",
+              "type": "string"
+            },
+            "labels": {
+              "additionalProperties": true,
+              "description": "Extra labels for the ServiceMonitor",
+              "title": "labels",
+              "type": "object"
+            },
+            "metricRelabelings": {
+              "items": {},
+              "description": "MetricRelabelConfigs to apply to samples before ingestion",
+              "title": "metricRelabelings",
+              "type": "array"
+            },
+            "namespace": {
+              "default": "",
+              "description": "Namespace which Prometheus is running in (e.g., \"monitoring\")",
+              "title": "namespace",
+              "type": "string"
+            },
+            "relabelings": {
+              "items": {},
+              "description": "RelabelConfigs to apply to samples before scraping",
+              "title": "relabelings",
+              "type": "array"
+            },
+            "scrapeTimeout": {
+              "default": "",
+              "description": "Timeout after which the scrape is ended",
+              "title": "scrapeTimeout",
+              "type": "string"
+            },
+            "selector": {
+              "additionalProperties": true,
+              "description": "ServiceMonitor selector labels",
+              "title": "selector",
+              "type": "object"
+            }
+          },
+          "description": "related to ServiceMonitor",
+          "title": "serviceMonitor",
+          "type": "object",
+          "required": [
+            "enabled"
+          ]
+        }
+      },
+      "title": "metrics",
+      "type": "object"
+    },
     "nameOverride": {
       "default": "",
       "title": "nameOverride",
@@ -309,19 +387,6 @@
       "additionalProperties": true,
       "description": "podLabels -- Custom Label to be applied on all pods",
       "title": "podLabels",
-      "type": "object"
-    },
-    "prometheus": {
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "default": false,
-          "description": "prometheus.enabled -- enables the prometheus metrics scraping (default: false)",
-          "title": "enabled",
-          "type": "boolean"
-        }
-      },
-      "title": "prometheus",
       "type": "object"
     },
     "tolerations": {

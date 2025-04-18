@@ -1,0 +1,8 @@
+# Deploy a serviceMonitor on a different namespace, with dedicated jobLabel.
+metrics:
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    labels: 
+      foo: bar
+    jobLabel: foo
