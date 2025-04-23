@@ -18,8 +18,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -34,7 +32,7 @@ import (
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	k6v1alpha1 "github.com/grafana/k6-operator/api/v1alpha1"
-	"github.com/grafana/k6-operator/pkg/cloud"
+	plzresources "github.com/grafana/k6-operator/pkg/resources/plz"
 )
 
 const (
@@ -48,14 +46,7 @@ type PrivateLoadZoneReconciler struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 
-	// Note: we expect that there's only one PLZ object at a time.
-	// Therefore it is safe to assume that poller should be created only once
-	// and it can simply be part of the Reconciler object.
-	// If support for multiple PLZs will be added at some point,
-	// poller should be made PLZ specific;
-	// e.g. with a map: PLZ name -> poller.
-	poller *cloud.TestRunPoller
-	token  string // needed for cloud logs
+	workers plzresources.PLZWorkers
 }
 
 //+kubebuilder:rbac:groups=k6.io,resources=privateloadzones,verbs=get;list;watch;create;update;patch;delete
@@ -77,20 +68,10 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	if r.poller == nil {
-		token, tokenReady, err := loadToken(ctx, logger, r.Client, plz.Spec.Token, &client.ListOptions{Namespace: plz.Namespace})
-		if err != nil {
-			// An error here means a very likely mis-configuration of the token.
-			logger.Error(err, "A problem while getting token.")
-			return ctrl.Result{}, nil
-		}
-		if !tokenReady {
-			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
-		}
-
-		r.poller = cloud.NewTestRunPoller(cloud.ApiURL(k6CloudHost()), token, plz.Name, logger)
-		r.token = token
-	}
+	var worker *plzresources.PLZWorker
+	// skipping error, as currently the true state is judged by PLZ resource,
+	// not by the state of the in-memory worker
+	worker, _ = r.workers.GetWorker(plz.Name)
 
 	if plz.DeletionTimestamp.IsZero() && (plz.IsUnknown(v1alpha1.PLZRegistered) || plz.IsFalse(v1alpha1.PLZRegistered)) {
 		if controllerutil.ContainsFinalizer(plz, plzFinalizer) {
@@ -103,13 +84,23 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				return ctrl.Result{}, err
 			}
 		} else {
-			// This is the first reconcile: PLZ should be registered
-			uid, err := plz.Register(ctx, logger, r.poller.Client)
+			// This is the first reconcile: a PLZ worker should be created and registered
+			token, proceed, result := r.loadToken(ctx, plz.Spec.Token, plz.Namespace, logger)
+			if !proceed {
+				return result, nil
+			}
+
+			worker = plzresources.NewPLZWorker(plz, token, r.Client, r.Log)
+			uid, err := worker.Register(ctx)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
 
-			logger.Info(fmt.Sprintf("PLZ %s is registered with k6 Cloud.", plz.Name))
+			if err := r.workers.AddWorker(plz.Name, worker); err != nil {
+				// An error here probably means a duplicate reconcile request. Switch to debug?
+				logger.Error(err, "Trying to register an existing PLZ.")
+				return ctrl.Result{}, nil
+			}
 
 			controllerutil.AddFinalizer(plz, plzFinalizer)
 			plz.SetAnnotations(map[string]string{
@@ -126,13 +117,8 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if !plz.DeletionTimestamp.IsZero() && controllerutil.ContainsFinalizer(plz, plzFinalizer) {
 			// PLZ has been deleted.
 
-			r.poller.Stop()
-
-			// Since resource is being deleted, there isn't much to do about
-			// deregistration error here.
-			_ = plz.Deregister(ctx, logger, r.poller.Client)
-
-			logger.Info(fmt.Sprintf("PLZ %s is deregistered with k6 Cloud.", plz.Name))
+			worker.StopFactory()
+			worker.Deregister(ctx)
 
 			controllerutil.RemoveFinalizer(plz, plzFinalizer)
 
@@ -140,7 +126,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				return ctrl.Result{}, err
 			}
 
-			r.poller = nil
+			r.workers.DeleteWorker(plz.Name)
 
 			// nothing left to do
 			return ctrl.Result{}, nil
@@ -148,11 +134,23 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	if plz.IsTrue(v1alpha1.PLZRegistered) {
-		if r.poller != nil && !r.poller.IsPolling() {
-			r.poller.Start()
-			r.startFactory(plz, r.poller.GetTestRuns())
-			logger.Info("Started polling k6 Cloud for new test runs.")
+		if worker != nil {
+			// if this is after restart of the k6-operator, the in-memory workers
+			// might be null and should be constructed
+			token, proceed, result := r.loadToken(ctx, plz.Spec.Token, plz.Namespace, logger)
+			if !proceed {
+				return result, nil
+			}
+			worker = plzresources.NewPLZWorker(plz, token, r.Client, r.Log)
+
+			if err := r.workers.AddWorker(plz.Name, worker); err != nil {
+				// An error here probably means a duplicate reconcile request. Switch to debug?
+				logger.Error(err, "Trying to register an existing PLZ.")
+				return ctrl.Result{}, nil
+			}
 		}
+
+		worker.StartFactory()
 	}
 
 	return ctrl.Result{}, nil
@@ -211,7 +209,16 @@ func (r *PrivateLoadZoneReconciler) UpdateStatus(
 	return true, nil
 }
 
-func k6CloudHost() string {
-	host, _ := os.LookupEnv("K6_CLOUD_HOST")
-	return host
+func (r *PrivateLoadZoneReconciler) loadToken(ctx context.Context, tokenName, ns string, logger logr.Logger) (
+	token string, proceed bool, result ctrl.Result) {
+	token, tokenReady, err := loadToken(ctx, logger, r.Client, tokenName, &client.ListOptions{Namespace: ns})
+	if err != nil {
+		// An error here means a very likely mis-configuration of the token.
+		logger.Error(err, "A problem while getting token.")
+		return "", false, ctrl.Result{}
+	}
+	if !tokenReady {
+		return "", false, ctrl.Result{RequeueAfter: time.Second * 5}
+	}
+	return token, true, ctrl.Result{}
 }

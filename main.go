@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/grafana/k6-operator/controllers"
+	"github.com/grafana/k6-operator/pkg/resources/plz"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -108,6 +109,8 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "PrivateLoadZone")
 		os.Exit(1)
 	}
+
+	plz.SetScheme(scheme)
 
 	// +kubebuilder:scaffold:builder
 
