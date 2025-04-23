@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"go.k6.io/k6/cloudapi"
@@ -49,9 +50,16 @@ func DeRegisterPLZ(client *cloudapi.Client, name string) error {
 
 // temporary hack!
 func ApiURL(k6CloudHostEnvVar string) string {
+	// k6CloudHostEnvVar := K6CloudHost()
 	url := defaultApiUrl
 	if strings.Contains(k6CloudHostEnvVar, "staging") {
 		url = "https://api.staging.k6.io"
 	}
 	return url
+}
+
+func K6CloudHost() string {
+	// TODO: error processing?
+	host, _ := os.LookupEnv("K6_CLOUD_HOST")
+	return host
 }

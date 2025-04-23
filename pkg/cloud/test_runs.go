@@ -21,6 +21,7 @@ type TestRunPoller struct {
 	logger    logr.Logger
 	testRunCh chan string
 
+	// TODO: switch to client?
 	Client *cloudapi.Client
 }
 
