@@ -90,7 +90,7 @@ func (w *PLZWorker) StopFactory() {
 }
 
 // creates a default template, applicable for all PLZ test runs.
-// The only fields set are the ones common to all PLZ test runs.
+// The only fields set here are the ones common to all PLZ test runs.
 func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 	volume := corev1.Volume{
 		Name: "archive-volume",
@@ -137,8 +137,10 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 	}
 }
 
-// modifies tr with data from trData, specific for this test run
+// modifies tr with data from trData, which is specific for this test run.
 func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
+	tr.Name = testrun.PLZTestName(trData.TestRunID())
+
 	initContainer := containers.NewS3InitContainer(
 		trData.ArchiveURL,
 		"ghcr.io/grafana/k6-operator:latest-starter",

@@ -21,7 +21,6 @@ type TestRunPoller struct {
 	logger    logr.Logger
 	testRunCh chan string
 
-	// TODO: switch to client?
 	Client *cloudapi.Client
 }
 
@@ -105,7 +104,7 @@ func getTestRun(client *cloudapi.Client, url string) (*TestRunData, error) {
 	return &trData, nil
 }
 
-// called by PLZ controller
+// called by PLZworker
 func GetTestRunData(client *cloudapi.Client, refID string) (*TestRunData, error) {
 	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status,k8s_load_zones_config,k6_runtime_config", strings.TrimSuffix(client.BaseURL(), "/v1"), refID)
 	return getTestRun(client, url)

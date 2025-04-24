@@ -134,7 +134,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	if plz.IsTrue(v1alpha1.PLZRegistered) {
-		if worker != nil {
+		if worker == nil {
 			// if this is after restart of the k6-operator, the in-memory workers
 			// might be null and should be constructed
 			token, proceed, result := r.loadToken(ctx, plz.Spec.Token, plz.Namespace, logger)
