@@ -18,8 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// todo, check: is abstraction rebuilt after restart of operator
-
 // PLZWorker is an internal representation of PrivateLoadZone, which is regularly
 // polling GCk6 and can (in the future) receive async updates of the state through the channel
 type PLZWorker struct {
@@ -29,13 +27,11 @@ type PLZWorker struct {
 	poller   *cloud.TestRunPoller
 	template *testrun.Template
 
-	// plzCh chan *v1alpha1.PrivateLoadZone // chan <-
-
 	k8sClient client.Client
 	logger    logr.Logger
 }
 
-// NewPLZWorker(plz, token, r.Log)
+// NewPLZWorker constructs a PLZWorker, create a template for test runs and creates a poller.
 func NewPLZWorker(plz *v1alpha1.PrivateLoadZone, token string, k8sClient client.Client, logger logr.Logger) *PLZWorker {
 	w := &PLZWorker{
 		plz:       *plz,
@@ -50,7 +46,7 @@ func NewPLZWorker(plz *v1alpha1.PrivateLoadZone, token string, k8sClient client.
 	return w
 }
 
-// Register PLZ with the Cloud
+// Register PLZ with the Cloud.
 func (w *PLZWorker) Register(ctx context.Context) (string, error) {
 	uid, err := w.plz.Register(ctx, w.logger, w.poller.Client)
 	if err != nil {
@@ -62,6 +58,7 @@ func (w *PLZWorker) Register(ctx context.Context) (string, error) {
 	return uid, nil
 }
 
+// Deregister PLZ with the Cloud.
 func (w *PLZWorker) Deregister(ctx context.Context) {
 	// Since resource is being deleted, there isn't much to do about
 	// deregistration error here.
@@ -70,6 +67,7 @@ func (w *PLZWorker) Deregister(ctx context.Context) {
 	w.logger.Info(fmt.Sprintf("PLZ %s is deregistered with k6 Cloud.", w.plz.Name))
 }
 
+// StartFactory starts a poller and starts to watch the channel for new test runs.
 func (w *PLZWorker) StartFactory() {
 	if w.poller != nil && !w.poller.IsPolling() {
 		w.poller.Start()
@@ -79,17 +77,20 @@ func (w *PLZWorker) StartFactory() {
 			for testRunId := range w.poller.GetTestRuns() {
 				w.handle(testRunId)
 			}
+			// TODO: a potential leak
 		}()
 		w.logger.Info("Started polling k6 Cloud for new test runs.")
 	}
 }
 
+// StopFactory stops the poller
 func (w *PLZWorker) StopFactory() {
-	w.poller.Stop()
-	// w.poller = nil
+	if w.poller != nil {
+		w.poller.Stop()
+	}
 }
 
-// creates a default template, applicable for all PLZ test runs.
+// createTemplate creates a default template, applicable for all PLZ test runs.
 // The only fields set here are the ones common to all PLZ test runs.
 func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 	volume := corev1.Volume{
@@ -137,7 +138,7 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 	}
 }
 
-// modifies tr with data from trData, which is specific for this test run.
+// complete modifies tr with data from trData, which is specific for this test run.
 func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 	tr.Name = testrun.PLZTestName(trData.TestRunID())
 
