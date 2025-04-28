@@ -120,8 +120,8 @@ service:
   # required: false
   # type: boolean
   # @schema
-  # service.enabled -- enables the k6 service (default: false)
-  enabled: false
+  # service.enabled -- enables the k6-operator service (default: false)
+  enabled: true
   # @schema
   # additionalProperties: true
   # required: false
