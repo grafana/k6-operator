@@ -1,5 +1,6 @@
 ---
 name: Helm Test
+permissions: {}
 on:
   push:
     # run only on branches and not tags
@@ -19,9 +20,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Helm
-        uses: azure/setup-helm@v1
+        # this is v4.3.0
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112
         with:
           version: v3.7.2
 
@@ -30,7 +33,8 @@ jobs:
           python-version: 3.13.1
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.6.1
+        # this is v2.7.0
+        uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b
 
       - name: Run chart-testing (list-changed)
         id: list-changed
@@ -42,7 +46,8 @@ jobs:
           fi
 
       - name: Create kind cluster
-        uses: helm/kind-action@v1.2.0
+        # this is v1.12.0
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Run chart-testing (install)

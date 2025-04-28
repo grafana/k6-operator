@@ -1,5 +1,6 @@
 ---
 name: "Unit Test"
+permissions: {}
 on:
   - push
   - pull_request
@@ -18,6 +19,8 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Test
         run: |
           make test-setup
