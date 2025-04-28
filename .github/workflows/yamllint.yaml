@@ -1,15 +1,20 @@
 ---
 name: Yaml Lint
+permissions: {}
 on:
   - push
   - pull_request
+
 jobs:
   lintAllTheThings:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: yaml-lint
-        uses: ibiqlik/action-yamllint@v3
+        # this is v3.1.1
+        uses: ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c
         with:
           file_or_dir: config/**/*.yaml e2e/*.yaml
           config_file: .yamllint.yaml

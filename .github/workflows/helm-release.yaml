@@ -1,5 +1,6 @@
 
 name: Helm release
+permissions: {}
 
 on:
   workflow_dispatch: {}
@@ -16,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          persist-credentials: true # this job is opening a PR in the next steps
 
       - name: Make changes to the file
         run: |

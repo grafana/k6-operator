@@ -1,5 +1,6 @@
 ---
 name: "Golang Lint"
+permissions: {}
 on:
   - push
   - pull_request
@@ -9,12 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23'
           cache: false
       - name: lint
-        uses: golangci/golangci-lint-action@v3
+        # this is v6.5.2
+        uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84
         with:
           version: v1.61
           args: --timeout=5m
