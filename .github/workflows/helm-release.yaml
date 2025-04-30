@@ -13,6 +13,9 @@ on:
 jobs:
   generate-chart-schema:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -53,6 +56,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   call-update-helm-repo:
+    permissions:
+      packages: write
     needs:
       - generate-chart-schema
     uses: grafana/helm-charts/.github/workflows/update-helm-repo.yaml@main
