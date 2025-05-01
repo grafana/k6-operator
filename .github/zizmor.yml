@@ -1,0 +1,5 @@
+rules:
+  cache-poisoning:
+    ignore:
+      - e2e-test.yaml:30
+      - push.yaml:56
