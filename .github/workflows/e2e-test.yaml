@@ -41,9 +41,11 @@ jobs:
     needs: ["docker"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: "Checkout"
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: "Kustomize Build"
         # this is latest master
         uses: karancode/kustomize-github-action@883a86ec3535e4e7d0fe6450a85f8325c97d2a7b
@@ -53,12 +55,14 @@ jobs:
           kustomize_output_file: "rendered.yaml"
           kustomize_build_options: "--load_restrictor none"
           token: ${{ github.token }} # ref: https://github.com/karancode/kustomize-github-action/issues/46
-        # this is v0.6.2
-      - uses: engineerd/setup-kind@71e45b960fc8dd50b4aeabf6eb6ef2ca0920b4c1
+
+      - name: Create kind cluster
+        # this is v1.12.0
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3
         with:
-          version: "v0.20.0"
-          image: "kindest/node:v1.27.1"
-      - name: Testing
+          node_image: "kindest/node:v1.27.1"
+
+      - name: Test
         run: |
           kubectl cluster-info
           kubectl cluster-info dump | grep 'nodeInfo' -A 11
