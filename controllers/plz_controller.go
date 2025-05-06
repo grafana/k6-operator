@@ -32,7 +32,7 @@ import (
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	k6v1alpha1 "github.com/grafana/k6-operator/api/v1alpha1"
-	plzresources "github.com/grafana/k6-operator/pkg/resources/plz"
+	plzworkers "github.com/grafana/k6-operator/pkg/plz"
 )
 
 const (
@@ -46,7 +46,7 @@ type PrivateLoadZoneReconciler struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 
-	workers plzresources.PLZWorkers
+	workers plzworkers.PLZWorkers
 }
 
 //+kubebuilder:rbac:groups=k6.io,resources=privateloadzones,verbs=get;list;watch;create;update;patch;delete
@@ -68,7 +68,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	var worker *plzresources.PLZWorker
+	var worker *plzworkers.PLZWorker
 	// skipping error, as currently the true state is judged by PLZ resource,
 	// not by the state of the in-memory worker
 	worker, _ = r.workers.GetWorker(plz.Name)
@@ -90,7 +90,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				return result, nil
 			}
 
-			worker = plzresources.NewPLZWorker(plz, token, r.Client, r.Log)
+			worker = plzworkers.NewPLZWorker(plz, token, r.Client, r.Log)
 			uid, err := worker.Register(ctx)
 			if err != nil {
 				return ctrl.Result{}, err
@@ -141,7 +141,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			if !proceed {
 				return result, nil
 			}
-			worker = plzresources.NewPLZWorker(plz, token, r.Client, r.Log)
+			worker = plzworkers.NewPLZWorker(plz, token, r.Client, r.Log)
 
 			if err := r.workers.AddWorker(plz.Name, worker); err != nil {
 				// An error here probably means a duplicate reconcile request. Switch to debug?
