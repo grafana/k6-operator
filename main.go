@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/grafana/k6-operator/controllers"
-	"github.com/grafana/k6-operator/pkg/resources/plz"
+	"github.com/grafana/k6-operator/pkg/plz"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
