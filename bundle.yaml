@@ -21,7 +21,15 @@ spec:
     singular: privateloadzone
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - description: The status of registration
+      jsonPath: .status.conditions[0].status
+      name: Registered
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         properties:
@@ -6335,7 +6343,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v0.0.20
+        image: ghcr.io/grafana/k6-operator:controller-v0.0.21
         name: manager
         resources:
           limits:
