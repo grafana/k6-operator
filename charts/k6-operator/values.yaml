@@ -346,7 +346,7 @@ manager:
     # type: string
     # @schema
     # manager.image.tag -- controller-manager image tag
-    tag: controller-v0.0.20
+    tag: controller-v0.0.21
     # @schema
     # required: false
     # type: string

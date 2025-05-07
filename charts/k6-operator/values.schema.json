@@ -7,31 +7,6 @@
       "title": "affinity",
       "type": "object"
     },
-    "service": {
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "default": false,
-          "description": "service.enabled -- enables the service",
-          "title": "enabled",
-          "type": "boolean"
-        },
-        "labels": {
-          "additionalProperties": true,
-          "description": "service.labels -- service custom labels",
-          "title": "labels",
-          "type": "object"
-        },
-        "annotations": {
-          "additionalProperties": true,
-          "description": "service.annotations -- service custom annotations",
-          "title": "labels",
-          "type": "object"
-        }
-      },
-      "title": "service",
-      "type": "object"
-    },
     "authProxy": {
       "additionalProperties": false,
       "properties": {
@@ -193,7 +168,7 @@
               "type": "string"
             },
             "tag": {
-              "default": "controller-v0.0.20",
+              "default": "controller-v0.0.21",
               "description": "manager.image.tag -- controller-manager image tag",
               "title": "tag",
               "type": "string"
@@ -412,6 +387,31 @@
       "additionalProperties": true,
       "description": "podLabels -- Custom Label to be applied on all pods",
       "title": "podLabels",
+      "type": "object"
+    },
+    "service": {
+      "additionalProperties": false,
+      "properties": {
+        "annotations": {
+          "additionalProperties": true,
+          "description": "service.annotations -- service custom annotations",
+          "title": "annotations",
+          "type": "object"
+        },
+        "enabled": {
+          "default": true,
+          "description": "service.enabled -- enables the k6-operator service (default: false)",
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "labels": {
+          "additionalProperties": true,
+          "description": "service.labels -- service custom labels",
+          "title": "labels",
+          "type": "object"
+        }
+      },
+      "title": "service",
       "type": "object"
     },
     "tolerations": {
