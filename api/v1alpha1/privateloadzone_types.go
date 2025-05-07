@@ -49,6 +49,7 @@ type PrivateLoadZoneStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 //+kubebuilder:printcolumn:name="Registered",type="string",JSONPath=".status.conditions[0].status",description="The status of registration"
 
 // PrivateLoadZone is the Schema for the privateloadzones API
