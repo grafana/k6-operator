@@ -20,6 +20,9 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     - description: The status of registration
       jsonPath: .status.conditions[0].status
       name: Registered
