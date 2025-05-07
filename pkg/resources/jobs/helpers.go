@@ -146,3 +146,33 @@ func getInitContainers(pod *v1alpha1.Pod, script *types.Script) []corev1.Contain
 
 	return initContainers
 }
+
+func getSidecarContainers(pod *v1alpha1.Pod, script *types.Script, k6Runner corev1.Container) []corev1.Container {
+	sidecarContainers := []corev1.Container{k6Runner}
+
+	for i, k6SidecarContainer := range pod.SidecarContainers {
+
+		name := fmt.Sprintf("k6-sidecar-%d", i)
+		if k6SidecarContainer.Name != "" {
+			name = k6SidecarContainer.Name
+		}
+
+		volumeMounts := append(script.VolumeMount(), k6SidecarContainer.VolumeMounts...)
+
+		sidecar := corev1.Container{
+			Name:            name,
+			Image:           k6SidecarContainer.Image,
+			Command:         k6SidecarContainer.Command,
+			Args:            k6SidecarContainer.Args,
+			WorkingDir:      k6SidecarContainer.WorkingDir,
+			EnvFrom:         k6SidecarContainer.EnvFrom,
+			Env:             k6SidecarContainer.Env,
+			VolumeMounts:    volumeMounts,
+			ImagePullPolicy: pod.ImagePullPolicy,
+			SecurityContext: &pod.ContainerSecurityContext,
+		}
+		sidecarContainers = append(sidecarContainers, sidecar)
+	}
+
+	return sidecarContainers
+}
