@@ -1,6 +1,6 @@
 # k6-operator
 
-![Version: 3.12.0](https://img.shields.io/badge/Version-3.12.0-informational?style=flat-square) ![AppVersion: 0.0.20](https://img.shields.io/badge/AppVersion-0.0.20-informational?style=flat-square)
+![Version: 3.13.0](https://img.shields.io/badge/Version-3.13.0-informational?style=flat-square) ![AppVersion: 0.0.21](https://img.shields.io/badge/AppVersion-0.0.21-informational?style=flat-square)
 
 A Helm chart to install the k6-operator
 
@@ -41,14 +41,14 @@ Kubernetes: `>=1.16.0-0`
 | global.image.pullSecrets | list | `[]` | Optional set of global image pull secrets |
 | global.image.registry | string | `""` | Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...) |
 | installCRDs | bool | `true` | Installs CRDs as part of the release |
-| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.20"},"livenessProbe":{},"podSecurityContext":{},"readinessProbe":{},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
+| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.21"},"livenessProbe":{},"podSecurityContext":{},"readinessProbe":{},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
 | manager.containerSecurityContext | object | `{}` | A security context defines privileges and access control settings for the container. |
 | manager.env | list | `[]` | List of environment variables to set in the controller |
 | manager.envFrom | list | `[]` | List of sources to populate environment variables in the controller |
-| manager.image | object | `{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.20"}` | controller-manager image configuration |
+| manager.image | object | `{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.21"}` | controller-manager image configuration |
 | manager.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent) |
 | manager.image.repository | string | `"grafana/k6-operator"` | controller-manager image repository |
-| manager.image.tag | string | `"controller-v0.0.20"` | controller-manager image tag |
+| manager.image.tag | string | `"controller-v0.0.21"` | controller-manager image tag |
 | manager.livenessProbe | object | `{}` | Liveness probe in Probe format |
 | manager.podSecurityContext | object | `{}` | A security context defines privileges and access control settings for a pod. |
 | manager.readinessProbe | object | `{}` | Readiness probe in Probe format |
@@ -62,12 +62,24 @@ Kubernetes: `>=1.16.0-0`
 | manager.resources.requests.memory | string | `"50Mi"` | controller-manager Memory request (Min) |
 | manager.serviceAccount.create | bool | `true` | create the service account (default: true) |
 | manager.serviceAccount.name | string | `"k6-operator-controller"` | kubernetes service account for the k6 manager |
+| metrics.serviceMonitor.enabled | bool | `false` |  |
+| metrics.serviceMonitor.honorLabels | bool | `false` |  |
+| metrics.serviceMonitor.interval | string | `""` |  |
+| metrics.serviceMonitor.jobLabel | string | `""` |  |
+| metrics.serviceMonitor.labels | object | `{}` |  |
+| metrics.serviceMonitor.metricRelabelings | list | `[]` |  |
+| metrics.serviceMonitor.namespace | string | `""` |  |
+| metrics.serviceMonitor.relabelings | list | `[]` |  |
+| metrics.serviceMonitor.scrapeTimeout | string | `""` |  |
+| metrics.serviceMonitor.selector | object | `{}` |  |
 | nameOverride | string | `""` |  |
 | namespace | object | `{"create":true}` | Namespace creation |
 | namespace.create | bool | `true` | create the namespace (default: true) |
 | nodeSelector | object | `{}` | Node Selector to be applied on all containers |
 | podAnnotations | object | `{}` | Custom Annotations to be applied on all pods |
 | podLabels | object | `{}` | Custom Label to be applied on all pods |
-| prometheus.enabled | bool | `false` | enables the prometheus metrics scraping (default: false) |
+| service.annotations | object | `{}` | service custom annotations |
+| service.enabled | bool | `true` | enables the k6-operator service (default: false) |
+| service.labels | object | `{}` | service custom labels |
 | tolerations | list | `[]` | Tolerations to be applied on all containers |
 
