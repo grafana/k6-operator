@@ -18,7 +18,7 @@ metadata:
 spec:
   namespaceSelector:
     matchNames:
-      {{- include "k6-operator.namespace" . }}
+      - {{- include "k6-operator.namespace" . }}
   selector:
     matchLabels:
       control-plane: "controller-manager"
