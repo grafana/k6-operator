@@ -101,6 +101,13 @@ installCRDs: true
 
 # @schema
 # required: false
+# type: boolean
+# @schema
+# installClusterRBAC -- Installs cluster roles and role bindings as part of the release
+installClusterRBAC: true
+
+# @schema
+# required: false
 # type: object
 # @schema
 # namespace -- Namespace creation
