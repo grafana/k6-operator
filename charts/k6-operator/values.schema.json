@@ -125,6 +125,12 @@
       "title": "installCRDs",
       "type": "boolean"
     },
+    "installClusterRBAC": {
+      "default": true,
+      "description": "installClusterRBAC -- Installs cluster roles and role bindings as part of the release",
+      "title": "installClusterRBAC",
+      "type": "boolean"
+    },
     "manager": {
       "additionalProperties": false,
       "properties": {
