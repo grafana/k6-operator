@@ -5,6 +5,7 @@ metadata:
   title: k6-operator
   description: |
     load-testing	https://github.com/topics/load-testing
+    distributed-testing https://github.com/topics/distributed-testing
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: grafana/k6-operator
