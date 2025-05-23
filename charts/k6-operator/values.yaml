@@ -103,6 +103,19 @@ installCRDs: true
 # required: false
 # type: object
 # @schema
+# rbac -- RBAC configuration
+rbac:
+  # @schema
+  # required: false
+  # type: boolean
+  # @schema
+  # rbac.namespaced -- If true, does not install cluster RBAC resources
+  namespaced: false
+
+# @schema
+# required: false
+# type: object
+# @schema
 # namespace -- Namespace creation
 namespace:
   # @schema
