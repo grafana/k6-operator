@@ -125,6 +125,19 @@
       "title": "installCRDs",
       "type": "boolean"
     },
+    "rbac": {
+      "additionalProperties": false,
+      "properties": {
+        "namespaced": {
+          "default": false,
+          "description": "rbac.namespaced -- If true, does not install cluster RBAC resources",
+          "title": "namespaced",
+          "type": "boolean"
+        }
+      },
+      "title": "rbac",
+      "type": "object"
+    },
     "manager": {
       "additionalProperties": false,
       "properties": {
