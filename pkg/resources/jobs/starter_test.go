@@ -9,6 +9,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	resource "k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestNewStarterJob(t *testing.T) {
@@ -51,7 +52,7 @@ func TestNewStarterJob(t *testing.T) {
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
 						containers.NewStartContainer([]string{"testing"}, "image", corev1.PullNever, []string{"sh", "-c"},
-							[]corev1.EnvVar{}, corev1.SecurityContext{}),
+							[]corev1.EnvVar{}, corev1.SecurityContext{}, corev1.ResourceRequirements{}),
 					},
 				},
 			},
@@ -145,6 +146,7 @@ func TestNewStarterJobIstio(t *testing.T) {
 								Value: "15",
 							}},
 							corev1.SecurityContext{},
+							corev1.ResourceRequirements{},
 						),
 					},
 				},
@@ -186,4 +188,40 @@ func TestNewStarterJobIstio(t *testing.T) {
 		t.Error(diff)
 	}
 
+}
+
+func TestNewStarterJobCustomResources(t *testing.T) {
+	// The starter.resources stanza in the CR should override defaults.
+	reqs := corev1.ResourceList{
+		corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
+		corev1.ResourceMemory: *resource.NewQuantity(64*1024*1024, resource.BinarySI), // 64 Mi
+	}
+	lims := corev1.ResourceList{
+		corev1.ResourceCPU:    *resource.NewMilliQuantity(250, resource.DecimalSI),
+		corev1.ResourceMemory: *resource.NewQuantity(160*1024*1024, resource.BinarySI), // 160 Mi
+	}
+	customRes := corev1.ResourceRequirements{Requests: reqs, Limits: lims}
+
+	k6 := &v1alpha1.TestRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.TestRunSpec{
+			Starter: v1alpha1.Pod{
+				Image:     "image",
+				Resources: customRes,
+			},
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{Name: "test", File: "test.js"},
+			},
+		},
+	}
+
+	job := NewStarterJob(k6, []string{"testing"})
+	gotRes := job.Spec.Template.Spec.Containers[0].Resources
+
+	if diff := deep.Equal(gotRes, customRes); diff != nil {
+		t.Errorf("starter resources not applied: %v", diff)
+	}
 }
