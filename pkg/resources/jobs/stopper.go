@@ -26,11 +26,11 @@ func NewStopJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 
 	job.Spec.Template.Spec.Containers = []corev1.Container{
 		containers.NewStopContainer(
-			hostname, 
-			image, 
-			k6.GetSpec().Starter.ImagePullPolicy, 
-			command, 
-			env, 
+			hostname,
+			image,
+			k6.GetSpec().Starter.ImagePullPolicy,
+			command,
+			env,
 			k6.GetSpec().Starter.ContainerSecurityContext,
 			k6.GetSpec().Starter.Resources,
 		),

@@ -40,7 +40,7 @@ func NewStopContainer(hostnames []string, image string, imagePullPolicy corev1.P
 			corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
 			corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
 		},
-    }
+	}
 
 	// User specified resource requirements
 	if len(resources.Requests) > 0 || len(resources.Limits) > 0 {
@@ -52,7 +52,7 @@ func NewStopContainer(hostnames []string, image string, imagePullPolicy corev1.P
 		Image:           image,
 		ImagePullPolicy: imagePullPolicy,
 		Env:             env,
-		Resources: resourceRequirements,
+		Resources:       resourceRequirements,
 		Command: append(
 			command,
 			strings.Join(parts, ";"),
