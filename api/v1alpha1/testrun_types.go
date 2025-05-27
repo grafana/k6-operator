@@ -16,12 +16,13 @@ package v1alpha1
 
 import (
 	"errors"
+	"path/filepath"
+
 	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -46,6 +47,7 @@ type Pod struct {
 	SecurityContext              corev1.PodSecurityContext         `json:"securityContext,omitempty"`
 	ContainerSecurityContext     corev1.SecurityContext            `json:"containerSecurityContext,omitempty"`
 	EnvFrom                      []corev1.EnvFromSource            `json:"envFrom,omitempty"`
+	SidecarContainers            []corev1.Container                `json:"sidecarContainers,omitempty"`
 	ReadinessProbe               *corev1.Probe                     `json:"readinessProbe,omitempty"`
 	LivenessProbe                *corev1.Probe                     `json:"livenessProbe,omitempty"`
 	InitContainers               []InitContainer                   `json:"initContainers,omitempty"`
