@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	"strings"
 
 	"github.com/grafana/k6-operator/controllers"
 	"github.com/grafana/k6-operator/pkg/plz"
@@ -75,7 +76,17 @@ func main() {
 		LeaderElectionID:           "fcdfce80.io",
 		LeaderElectionResourceLock: "leases",
 	}
-	if watchNamespace, namespaced := getWatchNamespace(); namespaced {
+
+	if watchNamespaces, multiNamespaced := getWatchNamespaces(); multiNamespaced {
+		defaultNamespaces := make(map[string]cache.Config, len(watchNamespaces))
+		for _, ns := range watchNamespaces {
+			defaultNamespaces[ns] = cache.Config{}
+		}
+		mgrOpts.Cache = cache.Options{
+			DefaultNamespaces: defaultNamespaces,
+		}
+		setupLog.Info("WATCH_NAMESPACES is configured, WATCH_NAMESPACE will be ignored", "ns", watchNamespaces)
+	} else if watchNamespace, namespaced := getWatchNamespace(); namespaced {
 		mgrOpts.Cache = cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
 				watchNamespace: cache.Config{},
@@ -125,4 +136,18 @@ func getWatchNamespace() (string, bool) {
 	var watchNamespaceEnvVar = "WATCH_NAMESPACE"
 
 	return os.LookupEnv(watchNamespaceEnvVar)
+}
+
+func getWatchNamespaces() ([]string, bool) {
+	const watchNamespacesEnvVar = "WATCH_NAMESPACES"
+
+	if nsList, isSet := os.LookupEnv(watchNamespacesEnvVar); isSet {
+		// The Kubernetes docs state that namespace names can only contain contain lowercase
+		// alphanumeric characters or '-', making a comma (',') a valid separator for multiple namespaces.
+		// See: https://kubernetes.io/docs/tasks/administer-cluster/namespaces/#creating-a-new-namespace
+		// See: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+		return strings.Split(nsList, ","), true
+	}
+
+	return nil, false
 }
