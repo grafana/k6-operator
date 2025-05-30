@@ -13,6 +13,8 @@ This is a basic suite of E2E tests for k6-operator, covering some of the main us
 ```
 
 It is assumed that there is a Kubernetes cluster to execute the tests in and `kubectl` with access to it.
+The [vcluster](https://www.vcluster.com/install) CLI should also be installed as it is a dependency of xk6-environment.
+See: https://github.com/grafana/xk6-environment/issues/1
 
 ## Under the hood
 

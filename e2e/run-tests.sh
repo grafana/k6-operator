@@ -92,6 +92,13 @@ cd ..
 # TODO: add a proper build with xk6-environment (use new functionality?)
 # Blocked by: https://github.com/grafana/xk6-environment/issues/16
 # Right now, using the pre-built k6 binary uploaded to a branch in xk6-environment
+# Note that this is an ELF binary built for x86-64, so it will not work on other platforms.
+# To build it yourself:
+#   1. clone the xk6-environment repo
+#   2. checkout the 0.1.0 tag
+#   3. edit the 'build' target in the Makefile to use v0.13.0 of go.k6.io/xk6/cmd/xk6 (instead of latest)
+#   4. `make build`
+#   5. copy the k6 binary to this directory
 
 if [ ! -f ./k6 ]; then
   wget https://github.com/grafana/xk6-environment/raw/refs/heads/fix/temp-k6-binary/bin/k6
@@ -115,6 +122,7 @@ tests=(
   "error-stage"
   "testrun-simultaneous"
   "testrun-watch-namespace"
+  "testrun-watch-namespaces"
   "testrun-cloud-output"
   "testrun-simultaneous-cloud-output"
   # "kyverno"
