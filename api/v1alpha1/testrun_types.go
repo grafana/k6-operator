@@ -16,12 +16,13 @@ package v1alpha1
 
 import (
 	"errors"
+	"path/filepath"
+
 	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,14 +55,15 @@ type Pod struct {
 }
 
 type InitContainer struct {
-	Name         string                 `json:"name,omitempty"`
-	Image        string                 `json:"image,omitempty"`
-	Env          []corev1.EnvVar        `json:"env,omitempty"`
-	EnvFrom      []corev1.EnvFromSource `json:"envFrom,omitempty"`
-	Command      []string               `json:"command,omitempty"`
-	Args         []string               `json:"args,omitempty"`
-	WorkingDir   string                 `json:"workingDir,omitempty"`
-	VolumeMounts []corev1.VolumeMount   `json:"volumeMounts,omitempty"`
+	Name          string                         `json:"name,omitempty"`
+	Image         string                         `json:"image,omitempty"`
+	Env           []corev1.EnvVar                `json:"env,omitempty"`
+	EnvFrom       []corev1.EnvFromSource         `json:"envFrom,omitempty"`
+	Command       []string                       `json:"command,omitempty"`
+	Args          []string                       `json:"args,omitempty"`
+	WorkingDir    string                         `json:"workingDir,omitempty"`
+	VolumeMounts  []corev1.VolumeMount           `json:"volumeMounts,omitempty"`
+	RestartPolicy *corev1.ContainerRestartPolicy `json:"restartPolicy,omitempty"`
 }
 
 type K6Scuttle struct {
