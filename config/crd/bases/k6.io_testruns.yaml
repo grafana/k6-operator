@@ -768,6 +768,8 @@ spec:
                           type: string
                         name:
                           type: string
+                        restartPolicy:
+                          type: string
                         volumeMounts:
                           items:
                             properties:
@@ -2710,6 +2712,8 @@ spec:
                         image:
                           type: string
                         name:
+                          type: string
+                        restartPolicy:
                           type: string
                         volumeMounts:
                           items:
@@ -4676,6 +4680,8 @@ spec:
                         image:
                           type: string
                         name:
+                          type: string
+                        restartPolicy:
                           type: string
                         volumeMounts:
                           items:
