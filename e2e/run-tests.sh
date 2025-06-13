@@ -68,8 +68,10 @@ if [ "$IMAGE" = "ghcr.io/grafana/k6-operator:latest" ]; then
   cp ../bundle.yaml ./latest/bundle-to-test.yaml
   cd latest
 else
-  cd ../config/default 
-  kustomize edit set image $IMAGE && kustomize build . > ../../e2e/latest/bundle-to-test.yaml
+  cd ../config/manager/
+  kustomize edit set image controller=$IMAGE
+  cd ../default
+  kustomize build . > ../../e2e/latest/bundle-to-test.yaml
   cd ../../e2e/latest
 fi
 
