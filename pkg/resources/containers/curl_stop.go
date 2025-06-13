@@ -8,8 +8,6 @@ import (
 
 	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
-
-	resource "k8s.io/apimachinery/pkg/api/resource"
 )
 
 // NewStopContainer is used to get a template for a new k6 stop curl container.
@@ -30,29 +28,12 @@ func NewStopContainer(hostnames []string, image string, imagePullPolicy corev1.P
 		parts = append(parts, fmt.Sprintf("curl --retry 3 -X PATCH -H 'Content-Type: application/json' http://%s/v1/status -d '%s'", net.JoinHostPort(hostname, "6565"), req))
 	}
 
-	// Default resource requests and limits to use as a fallback
-	resourceRequirements := corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
-			corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
-			corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
-		},
-	}
-
-	// User specified resource requirements
-	if len(resources.Requests) > 0 || len(resources.Limits) > 0 {
-		resourceRequirements = resources
-	}
-
 	return corev1.Container{
 		Name:            "k6-curl",
 		Image:           image,
 		ImagePullPolicy: imagePullPolicy,
 		Env:             env,
-		Resources:       resourceRequirements,
+		Resources:       resources,
 		Command: append(
 			command,
 			strings.Join(parts, ";"),
