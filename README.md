@@ -48,7 +48,6 @@ Additionally, you'll need to install the following tooling:
 - [Golang](https://go.dev/doc/install)
 - [kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/)
 - [operator-sdk](https://sdk.operatorframework.io/docs/installation/): optional as most common changes can be done without it
-  - v1.31.0 is confirmed working
 
 To execute unit tests, use these commands:
 
