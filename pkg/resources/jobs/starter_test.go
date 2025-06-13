@@ -52,7 +52,17 @@ func TestNewStarterJob(t *testing.T) {
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
 						containers.NewStartContainer([]string{"testing"}, "image", corev1.PullNever, []string{"sh", "-c"},
-							[]corev1.EnvVar{}, corev1.SecurityContext{}, corev1.ResourceRequirements{}),
+							[]corev1.EnvVar{}, corev1.SecurityContext{}, corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
+									corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
+									corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
+								},
+							},
+						),
 					},
 				},
 			},
@@ -146,7 +156,16 @@ func TestNewStarterJobIstio(t *testing.T) {
 								Value: "15",
 							}},
 							corev1.SecurityContext{},
-							corev1.ResourceRequirements{},
+							corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
+									corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
+									corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
+								},
+							},
 						),
 					},
 				},
