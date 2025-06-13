@@ -50,7 +50,7 @@ func TestNewStopperJob(t *testing.T) {
 					SecurityContext:              &corev1.PodSecurityContext{},
 					Containers: []corev1.Container{
 						containers.NewStopContainer([]string{"testing"}, "image", corev1.PullNever, []string{"sh", "-c"},
-							[]corev1.EnvVar{}, corev1.SecurityContext{}),
+							[]corev1.EnvVar{}, corev1.SecurityContext{}, corev1.ResourceRequirements{}),
 					},
 				},
 			},
@@ -143,6 +143,7 @@ func TestNewStopJobIstio(t *testing.T) {
 								Value: "15",
 							}},
 							corev1.SecurityContext{},
+							corev1.ResourceRequirements{},
 						),
 					},
 				},
