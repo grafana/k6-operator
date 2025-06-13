@@ -191,7 +191,41 @@ func TestNewStarterJobIstio(t *testing.T) {
 }
 
 func TestNewStarterJobCustomResources(t *testing.T) {
-	// The starter.resources stanza in the CR should override defaults.
+	// Test case 1: Default resources should be applied when no custom resources are specified
+	k6Default := &v1alpha1.TestRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.TestRunSpec{
+			Starter: v1alpha1.Pod{
+				Image: "image",
+			},
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{Name: "test", File: "test.js"},
+			},
+		},
+	}
+
+	jobDefault := NewStarterJob(k6Default, []string{"testing"})
+	gotDefaultRes := jobDefault.Spec.Template.Spec.Containers[0].Resources
+
+	expectedDefaultRes := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
+			corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
+			corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
+		},
+	}
+
+	if diff := deep.Equal(gotDefaultRes, expectedDefaultRes); diff != nil {
+		t.Errorf("default resources not applied: %v", diff)
+	}
+
+	// Test case 2: Custom resources should override defaults
 	reqs := corev1.ResourceList{
 		corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
 		corev1.ResourceMemory: *resource.NewQuantity(64*1024*1024, resource.BinarySI), // 64 Mi
@@ -202,7 +236,7 @@ func TestNewStarterJobCustomResources(t *testing.T) {
 	}
 	customRes := corev1.ResourceRequirements{Requests: reqs, Limits: lims}
 
-	k6 := &v1alpha1.TestRun{
+	k6Custom := &v1alpha1.TestRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
@@ -218,10 +252,10 @@ func TestNewStarterJobCustomResources(t *testing.T) {
 		},
 	}
 
-	job := NewStarterJob(k6, []string{"testing"})
-	gotRes := job.Spec.Template.Spec.Containers[0].Resources
+	jobCustom := NewStarterJob(k6Custom, []string{"testing"})
+	gotCustomRes := jobCustom.Spec.Template.Spec.Containers[0].Resources
 
-	if diff := deep.Equal(gotRes, customRes); diff != nil {
-		t.Errorf("starter resources not applied: %v", diff)
+	if diff := deep.Equal(gotCustomRes, customRes); diff != nil {
+		t.Errorf("custom resources not applied: %v", diff)
 	}
 }
