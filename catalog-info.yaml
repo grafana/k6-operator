@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: k6-operator
+  title: k6-operator
+  description: |
+    load-testing	https://github.com/topics/load-testing
+    distributed-testing https://github.com/topics/distributed-testing
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: grafana/k6-operator
+spec:
+  type: tool
+  owner: group:default/k6-cloud-data
+  lifecycle: production
