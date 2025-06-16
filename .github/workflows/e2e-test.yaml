@@ -46,15 +46,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: "Setup kustomize"
+        # this is v2.1.0
+        uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f
+
       - name: "Kustomize Build"
-        # this is latest master
-        uses: karancode/kustomize-github-action@883a86ec3535e4e7d0fe6450a85f8325c97d2a7b
-        with:
-          kustomize_version: "3.0.0"
-          kustomize_build_dir: "config/default"
-          kustomize_output_file: "rendered.yaml"
-          kustomize_build_options: "--load_restrictor none"
-          token: ${{ github.token }} # ref: https://github.com/karancode/kustomize-github-action/issues/46
+        run: |
+          cd config/default && kustomize build . > ../../rendered.yaml
 
       - name: Create kind cluster
         # this is v1.12.0
