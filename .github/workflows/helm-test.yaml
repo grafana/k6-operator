@@ -11,6 +11,11 @@ on:
   pull_request:
     branches-ignore:
       - 'release-**/bundle-update'
+  workflow_dispatch:
+    inputs:
+      helm_extra_args:
+        description: "Helm chart values that should be overriden, e.g. `--set=key=value`."
+        required: false
 
 jobs:
   test:
@@ -53,4 +58,4 @@ jobs:
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-            ct install --config ./charts/ct.yaml --helm-extra-set-args "--set=namespace.create=false"
+            ct install --config ./charts/ct.yaml --helm-extra-set-args "--set=namespace.create=false ${{ github.event.inputs.helm_extra_args }}"
