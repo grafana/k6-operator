@@ -103,18 +103,3 @@ Create the name of the service account to use
     {{- .Release.Namespace | indent 1 }}
   {{- end }}
 {{- end -}}
-
-
-{{- define "k6-operator.livenessProbe" -}}
-  {{- if .Values.authProxy.livenessProbe }}
-  livenessProbe:
-    {{- toYaml .Values.authProxy.livenessProbe | nindent 12 }}
-  {{- end }}
-{{- end -}}
-
-{{- define "k6-operator.readinessProbe" -}}
-  {{- if .Values.authProxy.readinessProbe }}
-  readinessProbe:
-    {{- toYaml .Values.authProxy.readinessProbe | nindent 12 }}
-  {{- end }}
-{{- end -}}

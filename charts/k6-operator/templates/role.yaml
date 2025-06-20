@@ -11,17 +11,17 @@ metadata:
     {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 rules:
 - apiGroups:
-  - ""
+    - ""
   resources:
-  - configmaps
+    - configmaps
   verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -32,9 +32,9 @@ rules:
   - list
   - update
 - apiGroups:
-  - ""
+    - ""
   resources:
-  - events
+    - events
   verbs:
-  - create
-  - patch
+    - create
+    - patch

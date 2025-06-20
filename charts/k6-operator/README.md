@@ -25,15 +25,6 @@ Kubernetes: `>=1.16.0-0`
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Affinity to be applied on all containers |
-| authProxy.containerSecurityContext | object | `{}` | A security context defines privileges and access control settings for the container. |
-| authProxy.enabled | bool | `true` | enables the protection of /metrics endpoint. (https://github.com/brancz/kube-rbac-proxy) |
-| authProxy.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent) |
-| authProxy.image.registry | string | `"quay.io"` |  |
-| authProxy.image.repository | string | `"brancz/kube-rbac-proxy"` | rbac-proxy image repository |
-| authProxy.image.tag | string | `"v0.18.2"` | rbac-proxy image tag |
-| authProxy.livenessProbe | object | `{}` | Liveness probe in Probe format |
-| authProxy.readinessProbe | object | `{}` | Readiness probe in Probe format |
-| authProxy.resources | object | `{}` | rbac-proxy resource limitation/request |
 | customAnnotations | object | `{}` | Custom Annotations to be applied on all resources |
 | customLabels | object | `{}` | Custom Label to be applied on all resources |
 | fullnameOverride | string | `""` |  |
@@ -41,7 +32,7 @@ Kubernetes: `>=1.16.0-0`
 | global.image.pullSecrets | list | `[]` | Optional set of global image pull secrets |
 | global.image.registry | string | `""` | Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...) |
 | installCRDs | bool | `true` | Installs CRDs as part of the release |
-| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.21"},"livenessProbe":{},"podSecurityContext":{},"readinessProbe":{},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
+| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.21"},"livenessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":15,"periodSeconds":20},"podSecurityContext":{},"readinessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":5,"periodSeconds":10},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
 | manager.containerSecurityContext | object | `{}` | A security context defines privileges and access control settings for the container. |
 | manager.env | list | `[]` | List of environment variables to set in the controller |
 | manager.envFrom | list | `[]` | List of sources to populate environment variables in the controller |
@@ -49,9 +40,11 @@ Kubernetes: `>=1.16.0-0`
 | manager.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent) |
 | manager.image.repository | string | `"grafana/k6-operator"` | controller-manager image repository |
 | manager.image.tag | string | `"controller-v0.0.21"` | controller-manager image tag |
-| manager.livenessProbe | object | `{}` | Liveness probe in Probe format |
+| manager.livenessProbe | object | `{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":15,"periodSeconds":20}` | Liveness probe in Probe format |
+| manager.livenessProbe.httpGet | object | `{"path":"/healthz","port":8081}` | HTTP liveness probe |
 | manager.podSecurityContext | object | `{}` | A security context defines privileges and access control settings for a pod. |
-| manager.readinessProbe | object | `{}` | Readiness probe in Probe format |
+| manager.readinessProbe | object | `{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":5,"periodSeconds":10}` | Readiness probe in Probe format |
+| manager.readinessProbe.httpGet | object | `{"path":"/healthz","port":8081}` | HTTP readiness probe |
 | manager.replicas | int | `1` | number of controller-manager replicas (default: 1) |
 | manager.resources | object | `{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}}` | controller-manager Resources definition |
 | manager.resources.limits | object | `{"cpu":"100m","memory":"100Mi"}` | controller-manager Resources limits |
@@ -78,6 +71,8 @@ Kubernetes: `>=1.16.0-0`
 | nodeSelector | object | `{}` | Node Selector to be applied on all containers |
 | podAnnotations | object | `{}` | Custom Annotations to be applied on all pods |
 | podLabels | object | `{}` | Custom Label to be applied on all pods |
+| rbac | object | `{"namespaced":false}` | RBAC configuration |
+| rbac.namespaced | bool | `false` | If true, does not install cluster RBAC resources |
 | service.annotations | object | `{}` | service custom annotations |
 | service.enabled | bool | `true` | enables the k6-operator service (default: false) |
 | service.labels | object | `{}` | service custom labels |

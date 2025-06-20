@@ -238,79 +238,6 @@ service:
 # required: false
 # type: object
 # @schema
-authProxy:
-  # @schema
-  # required: false
-  # type: boolean
-  # @schema
-  # authProxy.enabled -- enables the protection of /metrics endpoint. (https://github.com/brancz/kube-rbac-proxy)
-  enabled: true
-  # @schema
-  # required: false
-  # type: object
-  # @schema
-  image:
-    # @schema
-    # required: false
-    # type: string
-    # @schema
-    # authProxy.image.registry
-    registry: quay.io
-    # @schema
-    # required: false
-    # type: string
-    # @schema
-    # authProxy.image.repository -- rbac-proxy image repository
-    repository: brancz/kube-rbac-proxy
-    # @schema
-    # required: false
-    # type: string
-    # @schema
-    # authProxy.image.tag -- rbac-proxy image tag
-    tag: v0.18.2
-    # @schema
-    # required: false
-    # type: string
-    # @schema
-    # authProxy.image.pullPolicy -- pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent)
-    pullPolicy: IfNotPresent
-
-  # @schema
-  # additionalProperties: true
-  # required: false
-  # type: object
-  # @schema
-  # authProxy.resources -- rbac-proxy resource limitation/request
-  resources: {}
-
-  # @schema
-  # additionalProperties: true
-  # required: false
-  # type: object
-  # @schema
-  # authProxy.livenessProbe -- Liveness probe in Probe format
-  livenessProbe: {}
-
-  # @schema
-  # additionalProperties: true
-  # required: false
-  # type: object
-  # @schema
-  # authProxy.readinessProbe -- Readiness probe in Probe format
-  readinessProbe: {}
-
-  # @schema
-  # additionalProperties: true
-  # required: false
-  # type: object
-  # @schema
-  # authProxy.containerSecurityContext -- A security context defines privileges and access control settings for the container.
-  containerSecurityContext: {}
-
-# @schema
-# required: false
-# type: object
-# @schema
 # manager -- controller-manager configuration
 manager:
   # @schema
@@ -368,20 +295,42 @@ manager:
     pullPolicy: IfNotPresent
 
   # @schema
-  # additionalProperties: true
   # required: false
   # type: object
+  # additionalProperties: true
   # @schema
   # manager.livenessProbe -- Liveness probe in Probe format
-  livenessProbe: {}
+  livenessProbe:
+    # @schema
+    # required: false
+    # type: object
+    # additionalProperties: true
+    # @schema
+    # manager.livenessProbe.httpGet -- HTTP liveness probe
+    httpGet:
+      path: /healthz
+      port: 8081
+    initialDelaySeconds: 15
+    periodSeconds: 20
 
   # @schema
-  # additionalProperties: true
   # required: false
   # type: object
+  # additionalProperties: true
   # @schema
   # manager.readinessProbe -- Readiness probe in Probe format
-  readinessProbe: {}
+  readinessProbe:
+  # @schema
+    # required: false
+    # type: object
+    # additionalProperties: true
+    # @schema
+    # manager.readinessProbe.httpGet -- HTTP readiness probe
+    httpGet:
+      path: /healthz
+      port: 8081
+    initialDelaySeconds: 5
+    periodSeconds: 10
 
   # @schema
   # required: false

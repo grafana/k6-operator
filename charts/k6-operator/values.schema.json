@@ -7,74 +7,6 @@
       "title": "affinity",
       "type": "object"
     },
-    "authProxy": {
-      "additionalProperties": false,
-      "properties": {
-        "containerSecurityContext": {
-          "additionalProperties": true,
-          "description": "authProxy.containerSecurityContext -- A security context defines privileges and access control settings for the container.",
-          "title": "containerSecurityContext",
-          "type": "object"
-        },
-        "enabled": {
-          "default": true,
-          "description": "authProxy.enabled -- enables the protection of /metrics endpoint. (https://github.com/brancz/kube-rbac-proxy)",
-          "title": "enabled",
-          "type": "boolean"
-        },
-        "image": {
-          "additionalProperties": false,
-          "properties": {
-            "pullPolicy": {
-              "default": "IfNotPresent",
-              "description": "authProxy.image.pullPolicy -- pull policy for the image can be Always, Never, IfNotPresent (default: IfNotPresent)",
-              "title": "pullPolicy",
-              "type": "string"
-            },
-            "registry": {
-              "default": "quay.io",
-              "description": "authProxy.image.registry",
-              "title": "registry",
-              "type": "string"
-            },
-            "repository": {
-              "default": "brancz/kube-rbac-proxy",
-              "description": "authProxy.image.repository -- rbac-proxy image repository",
-              "title": "repository",
-              "type": "string"
-            },
-            "tag": {
-              "default": "v0.18.2",
-              "description": "authProxy.image.tag -- rbac-proxy image tag",
-              "title": "tag",
-              "type": "string"
-            }
-          },
-          "title": "image",
-          "type": "object"
-        },
-        "livenessProbe": {
-          "additionalProperties": true,
-          "description": "authProxy.livenessProbe -- Liveness probe in Probe format",
-          "title": "livenessProbe",
-          "type": "object"
-        },
-        "readinessProbe": {
-          "additionalProperties": true,
-          "description": "authProxy.readinessProbe -- Readiness probe in Probe format",
-          "title": "readinessProbe",
-          "type": "object"
-        },
-        "resources": {
-          "additionalProperties": true,
-          "description": "authProxy.resources -- rbac-proxy resource limitation/request",
-          "title": "resources",
-          "type": "object"
-        }
-      },
-      "title": "authProxy",
-      "type": "object"
-    },
     "customAnnotations": {
       "additionalProperties": true,
       "description": "customAnnotations -- Custom Annotations to be applied on all resources",
@@ -124,19 +56,6 @@
       "description": "installCRDs -- Installs CRDs as part of the release",
       "title": "installCRDs",
       "type": "boolean"
-    },
-    "rbac": {
-      "additionalProperties": false,
-      "properties": {
-        "namespaced": {
-          "default": false,
-          "description": "rbac.namespaced -- If true, does not install cluster RBAC resources",
-          "title": "namespaced",
-          "type": "boolean"
-        }
-      },
-      "title": "rbac",
-      "type": "object"
     },
     "manager": {
       "additionalProperties": false,
@@ -193,9 +112,47 @@
         },
         "livenessProbe": {
           "additionalProperties": true,
+          "properties": {
+            "httpGet": {
+              "additionalProperties": true,
+              "properties": {
+                "path": {
+                  "default": "/healthz",
+                  "title": "path",
+                  "type": "string"
+                },
+                "port": {
+                  "default": 8081,
+                  "title": "port",
+                  "type": "integer"
+                }
+              },
+              "description": "manager.livenessProbe.httpGet -- HTTP liveness probe",
+              "title": "httpGet",
+              "type": "object",
+              "required": [
+                "path",
+                "port"
+              ]
+            },
+            "initialDelaySeconds": {
+              "default": 15,
+              "title": "initialDelaySeconds",
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "default": 20,
+              "title": "periodSeconds",
+              "type": "integer"
+            }
+          },
           "description": "manager.livenessProbe -- Liveness probe in Probe format",
           "title": "livenessProbe",
-          "type": "object"
+          "type": "object",
+          "required": [
+            "initialDelaySeconds",
+            "periodSeconds"
+          ]
         },
         "podSecurityContext": {
           "additionalProperties": true,
@@ -205,9 +162,47 @@
         },
         "readinessProbe": {
           "additionalProperties": true,
+          "properties": {
+            "httpGet": {
+              "additionalProperties": true,
+              "properties": {
+                "path": {
+                  "default": "/healthz",
+                  "title": "path",
+                  "type": "string"
+                },
+                "port": {
+                  "default": 8081,
+                  "title": "port",
+                  "type": "integer"
+                }
+              },
+              "description": "manager.readinessProbe.httpGet -- HTTP readiness probe",
+              "title": "httpGet",
+              "type": "object",
+              "required": [
+                "path",
+                "port"
+              ]
+            },
+            "initialDelaySeconds": {
+              "default": 5,
+              "title": "initialDelaySeconds",
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "default": 10,
+              "title": "periodSeconds",
+              "type": "integer"
+            }
+          },
           "description": "manager.readinessProbe -- Readiness probe in Probe format",
           "title": "readinessProbe",
-          "type": "object"
+          "type": "object",
+          "required": [
+            "initialDelaySeconds",
+            "periodSeconds"
+          ]
         },
         "replicas": {
           "default": 1,
@@ -400,6 +395,20 @@
       "additionalProperties": true,
       "description": "podLabels -- Custom Label to be applied on all pods",
       "title": "podLabels",
+      "type": "object"
+    },
+    "rbac": {
+      "additionalProperties": false,
+      "properties": {
+        "namespaced": {
+          "default": false,
+          "description": "rbac.namespaced -- If true, does not install cluster RBAC resources",
+          "title": "namespaced",
+          "type": "boolean"
+        }
+      },
+      "description": "rbac -- RBAC configuration",
+      "title": "rbac",
       "type": "object"
     },
     "service": {
