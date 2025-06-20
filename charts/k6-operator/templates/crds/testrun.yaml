@@ -774,6 +774,8 @@ spec:
                           type: string
                         name:
                           type: string
+                        restartPolicy:
+                          type: string
                         volumeMounts:
                           items:
                             properties:
@@ -1034,6 +1036,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
@@ -2715,6 +2719,8 @@ spec:
                           type: string
                         name:
                           type: string
+                        restartPolicy:
+                          type: string
                         volumeMounts:
                           items:
                             properties:
@@ -2975,6 +2981,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
@@ -4679,6 +4687,8 @@ spec:
                           type: string
                         name:
                           type: string
+                        restartPolicy:
+                          type: string
                         volumeMounts:
                           items:
                             properties:
@@ -4939,6 +4949,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
