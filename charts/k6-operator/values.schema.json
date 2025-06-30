@@ -100,7 +100,7 @@
               "type": "string"
             },
             "tag": {
-              "default": "controller-v0.0.21",
+              "default": "controller-v0.0.22",
               "description": "manager.image.tag -- controller-manager image tag",
               "title": "tag",
               "type": "string"
