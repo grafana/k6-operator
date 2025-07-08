@@ -13,17 +13,11 @@ The `PrivateLoadZone` CRD is a representation of a [load zone](https://grafana.c
 
 ## Installation
 
-To install the k6 Operator, use the following command:
-
-```bash
-curl https://raw.githubusercontent.com/grafana/k6-operator/main/bundle.yaml | kubectl apply -f -
-```
-
-For more information, see the [Install k6 Operator](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/install-k6-operator/) page.
+Refer to [Install k6 Operator](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/install-k6-operator/) for installation instructions.
 
 ## Documentation
 
-You can find the latest k6 Operator documentation in the [Grafana k6 OSS docs](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/usage/common-options/).
+You can find the latest k6 Operator documentation in the [Grafana k6 OSS docs](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/).
 
 For additional resources:
 
