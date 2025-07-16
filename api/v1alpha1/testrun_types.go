@@ -52,6 +52,8 @@ type Pod struct {
 	InitContainers               []InitContainer                   `json:"initContainers,omitempty"`
 	Volumes                      []corev1.Volume                   `json:"volumes,omitempty"`
 	VolumeMounts                 []corev1.VolumeMount              `json:"volumeMounts,omitempty"`
+	// +kubebuilder:default=30
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 }
 
 type InitContainer struct {
