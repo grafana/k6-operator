@@ -63,7 +63,7 @@ spec:
             {{- if gt (int .Values.manager.replicas) 1 }}
             - --leader-elect
             {{- end }}
-            - --metrics-bind-address=:8080
+            - --metrics-bind-address=:8443
       serviceAccountName: {{ include "k6-operator.serviceAccountName" . }}
       {{- if .Values.global.image.pullSecrets }}
       imagePullSecrets:
