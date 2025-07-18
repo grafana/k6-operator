@@ -34,7 +34,7 @@ kind load docker-image k6operator:foo
 docker exec -it kind-control-plane crictl images | grep k6operator
 
 # Start a suite with the custom image:
-./e2e/run-tests.sh  -i docker.io/library/k6operator:foo
+./run-tests.sh  -i docker.io/library/k6operator:foo
 ```
 
 ### GCk6 tests

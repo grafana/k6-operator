@@ -1,6 +1,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: k6-operator
   name: k6-operator-leader-election-rolebinding
   namespace: k6-operator-system
 roleRef:

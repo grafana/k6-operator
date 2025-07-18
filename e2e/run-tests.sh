@@ -3,10 +3,11 @@
 show_help() {
   echo "Usage: $(basename $0) [-h] [-t GHCR_IMAGE_TAG] [-i IMAGE] [-p TEST_NAME]"
   echo "Options:"
-  echo "  -h      Display this help message"
-  echo "  -t      Existing tag of ghcr.io/grafana/k6-operator image"
-  echo "  -i      Arbitrary Docker image for k6-operator"
-  echo "  -p      Pick one test (folder) to run separately"
+  echo "  -h      Display this help message."
+  echo "  -t      Existing tag of ghcr.io/grafana/k6-operator image."
+  echo "  -i      Arbitrary Docker image for k6-operator."
+  echo "  -u      Update manifests in latest folder."
+  echo "  -p      Pick one test (folder) to run separately."
   exit 0
 }
 
@@ -28,7 +29,7 @@ GHCR_IMAGE_TAG=latest
 IMAGE=
 TEST_NAME=
 
-while getopts ':ht:i:p:' option; do
+while getopts ':hut:i:p:' option; do
   case "$option" in
     h) show_help
        exit
@@ -36,6 +37,8 @@ while getopts ':ht:i:p:' option; do
     t) GHCR_IMAGE_TAG=$OPTARG
        ;;
     i) IMAGE=$OPTARG
+       ;;
+    u) UPDATE_LATEST=true
        ;;
     p) TEST_NAME=$OPTARG
        ;;
@@ -56,6 +59,11 @@ if [ -z "${IMAGE}" ]; then
 fi
 
 echo "Using k6-operator image:" $IMAGE
+
+if ! docker pull $IMAGE ; then 
+  echo "Cannot find this image: $IMAGE"
+  exit 1
+fi
 
 # Recreate kustomization.
 
@@ -78,7 +86,7 @@ fi
 # We're in e2e/latest here and there is a bundle-to-test.yaml
 # Split the bundle and create a kustomize
 
-docker run --user="1001" --rm -v "${PWD}":/workdir mikefarah/yq --no-doc  -s  '.kind + "-" + .metadata.name' bundle-to-test.yaml
+docker run --user="$(id -u)" --rm -v "${PWD}":/workdir mikefarah/yq --no-doc  -s  '.kind + "-" + .metadata.name' bundle-to-test.yaml
 # since CRDs are being extracted as k6.io, without yaml in the end, rename them:
 for f in $(find . -type f  -name '*.k6.io'); do mv $f ${f}.yaml; done
 
@@ -90,6 +98,11 @@ for f in $(find . -type f  -name '*.k6.io'); do mv $f ${f}.yaml; done
 
 # go back to e2e/
 cd ..
+
+if [[ $UPDATE_LATEST == true ]] ; then
+  echo "Latest manifests were updated."
+  exit 0
+fi
 
 # TODO: add a proper build with xk6-environment (use new functionality?)
 # Blocked by: https://github.com/grafana/xk6-environment/issues/16
