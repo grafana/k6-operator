@@ -29,3 +29,5 @@ kubebuilder-tools-*
 .vscode
 
 testbin
+
+*.env

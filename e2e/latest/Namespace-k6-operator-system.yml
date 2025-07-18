@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
+    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: k6-operator
     control-plane: controller-manager
   name: k6-operator-system
