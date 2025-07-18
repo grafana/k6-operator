@@ -8,7 +8,7 @@ metadata:
     {{- include "k6-operator.customLabels" . | nindent 4 }}
   annotations:
     {{- include "k6-operator.customAnnotations" . | nindent 4 }}
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: privateloadzones.k6.io
 spec:
   group: k6.io
