@@ -22,7 +22,12 @@ bin
 *~
 
 /manager
+./k6-operator
 
 kubebuilder-tools-*
 
 .vscode
+
+testbin
+
+*.env

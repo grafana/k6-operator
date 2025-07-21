@@ -11,9 +11,13 @@ The `TestRun` CRD is a representation of a single k6 test executed once. `TestRu
 
 The `PrivateLoadZone` CRD is a representation of a [load zone](https://grafana.com/docs/grafana-cloud/testing/k6/author-run/use-load-zones/), which is a k6 term for a set of nodes within a cluster designated to execute k6 test runs. `PrivateLoadZone` is integrated with [Grafana Cloud k6](https://grafana.com/products/cloud/k6/) and requires a [Grafana Cloud account](https://grafana.com/auth/sign-up/create-user). You can find a guide describing how to set up a `PrivateLoadZone` [here](https://grafana.com/docs/grafana-cloud/testing/k6/author-run/private-load-zone-v2/), while billing details can be found [here](https://grafana.com/docs/grafana-cloud/cost-management-and-billing/understand-your-invoice/k6-invoice/).
 
+## Installation
+
+Refer to [Install k6 Operator](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/install-k6-operator/) for installation instructions.
+
 ## Documentation
 
-You can find the latest k6 Operator documentation in the [Grafana k6 OSS docs](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/usage/common-options/).
+You can find the latest k6 Operator documentation in the [Grafana k6 OSS docs](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/).
 
 For additional resources:
 
@@ -52,7 +56,6 @@ Additionally, you'll need to install the following tooling:
 To execute unit tests, use these commands:
 
 ```bash
-make test-setup # only need to run once
 make test
 ```
 

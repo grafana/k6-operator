@@ -19,8 +19,9 @@ package main
 import (
 	"flag"
 	"os"
+	"strings"
 
-	"github.com/grafana/k6-operator/controllers"
+	controllers "github.com/grafana/k6-operator/internal/controller"
 	"github.com/grafana/k6-operator/pkg/plz"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -54,14 +55,19 @@ func main() {
 	var metricsAddr string
 	var healthAddr string
 	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&healthAddr, "health-addr", ":8081", "The address the health endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
+	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&healthAddr, "health-probe-bind-address", ":8081", "The address the health endpoint binds to.")
+	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+
+	opts := zap.Options{
+		Development: true,
+	}
+	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgrOpts := ctrl.Options{
 		Scheme: scheme,
@@ -74,11 +80,22 @@ func main() {
 		LeaderElection:             enableLeaderElection,
 		LeaderElectionID:           "fcdfce80.io",
 		LeaderElectionResourceLock: "leases",
+		HealthProbeBindAddress:     healthAddr,
 	}
-	if watchNamespace, namespaced := getWatchNamespace(); namespaced {
+
+	if watchNamespaces, multiNamespaced := getWatchNamespaces(); multiNamespaced {
+		defaultNamespaces := make(map[string]cache.Config, len(watchNamespaces))
+		for _, ns := range watchNamespaces {
+			defaultNamespaces[ns] = cache.Config{}
+		}
+		mgrOpts.Cache = cache.Options{
+			DefaultNamespaces: defaultNamespaces,
+		}
+		setupLog.Info("WATCH_NAMESPACES is configured, WATCH_NAMESPACE will be ignored", "ns", watchNamespaces)
+	} else if watchNamespace, namespaced := getWatchNamespace(); namespaced {
 		mgrOpts.Cache = cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
-				watchNamespace: cache.Config{},
+				watchNamespace: {},
 			},
 		}
 		setupLog.Info("WATCH_NAMESPACE is configured", "ns", watchNamespace)
@@ -125,4 +142,18 @@ func getWatchNamespace() (string, bool) {
 	var watchNamespaceEnvVar = "WATCH_NAMESPACE"
 
 	return os.LookupEnv(watchNamespaceEnvVar)
+}
+
+func getWatchNamespaces() ([]string, bool) {
+	const watchNamespacesEnvVar = "WATCH_NAMESPACES"
+
+	if nsList, isSet := os.LookupEnv(watchNamespacesEnvVar); isSet {
+		// The Kubernetes docs state that namespace names can only contain contain lowercase
+		// alphanumeric characters or '-', making a comma (',') a valid separator for multiple namespaces.
+		// See: https://kubernetes.io/docs/tasks/administer-cluster/namespaces/#creating-a-new-namespace
+		// See: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+		return strings.Split(nsList, ","), true
+	}
+
+	return nil, false
 }

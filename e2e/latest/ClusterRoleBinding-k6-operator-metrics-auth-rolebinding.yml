@@ -1,12 +1,11 @@
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: proxy-rolebinding
+  name: k6-operator-metrics-auth-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: proxy-role
+  name: k6-operator-metrics-auth-role
 subjects:
   - kind: ServiceAccount
     name: k6-operator-controller

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: testruns.k6.io
 spec:
   group: k6.io
@@ -767,6 +767,8 @@ spec:
                         image:
                           type: string
                         name:
+                          type: string
+                        restartPolicy:
                           type: string
                         volumeMounts:
                           items:
@@ -2710,6 +2712,8 @@ spec:
                         image:
                           type: string
                         name:
+                          type: string
+                        restartPolicy:
                           type: string
                         volumeMounts:
                           items:
@@ -4676,6 +4680,8 @@ spec:
                         image:
                           type: string
                         name:
+                          type: string
+                        restartPolicy:
                           type: string
                         volumeMounts:
                           items:

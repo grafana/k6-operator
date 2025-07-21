@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/k6-operator/pkg/resources/containers"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -43,6 +44,24 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 
 	command, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, []string{"sh", "-c"})
 	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
+
+	// Default resource requests and limits to use as a fallback
+	resourceRequirements := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
+			corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
+			corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
+		},
+	}
+
+	// User specified resource requirements
+	if len(k6.GetSpec().Starter.Resources.Requests) > 0 || len(k6.GetSpec().Starter.Resources.Limits) > 0 {
+		resourceRequirements = k6.GetSpec().Starter.Resources
+	}
+
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fmt.Sprintf("%s-starter", k6.NamespacedName().Name),
@@ -67,7 +86,15 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 					SecurityContext:              &k6.GetSpec().Starter.SecurityContext,
 					ImagePullSecrets:             k6.GetSpec().Starter.ImagePullSecrets,
 					Containers: []corev1.Container{
-						containers.NewStartContainer(hostname, starterImage, k6.GetSpec().Starter.ImagePullPolicy, command, env, k6.GetSpec().Starter.ContainerSecurityContext),
+						containers.NewStartContainer(
+							hostname,
+							starterImage,
+							k6.GetSpec().Starter.ImagePullPolicy,
+							command,
+							env,
+							k6.GetSpec().Starter.ContainerSecurityContext,
+							resourceRequirements,
+						),
 					},
 				},
 			},

@@ -14,11 +14,28 @@ This is a basic suite of E2E tests for k6-operator, covering some of the main us
 
 It is assumed that there is a Kubernetes cluster to execute the tests in and `kubectl` with access to it.
 
+The [vcluster](https://www.vcluster.com/install) CLI should also be installed as it is currently a dependency of xk6-environment. See the [issue](https://github.com/grafana/xk6-environment/issues/1) for details.
+
 ## Under the hood
 
 `run-tests.sh` does not build any images but it can be customized with custom image and a tag for k6-operator image. At the same time the script uses the current k6-operator folder to get manifests. So for example, in order to test a certain branch, one has to switch to that branch locally first.
 
 Each test is executed with [xk6-environment](https://github.com/grafana/xk6-environment) extension, bootstraping a virtual cluster and full isolation per test. After a test is finished, everything connected to it is removed, leaving a cluster in its initial state. While the test executes, it is not recommended to interact with the cluster unless it's for monitoring or debugging purposes.
+
+### Build a custom image
+
+As an example, the following commands can be used to set up a custom image of k6-operator with the local [`kind` cluster](https://kind.sigs.k8s.io):
+
+```sh
+IMG_NAME=k6operator IMG_TAG=foo make docker-build
+kind load docker-image k6operator:foo
+
+# Check where image is on the cluster to be certain of its name:
+docker exec -it kind-control-plane crictl images | grep k6operator
+
+# Start a suite with the custom image:
+./run-tests.sh  -i docker.io/library/k6operator:foo
+```
 
 ### GCk6 tests
 

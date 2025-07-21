@@ -1,3 +1,4 @@
+{{- if not .Values.rbac.namespaced }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -15,13 +16,12 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ include "k6-operator.serviceAccountName" . }}
-    namespace: {{- include "k6-operator.namespace" . -}}
-{{- if .Values.authProxy.enabled }}
+    namespace: {{- include "k6-operator.namespace" . }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "k6-operator.fullname" . }}-proxy-rolebinding
+  name: {{ include "k6-operator.fullname" . }}-metrics-auth-rolebinding
   labels:
     {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
   annotations:
@@ -29,9 +29,9 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "k6-operator.fullname" . }}-proxy-role
+  name: {{ include "k6-operator.fullname" . }}-metrics-auth-role
 subjects:
   - kind: ServiceAccount
     name: {{ include "k6-operator.serviceAccountName" . }}
-    namespace: {{- include "k6-operator.namespace" . -}}
+    namespace: {{- include "k6-operator.namespace" . }}
 {{- end }}

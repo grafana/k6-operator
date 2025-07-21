@@ -1,3 +1,4 @@
+{{- if not .Values.rbac.namespaced }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -141,27 +142,11 @@ rules:
   - get
   - patch
   - update
-{{- if .Values.authProxy.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "k6-operator.fullname" . }}-metrics-reader
-  labels:
-    {{- include "k6-operator.labels" . | nindent 4 }}
-    {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
-  annotations:
-    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
-rules:
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: {{ include "k6-operator.fullname" . }}-proxy-role
+  name: {{ include "k6-operator.fullname" . }}-metrics-auth-role
   labels:
     {{- include "k6-operator.labels" . | nindent 4 }}
     {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
@@ -180,7 +165,21 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
-{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "k6-operator.fullname" . }}-metrics-reader
+  labels:
+    {{- include "k6-operator.labels" . | nindent 4 }}
+    {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
+  annotations:
+    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
 ---
 # permissions for end users to edit privateloadzones.
 apiVersion: rbac.authorization.k8s.io/v1
@@ -227,3 +226,4 @@ rules:
   - privateloadzones/status
   verbs:
   - get
+{{- end }}
