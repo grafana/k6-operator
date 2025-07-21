@@ -77,7 +77,7 @@ func (s *Script) VolumeMount() []corev1.VolumeMount {
 			},
 		}
 
-	default:
+	default: // LocalFile
 		return []corev1.VolumeMount{}
 
 	}
