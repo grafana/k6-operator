@@ -30,7 +30,6 @@ func (s *Script) Volume() []corev1.Volume {
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 						ClaimName: s.Name,
-						ReadOnly:  s.ReadOnly,
 					},
 				},
 			},
@@ -57,16 +56,32 @@ func (s *Script) Volume() []corev1.Volume {
 
 // VolumeMount creates a VolumeMount spec for the script
 func (s *Script) VolumeMount() []corev1.VolumeMount {
-	if s.Type == "LocalFile" {
+
+	switch s.Type {
+
+	case "VolumeClaim":
+		return []corev1.VolumeMount{
+			corev1.VolumeMount{
+				Name:      "k6-test-volume",
+				MountPath: "/test",
+				ReadOnly:  s.ReadOnly,
+			},
+		}
+
+	case "ConfigMap":
+		return []corev1.VolumeMount{
+			corev1.VolumeMount{
+				Name:      "k6-test-volume",
+				MountPath: "/test",
+				ReadOnly:  true,
+			},
+		}
+
+	default: // LocalFile
 		return []corev1.VolumeMount{}
+
 	}
 
-	return []corev1.VolumeMount{
-		corev1.VolumeMount{
-			Name:      "k6-test-volume",
-			MountPath: "/test",
-		},
-	}
 }
 
 // UpdateCommand modifies command to check for script existence in case of LocalFile;
