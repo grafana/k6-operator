@@ -107,14 +107,14 @@ PrivateLoadZoneSpec defines the desired state of PrivateLoadZone
         <td><b><a href="#privateloadzonespecconfig">config</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          Configuration of the test runs specific for this `PrivateLoadZone`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
-          <br/>
+          The Docker image of the k6 runners.<br/>
           <br/>
             <i>Default</i>: grafana/k6:latest<br/>
         </td>
@@ -123,21 +123,21 @@ PrivateLoadZoneSpec defines the desired state of PrivateLoadZone
         <td><b><a href="#privateloadzonespecimagepullsecretsindex">imagePullSecrets</a></b></td>
         <td>[]object</td>
         <td>
-          <br/>
+          The imagePullSecrets which should be configured for all created Pods.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
-          <br/>
+          Node selector which should be applied to all created Pods.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>serviceAccountName</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Service account name which should be associated with all created Pods.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -238,7 +238,7 @@ only the result of this request.<br/>
 
 
 
-
+Configuration of the test runs specific for this `PrivateLoadZone`.
 
 <table>
     <thead>
@@ -253,7 +253,8 @@ only the result of this request.<br/>
         <td><b><a href="#privateloadzonespecconfigsecretsindex">secrets</a></b></td>
         <td>[]object</td>
         <td>
-          <br/>
+          Secrets contains a list of definitions copied from `corev1.EnvFromSource`.
+They are re-packed into `EnvFromSource` struct during TestRun creation.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -280,8 +281,11 @@ only the result of this request.<br/>
         <td><b><a href="#privateloadzonespecconfigsecretsindexconfigmapref">configMapRef</a></b></td>
         <td>object</td>
         <td>
-          these definitions are copies from corev1.EnvFromSource - to be
-re-packed into that struct during TestRun creation<br/>
+          ConfigMapEnvSource selects a ConfigMap to populate the environment
+variables with.
+
+The contents of the target ConfigMap's Data field will represent the
+key-value pairs as environment variables.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -304,8 +308,11 @@ key-value pairs as environment variables.<br/>
 
 
 
-these definitions are copies from corev1.EnvFromSource - to be
-re-packed into that struct during TestRun creation
+ConfigMapEnvSource selects a ConfigMap to populate the environment
+variables with.
+
+The contents of the target ConfigMap's Data field will represent the
+key-value pairs as environment variables.
 
 <table>
     <thead>
@@ -529,7 +536,7 @@ with respect to the current state of the instance.<br/>
 
 
 
-TestRun is the Schema for the testruns API
+TestRun is the Schema for the testruns API.
 
 <table>
     <thead>
@@ -568,7 +575,7 @@ TestRun is the Schema for the testruns API
         <td><b><a href="#testrunstatus">status</a></b></td>
         <td>object</td>
         <td>
-          TestRunStatus defines the observed state of TestRun<br/>
+          TestRunStatus defines the observed state of TestRun.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -595,7 +602,7 @@ TestRunSpec defines the desired state of TestRun
         <td><b>parallelism</b></td>
         <td>integer</td>
         <td>
-          <br/>
+          Parallelism shows the number of k6 runners.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -604,21 +611,21 @@ TestRunSpec defines the desired state of TestRun
         <td><b><a href="#testrunspecscript">script</a></b></td>
         <td>object</td>
         <td>
-          K6Script describes where the script to execute the tests is found<br/>
+          Script describes where the k6 script is located.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>arguments</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Arguments to pass to the k6 process.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>cleanup</b></td>
         <td>enum</td>
         <td>
-          Cleanup allows for automatic cleanup of resources post execution<br/>
+          Cleanup allows for automatic cleanup of resources post execution.<br/>
           <br/>
             <i>Enum</i>: post<br/>
         </td>
@@ -627,70 +634,78 @@ TestRunSpec defines the desired state of TestRun
         <td><b><a href="#testrunspecinitializer">initializer</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          Configuration for the initializer Pod. If omitted, the initializer
+is configured with the same parameters as a runner Pod.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>paused</b></td>
         <td>string</td>
         <td>
+          Paused is a boolean variable that allows to switch off passing the `--paused` to k6.
+Use with caution as it can skew the result of the test.<br/>
           <br/>
+            <i>Default</i>: true<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#testrunspecportsindex">ports</a></b></td>
         <td>[]object</td>
         <td>
-          <br/>
+          Port to configure on all k6 containers.
+Port 6565 is always configured for k6 processes.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>quiet</b></td>
         <td>string</td>
         <td>
+          Quiet is a boolean variable that allows to swtich off passing the `--quiet` to k6.<br/>
           <br/>
+            <i>Default</i>: true<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#testrunspecrunner">runner</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          Configuration for a runner Pod.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#testrunspecscuttle">scuttle</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          Configuration for Envoy proxy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>separate</b></td>
         <td>boolean</td>
         <td>
-          <br/>
+          Separate is a quick way to run all k6 runners on different hostnames
+using the podAntiAffinity rule.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#testrunspecstarter">starter</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          Configuration for the starter Pod.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>testRunId</b></td>
         <td>string</td>
         <td>
-          <br/>
+          TestRunID is reserved by Grafana Cloud k6. Do not set it manually.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>token</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Token is reserved by Grafana Cloud k6. Do not set it manually.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -702,7 +717,7 @@ TestRunSpec defines the desired state of TestRun
 
 
 
-K6Script describes where the script to execute the tests is found
+Script describes where the k6 script is located.
 
 <table>
     <thead>
@@ -717,21 +732,21 @@ K6Script describes where the script to execute the tests is found
         <td><b><a href="#testrunspecscriptconfigmap">configMap</a></b></td>
         <td>object</td>
         <td>
-          K6Configmap describes the config map script location<br/>
+          K6Configmap describes the location of the script in the ConfigMap.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>localFile</b></td>
         <td>string</td>
         <td>
-          <br/>
+          LocalFile describes the location of the script in the runner image.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#testrunspecscriptvolumeclaim">volumeClaim</a></b></td>
         <td>object</td>
         <td>
-          K6VolumeClaim describes the volume claim script location<br/>
+          K6VolumeClaim describes the location of the script on the Volume.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -743,7 +758,7 @@ K6Script describes where the script to execute the tests is found
 
 
 
-K6Configmap describes the config map script location
+K6Configmap describes the location of the script in the ConfigMap.
 
 <table>
     <thead>
@@ -758,14 +773,14 @@ K6Configmap describes the config map script location
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Name of the ConfigMap. It is expected to be in the sanme namespace as the `TestRun`.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>file</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Name of the file to execute (.js or .tar), stored as a key in the ConfigMap.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -777,7 +792,7 @@ K6Configmap describes the config map script location
 
 
 
-K6VolumeClaim describes the volume claim script location
+K6VolumeClaim describes the location of the script on the Volume.
 
 <table>
     <thead>
@@ -792,21 +807,22 @@ K6VolumeClaim describes the volume claim script location
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Name of the persistent volumeClaim where the script is stored.
+It is mounted as a `/test` folder to all k6 Pods.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>file</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Name of the file to execute (.js or .tar), stored on the Volume.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>readOnly</b></td>
         <td>boolean</td>
         <td>
-          <br/>
+          ReadOnly shows whether the volume should be mounted as `readOnly`.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -818,7 +834,8 @@ K6VolumeClaim describes the volume claim script location
 
 
 
-
+Configuration for the initializer Pod. If omitted, the initializer
+is configured with the same parameters as a runner Pod.
 
 <table>
     <thead>
@@ -9369,7 +9386,7 @@ Defaults to "TCP".<br/>
 
 
 
-
+Configuration for a runner Pod.
 
 <table>
     <thead>
@@ -17852,7 +17869,7 @@ Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
 
 
 
-
+Configuration for Envoy proxy.
 
 <table>
     <thead>
@@ -17942,7 +17959,7 @@ Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
 
 
 
-
+Configuration for the starter Pod.
 
 <table>
     <thead>
@@ -26425,7 +26442,7 @@ Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
 
 
 
-TestRunStatus defines the observed state of TestRun
+TestRunStatus defines the observed state of TestRun.
 
 <table>
     <thead>
@@ -26454,7 +26471,7 @@ TestRunStatus defines the observed state of TestRun
         <td><b>stage</b></td>
         <td>enum</td>
         <td>
-          Stage describes which stage of the test execution lifecycle our runners are in<br/>
+          Stage describes which stage of the test execution lifecycle k6 runners are in.<br/>
           <br/>
             <i>Enum</i>: initialization, initialized, created, started, stopped, finished, error<br/>
         </td>
