@@ -36,13 +36,22 @@ type PrivateLoadZoneSpec struct {
 	// +kubebuilder:validation:Type=string
 	Token string `json:"token"`
 
-	Resources          corev1.ResourceRequirements `json:"resources"`
-	ServiceAccountName string                      `json:"serviceAccountName,omitempty"`
-	NodeSelector       map[string]string           `json:"nodeSelector,omitempty"`
+	Resources corev1.ResourceRequirements `json:"resources"`
+
+	// Service account name which should be associated with all created Pods.
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Node selector which should be applied to all created Pods.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// The Docker image of the k6 runners.
 	// +kubebuilder:default="grafana/k6:latest"
-	Image            string                        `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
+
+	// The imagePullSecrets which should be configured for all created Pods.
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
+	// Configuration of the test runs specific for this `PrivateLoadZone`.
 	Config PrivateLoadZoneConfig `json:"config,omitempty"`
 }
 
@@ -76,12 +85,12 @@ type PrivateLoadZoneList struct {
 }
 
 type PrivateLoadZoneConfig struct {
+	// Secrets contains a list of definitions copied from `corev1.EnvFromSource`.
+	// They are re-packed into `EnvFromSource` struct during TestRun creation.
 	Secrets []PLZSecretsConfig `json:"secrets,omitempty"`
 }
 
 type PLZSecretsConfig struct {
-	// these definitions are copies from corev1.EnvFromSource - to be
-	// re-packed into that struct during TestRun creation
 	ConfigMapRef *corev1.ConfigMapEnvSource `json:"configMapRef,omitempty"`
 	SecretRef    *corev1.SecretEnvSource    `json:"secretRef,omitempty"`
 }

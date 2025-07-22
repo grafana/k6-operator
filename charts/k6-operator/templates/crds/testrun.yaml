@@ -1971,6 +1971,7 @@ spec:
                 format: int32
                 type: integer
               paused:
+                default: "true"
                 type: string
               ports:
                 items:
@@ -1993,6 +1994,7 @@ spec:
                   type: object
                 type: array
               quiet:
+                default: "true"
                 type: string
               runner:
                 properties:

@@ -81,54 +81,92 @@ type K6Scuttle struct {
 
 // TestRunSpec defines the desired state of TestRun
 type TestRunSpec struct {
-	Script      K6Script               `json:"script"`
-	Parallelism int32                  `json:"parallelism"`
-	Separate    bool                   `json:"separate,omitempty"`
-	Arguments   string                 `json:"arguments,omitempty"`
-	Ports       []corev1.ContainerPort `json:"ports,omitempty"`
-	Initializer *Pod                   `json:"initializer,omitempty"`
-	Starter     Pod                    `json:"starter,omitempty"`
-	Runner      Pod                    `json:"runner,omitempty"`
-	Quiet       string                 `json:"quiet,omitempty"`
-	Paused      string                 `json:"paused,omitempty"`
-	Scuttle     K6Scuttle              `json:"scuttle,omitempty"`
-	Cleanup     Cleanup                `json:"cleanup,omitempty"`
+	// Script describes where the k6 script is located.
+	Script K6Script `json:"script"`
 
+	// Parallelism shows the number of k6 runners.
+	Parallelism int32 `json:"parallelism"`
+
+	// Separate is a quick way to run all k6 runners on different hostnames
+	// using the podAntiAffinity rule.
+	Separate bool `json:"separate,omitempty"`
+
+	// Arguments to pass to the k6 process.
+	Arguments string `json:"arguments,omitempty"`
+
+	// Port to configure on all k6 containers.
+	// Port 6565 is always configured for k6 processes.
+	Ports []corev1.ContainerPort `json:"ports,omitempty"`
+
+	// Configuration for the initializer Pod. If omitted, the initializer
+	// is configured with the same parameters as a runner Pod.
+	Initializer *Pod `json:"initializer,omitempty"`
+
+	// Configuration for the starter Pod.
+	Starter Pod `json:"starter,omitempty"`
+
+	// Configuration for a runner Pod.
+	Runner Pod `json:"runner,omitempty"`
+
+	// Quiet is a boolean variable that allows to swtich off passing the `--quiet` to k6.
+	// +kubebuilder:default="true"
+	Quiet string `json:"quiet,omitempty"`
+
+	// Paused is a boolean variable that allows to switch off passing the `--paused` to k6.
+	// Use with caution as it can skew the result of the test.
+	// +kubebuilder:default="true"
+	Paused string `json:"paused,omitempty"`
+
+	// Configuration for Envoy proxy.
+	Scuttle K6Scuttle `json:"scuttle,omitempty"`
+
+	Cleanup Cleanup `json:"cleanup,omitempty"`
+
+	// TestRunID is reserved by Grafana Cloud k6. Do not set it manually.
 	TestRunID string `json:"testRunId,omitempty"` // PLZ reserved field
-	Token     string `json:"token,omitempty"`     // PLZ reserved field (for now)
+
+	// Token is reserved by Grafana Cloud k6. Do not set it manually.
+	Token string `json:"token,omitempty"` // PLZ reserved field (for now)
 }
 
-// K6Script describes where the script to execute the tests is found
+// K6Script describes where to find the k6 script.
 type K6Script struct {
 	VolumeClaim K6VolumeClaim `json:"volumeClaim,omitempty"`
 	ConfigMap   K6Configmap   `json:"configMap,omitempty"`
-	LocalFile   string        `json:"localFile,omitempty"`
+	// LocalFile describes the location of the script in the runner image.
+	LocalFile string `json:"localFile,omitempty"`
 }
 
-// K6VolumeClaim describes the volume claim script location
+// K6VolumeClaim describes the location of the script on the Volume.
 type K6VolumeClaim struct {
-	Name     string `json:"name"`
-	File     string `json:"file,omitempty"`
-	ReadOnly bool   `json:"readOnly,omitempty"`
+	// Name of the persistent volumeClaim where the script is stored.
+	// It is mounted as a `/test` folder to all k6 Pods.
+	Name string `json:"name"`
+	// Name of the file to execute (.js or .tar), stored on the Volume.
+	File string `json:"file,omitempty"`
+	// ReadOnly shows whether the volume should be mounted as `readOnly`.
+	ReadOnly bool `json:"readOnly,omitempty"`
 }
 
-// K6Configmap describes the config map script location
+// K6Configmap describes the location of the script in the ConfigMap.
 type K6Configmap struct {
+	// Name of the ConfigMap. It is expected to be in the sanme namespace as the `TestRun`.
 	Name string `json:"name"`
+	// Name of the file to execute (.js or .tar), stored as a key in the ConfigMap.
 	File string `json:"file,omitempty"`
 }
 
 //TODO: cleanup pre-execution?
 
-// Cleanup allows for automatic cleanup of resources post execution
+// Cleanup allows for automatic cleanup of resources post execution.
 // +kubebuilder:validation:Enum=post
 type Cleanup string
 
-// Stage describes which stage of the test execution lifecycle our runners are in
+// Stage describes which stage of the test execution lifecycle k6 runners are in.
 // +kubebuilder:validation:Enum=initialization;initialized;created;started;stopped;finished;error
 type Stage string
 
-// TestRunStatus defines the observed state of TestRun
+// TestRunStatus defines the observed state of TestRun.
 type TestRunStatus struct {
 	Stage           Stage  `json:"stage,omitempty"`
 	TestRunID       string `json:"testRunId,omitempty"`
@@ -143,7 +181,7 @@ type TestRunStatus struct {
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 //+kubebuilder:printcolumn:name="TestRunID",type="string",JSONPath=".status.testRunId"
 
-// TestRun is the Schema for the testruns API
+// TestRun is the Schema for the testruns API.
 type TestRun struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
