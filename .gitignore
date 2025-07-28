@@ -31,3 +31,5 @@ kubebuilder-tools-*
 testbin
 
 *.env
+
+.devspace/
