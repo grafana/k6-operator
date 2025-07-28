@@ -1,0 +1,49 @@
+version: v2beta1
+name: k6-operator
+
+pipelines:
+  # This is the pipeline for the main command: `devspace dev` (or `devspace run-pipeline dev`)
+  dev:
+    run: |-
+      run_dependencies --all       # 1. Deploy any projects this project needs (see "dependencies")
+      ensure_pull_secrets --all    # 2. Ensure pull secrets
+      create_deployments --all     # 3. Deploy Helm charts and manifests specfied as "deployments"
+      start_dev app                # 4. Start dev mode "app" (see "dev" section)
+
+dev:
+  app:
+    namespace: k6-operator-system
+    imageSelector: ghcr.io/grafana/k6-operator:latest
+    devImage: ghcr.io/loft-sh/devspace-containers/go:1.24-alpine
+    logs: {}
+    sync:
+    - path: ./devspace_start.sh
+    - path: ./go.mod
+    - path: ./go.sum
+    - path: ./Makefile
+    - path: ./api
+    - path: ./cmd
+    - path: ./internal
+    - path: ./pkg
+    terminal:
+      command: ./devspace_start.sh
+    ssh:
+      enabled: false
+    proxyCommands:
+      - command: devspace
+      - command: kubectl
+      - command: helm
+      - gitCredentials: true
+    resources:
+      limits:
+        cpu: 4
+        memory: 3Gi
+      requests:
+        cpu: 4
+        memory: 3Gi
+    env:
+    - name: GOMAXPROCS
+      value: "4"
+    patches:
+      - op: remove
+        path: spec.securityContext
