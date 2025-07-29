@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/testrun"
+
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -116,77 +116,6 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 	return
 }
 
-// Similarly to inspectTestRun, there may be some errors during load of token
-// that should be just waited out. But other errors should result in change of
-// behaviour in the caller.
-// ready shows whether token was loaded yet, while returnErr indicates an error
-// that should be acted on.
-//
-// Currently we support two modes for loading token:
-// - by name of the token (PLZ mode)
-// - by label selector (cloud output mode)
-// Specify arguments to loadToken accordingly.
-func loadToken(ctx context.Context, log logr.Logger, c client.Client, secretName string, sOpts *client.ListOptions) (token string, ready bool, returnErr error) {
-	var (
-		secrets corev1.SecretList
-		secret  corev1.Secret
-		// This is the default location of the token;
-		// what is used by cloud output mode.
-		secretOpts = &client.ListOptions{
-			Namespace: "k6-operator-system",
-			LabelSelector: labels.SelectorFromSet(map[string]string{
-				"k6cloud": "token",
-			}),
-		}
-		err error
-	)
-
-	if sOpts != nil && len(secretName) > 0 {
-		// PLZ mode case
-		secretOpts = sOpts
-	}
-
-	if len(secretName) > 0 {
-		log.Info("Loading token by name.", "name", secretName, "secretNamespace", secretOpts.Namespace)
-
-		if err := c.Get(ctx, types.NamespacedName{Namespace: secretOpts.Namespace, Name: secretName}, &secret); err != nil {
-			log.Error(err, "Failed to load k6 Cloud token", "name", secretName, "secretNamespace", secretOpts.Namespace)
-			// This may be a networking issue, etc. so just retry.
-			return
-		}
-	} else {
-		log.Info("Loading token by label pair.", "labelset", secretOpts.LabelSelector.String(), "secretNamespace", secretOpts.Namespace)
-
-		if err = c.List(ctx, &secrets, secretOpts); err != nil {
-			log.Error(err, "Failed to load k6 Cloud token", "labelset", secretOpts.LabelSelector.String(), "secretNamespace", secretOpts.Namespace)
-			// This may be a networking issue, etc. so just retry.
-			return
-		}
-
-		if len(secrets.Items) < 1 {
-			// we should stop execution in case of this error
-			returnErr = fmt.Errorf("There are no secrets to hold k6 Cloud token")
-			log.Error(returnErr, returnErr.Error(), "labelset", secretOpts.LabelSelector.String(), "secretNamespace", secretOpts.Namespace)
-			return
-		}
-
-		secret = secrets.Items[0]
-	}
-
-	if t, ok := secret.Data["token"]; !ok {
-		// we should stop execution in case of this error
-		returnErr = fmt.Errorf("The secret doesn't have a field token for k6 Cloud")
-		log.Error(err, err.Error())
-		return
-	} else {
-		token = string(t)
-		ready = true
-		log.Info("Token for k6 Cloud was loaded.")
-	}
-
-	return
-}
-
 func getEnvVar(vars []corev1.EnvVar, name string) string {
 	for _, v := range vars {
 		if v.Name == name {
@@ -202,7 +131,7 @@ func (r *TestRunReconciler) hostnames(ctx context.Context, log logr.Logger, abor
 		err       error
 	)
 
-	sl := &v1.ServiceList{}
+	sl := &corev1.ServiceList{}
 
 	if err = r.List(ctx, sl, opts); err != nil {
 		log.Error(err, "Could not list services")

@@ -3,10 +3,9 @@ package jobs
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"strings"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
@@ -17,7 +16,8 @@ import (
 )
 
 // NewRunnerJob creates a new k6 job from a CRD
-func NewRunnerJob(k6 *v1alpha1.TestRun, index int, token string) (*batchv1.Job, error) {
+// secretName is the name of the Secret with Cloud token, which must be in the same namespace.
+func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.NamespacedName().Name, index)
 	postCommand := []string{"k6", "run"}
 
@@ -119,11 +119,26 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, token string) (*batchv1.Job, 
 
 	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
 
-	// this is a cloud output run
-	if len(k6.GetStatus().TestRunID) > 0 {
-		// temporary hack
+	// this is a cloud test run
+	if len(k6.TestRunID()) > 0 {
+		// cloud output case
+		tokenVar := corev1.EnvVar{
+			Name:  "K6_CLOUD_TOKEN",
+			Value: tokenInfo.Value(),
+		}
+
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+			// temporary hack
 			k6.GetStatus().AggregationVars = "2|5s|3s|10s|10"
+			tokenVar = corev1.EnvVar{
+				Name: "K6_CLOUD_TOKEN",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: tokenInfo.SecretName()},
+						Key:                  "token",
+					},
+				},
+			}
 		}
 
 		aggregationVars, err := cloud.DecodeAggregationConfig(k6.GetStatus().AggregationVars)
@@ -134,11 +149,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, token string) (*batchv1.Job, 
 		env = append(env, corev1.EnvVar{
 			Name:  "K6_CLOUD_PUSH_REF_ID",
 			Value: k6.GetStatus().TestRunID,
-		}, corev1.EnvVar{
-			Name:  "K6_CLOUD_TOKEN",
-			Value: token,
-		},
-		)
+		}, tokenVar)
 	}
 
 	env = append(env, k6.GetSpec().Runner.Env...)
