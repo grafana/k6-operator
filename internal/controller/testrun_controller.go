@@ -439,18 +439,20 @@ func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRu
 
 func (r *TestRunReconciler) createClient(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) (bool, error) {
 	if r.k6CloudClient == nil {
-		token, tokenReady, err := loadToken(ctx, log, r.Client, k6.GetSpec().Token, &client.ListOptions{Namespace: k6.NamespacedName().Namespace})
+		tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
+		err := tokenInfo.Load(ctx, log, r.Client)
+
 		if err != nil {
 			log.Error(err, "A problem while getting token.")
 			return false, err
 		}
-		if !tokenReady {
+		if !tokenInfo.Ready {
 			return false, nil
 		}
 
 		host := getEnvVar(k6.GetSpec().Runner.Env, "K6_CLOUD_HOST")
 
-		r.k6CloudClient = cloud.NewClient(log, token, host)
+		r.k6CloudClient = cloud.NewClient(log, tokenInfo.Value(), host)
 	}
 
 	return true, nil
