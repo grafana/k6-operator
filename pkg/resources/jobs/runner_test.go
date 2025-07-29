@@ -9,6 +9,7 @@ import (
 
 	deep "github.com/go-test/deep"
 	"github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -396,7 +397,7 @@ func TestNewRunnerJob(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -511,7 +512,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -626,7 +627,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -742,7 +743,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -859,7 +860,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -989,7 +990,7 @@ func TestNewRunnerJobIstio(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -1115,7 +1116,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "token")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", "").InjectValue("token"))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -1228,7 +1229,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -1395,7 +1396,7 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -1594,7 +1595,7 @@ func TestNewRunnerJobWithVolume(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
@@ -1738,7 +1739,7 @@ func TestNewRunnerJobPLZTestRun(t *testing.T) {
 		},
 	}
 
-	job, err := NewRunnerJob(k6, 1, "")
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
 	if err != nil {
 		t.Errorf("NewRunnerJob errored, got: %v", err)
 	}
