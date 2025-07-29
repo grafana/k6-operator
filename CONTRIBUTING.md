@@ -68,7 +68,7 @@ As an example, the repo contains the [DevSpace](https://www.devspace.sh/) setup,
 1. Test and debug inside the replacement Pod as needed.
 1. Exit the replacement Pod and run `devspace purge` to clean it up.
 
-### Before PRs
+### Before opening PRs
 
 If there are changes to the Golang code, it makes sense to run the following to preempt the CI errors if any:
 ```sh
