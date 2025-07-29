@@ -45,7 +45,7 @@ type PrivateLoadZoneSpec struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// The Docker image of the k6 runners.
-	// +kubebuilder:default="grafana/k6:latest"
+	// Default is "grafana/k6:latest", set by Grafana Cloud k6.
 	Image string `json:"image,omitempty"`
 
 	// The imagePullSecrets which should be configured for all created Pods.

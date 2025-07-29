@@ -61,7 +61,6 @@ spec:
                     type: array
                 type: object
               image:
-                default: grafana/k6:latest
                 type: string
               imagePullSecrets:
                 items:
