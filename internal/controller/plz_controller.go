@@ -117,19 +117,22 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if !plz.DeletionTimestamp.IsZero() && controllerutil.ContainsFinalizer(plz, plzFinalizer) {
 			// PLZ has been deleted.
 
-			worker.StopFactory()
-			worker.Deregister(ctx)
+			// worker can be nil in case of a "timely" restart of k6-operator
+			if worker != nil {
+				worker.StopFactory()
+				worker.Deregister(ctx)
 
-			controllerutil.RemoveFinalizer(plz, plzFinalizer)
+				controllerutil.RemoveFinalizer(plz, plzFinalizer)
 
-			if err := r.Update(ctx, plz); err != nil {
-				return ctrl.Result{}, err
+				if err := r.Update(ctx, plz); err != nil {
+					return ctrl.Result{}, err
+				}
+
+				r.workers.DeleteWorker(plz.Name)
+
+				// nothing left to do
+				return ctrl.Result{}, nil
 			}
-
-			r.workers.DeleteWorker(plz.Name)
-
-			// nothing left to do
-			return ctrl.Result{}, nil
 		}
 	}
 
@@ -148,6 +151,10 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				logger.Error(err, "Trying to register an existing PLZ.")
 				return ctrl.Result{}, nil
 			}
+
+			// If worker is reconstructed after a restart, we should
+			// re-check if it is scheduled for deletion.
+			return ctrl.Result{Requeue: true}, nil
 		}
 
 		worker.StartFactory()
