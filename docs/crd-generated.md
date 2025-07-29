@@ -114,9 +114,8 @@ PrivateLoadZoneSpec defines the desired state of PrivateLoadZone
         <td><b>image</b></td>
         <td>string</td>
         <td>
-          The Docker image of the k6 runners.<br/>
-          <br/>
-            <i>Default</i>: grafana/k6:latest<br/>
+          The Docker image of the k6 runners.
+Default is "grafana/k6:latest", set by Grafana Cloud k6.<br/>
         </td>
         <td>false</td>
       </tr><tr>
