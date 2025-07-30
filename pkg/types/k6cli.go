@@ -38,6 +38,13 @@ func ParseCLI(arguments string) *CLI {
 		if args[i][0] == '-' {
 			end := lastArgV(i+1, args)
 
+			if strings.HasPrefix(args[i], "--log-output") {
+				// `k6 archive` ignores this argument but if it contains an env var
+				// for token (cloud logs for PLZ test runs), it will break the shell;
+				// so omit it.
+				break
+			}
+
 			switch args[i] {
 			case "-o", "--out":
 				for j := 0; j < end; j++ {
