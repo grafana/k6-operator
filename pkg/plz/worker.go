@@ -159,10 +159,9 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 	}
 	tr.Spec.Runner.Env = envVars
 	tr.Spec.Parallelism = int32(trData.InstanceCount)
-	tr.Spec.Arguments = fmt.Sprintf(`--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token %s"`,
+	tr.Spec.Arguments = fmt.Sprintf(`--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
 		w.plz.Name,
-		trData.TestRunID(),
-		w.token)
+		trData.TestRunID())
 	tr.Spec.TestRunID = trData.TestRunID()
 }
 
