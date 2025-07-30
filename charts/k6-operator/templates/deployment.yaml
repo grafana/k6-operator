@@ -64,6 +64,9 @@ spec:
             - --leader-elect
             {{- end }}
             - --metrics-bind-address=:8443
+          ports:
+            - containerPort: 8443
+              name: https
       serviceAccountName: {{ include "k6-operator.serviceAccountName" . }}
       {{- if .Values.global.image.pullSecrets }}
       imagePullSecrets:
