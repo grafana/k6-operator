@@ -138,14 +138,14 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 	}
 
 	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
-	err, retry := tokenInfo.Load(ctx, log, r.Client)
+	err = tokenInfo.Load(ctx, log, r.Client)
 	if err != nil {
 		// An error here means a very likely mis-configuration of the token.
 		// Consider updating status to error to let a user know quicker?
 		log.Error(err, "A problem while getting token.")
 		return ctrl.Result{}, nil
 	}
-	if retry {
+	if !tokenInfo.Ready {
 		return res, nil
 	}
 

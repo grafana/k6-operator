@@ -24,14 +24,14 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *T
 	if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunCreated) {
 		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 
-		err, retry := tokenInfo.Load(ctx, log, r.Client)
+		err := tokenInfo.Load(ctx, log, r.Client)
 		if err != nil {
 			// An error here means a very likely mis-configuration of the token.
 			// TODO: update status to error to let a user know quicker
 			log.Error(err, "A problem while getting token.")
 			return ctrl.Result{}, nil
 		}
-		if retry {
+		if !tokenInfo.Ready {
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 	}

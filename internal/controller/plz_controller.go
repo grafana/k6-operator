@@ -221,14 +221,14 @@ func (r *PrivateLoadZoneReconciler) loadToken(ctx context.Context, tokenName, ns
 	token string, proceed bool, result ctrl.Result) {
 
 	tokenInfo := cloud.NewTokenInfo(tokenName, ns)
-	err, retry := tokenInfo.Load(ctx, logger, r.Client)
+	err := tokenInfo.Load(ctx, logger, r.Client)
 
 	if err != nil {
 		// An error here means a very likely mis-configuration of the token.
 		logger.Error(err, "A problem while getting token.")
 		return "", false, ctrl.Result{}
 	}
-	if retry {
+	if !tokenInfo.Ready {
 		return "", false, ctrl.Result{RequeueAfter: time.Second * 5}
 	}
 	return tokenInfo.Value(), true, ctrl.Result{}

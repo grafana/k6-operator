@@ -440,13 +440,13 @@ func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRu
 func (r *TestRunReconciler) createClient(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) (bool, error) {
 	if r.k6CloudClient == nil {
 		tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
-		err, retry := tokenInfo.Load(ctx, log, r.Client)
+		err := tokenInfo.Load(ctx, log, r.Client)
 
 		if err != nil {
 			log.Error(err, "A problem while getting token.")
 			return false, err
 		}
-		if retry {
+		if !tokenInfo.Ready {
 			return false, nil
 		}
 
