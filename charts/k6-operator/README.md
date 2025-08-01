@@ -1,6 +1,6 @@
 # k6-operator
 
-![Version: 3.14.2](https://img.shields.io/badge/Version-3.14.2-informational?style=flat-square) ![AppVersion: 0.0.22](https://img.shields.io/badge/AppVersion-0.0.22-informational?style=flat-square)
+![Version: 3.14.3](https://img.shields.io/badge/Version-3.14.3-informational?style=flat-square) ![AppVersion: 0.0.22](https://img.shields.io/badge/AppVersion-0.0.22-informational?style=flat-square)
 
 A Helm chart to install the k6-operator
 
