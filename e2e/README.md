@@ -57,6 +57,11 @@ echo -n '<MY ORG TOKEN HERE>' | base64
 export CLOUD_ORG_TOKEN=... # in base64!
 ```
 
+If the cloud environment variables are present in a `stack.env` file, they can be quickly exported before running the test suite with this command:
+```sh
+export $(cat stack.env | xargs)
+```
+
 ## How to add a test
 
 Firstly, the existing tests can be used as a basis for many additional experiments. Otherwise, the skeleton for the test looks like this:

@@ -60,11 +60,6 @@ fi
 
 echo "Using k6-operator image:" $IMAGE
 
-if ! docker pull $IMAGE ; then 
-  echo "Cannot find this image: $IMAGE"
-  exit 1
-fi
-
 # Recreate kustomization.
 
 echo "Regenerate ./latest from the bundle"
@@ -140,6 +135,7 @@ tests=(
   "testrun-watch-namespaces"
   "testrun-cloud-output"
   "testrun-simultaneous-cloud-output"
+  # volume-claim
   # "kyverno"
   # "custom-domain"
   # "browser-1"
