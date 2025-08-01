@@ -130,21 +130,22 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 	inspectOutput, inspectReady, err := inspectTestRun(ctx, log, k6, r.Client)
 	if err != nil {
 		// This *shouldn't* fail since it was already done once. Don't requeue.
-		// Alternatively: store inspect options in K6 Status? Get rid off reading logs?
+		// Alternatively: store inspect options in TestRun Status? Get rid off reading logs?
 		return ctrl.Result{}, nil
 	}
 	if !inspectReady {
 		return res, nil
 	}
 
-	token, tokenReady, err := loadToken(ctx, log, r.Client, "", nil)
+	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
+	err = tokenInfo.Load(ctx, log, r.Client)
 	if err != nil {
 		// An error here means a very likely mis-configuration of the token.
 		// Consider updating status to error to let a user know quicker?
 		log.Error(err, "A problem while getting token.")
 		return ctrl.Result{}, nil
 	}
-	if !tokenReady {
+	if !tokenInfo.Ready {
 		return res, nil
 	}
 
@@ -166,7 +167,7 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 			inspectOutput.SetTestName(script.Filename)
 		}
 
-		if testRunData, err := cloud.CreateTestRun(inspectOutput, k6.GetSpec().Parallelism, host, token, log); err != nil {
+		if testRunData, err := cloud.CreateTestRun(inspectOutput, k6.GetSpec().Parallelism, host, tokenInfo.Value(), log); err != nil {
 			log.Error(err, "Failed to create a new cloud test run.")
 			return res, nil
 		} else {
@@ -179,7 +180,6 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 			k6.GetStatus().AggregationVars = cloud.EncodeAggregationConfig(testRunData.ConfigOverride)
 
 			_, err := r.UpdateStatus(ctx, k6, log)
-			// log.Info(fmt.Sprintf("Debug updating status after create %v", updateHappened))
 			if err != nil {
 				return ctrl.Result{}, err
 			}

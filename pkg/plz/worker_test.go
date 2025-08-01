@@ -108,7 +108,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				},
 				Parallelism: int32(0),
 				Separate:    false,
-				Arguments:   "--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization=\"Token token\"",
+				Arguments:   "--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization=\"Token $(K6_CLOUD_TOKEN)\"",
 				Cleanup:     v1alpha1.Cleanup("post"),
 
 				TestRunID: "0",

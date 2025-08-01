@@ -69,6 +69,14 @@ func Test_ParseCLI(t *testing.T) {
 				HasCloudOut: true,
 			},
 		},
+		{
+			"OmitLogOutput",
+			`--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,label.test_run_id=1111,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
+			CLI{
+				ArchiveArgs: "--no-thresholds",
+				HasCloudOut: true,
+			},
+		},
 	}
 
 	for _, test := range tests {

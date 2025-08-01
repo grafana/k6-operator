@@ -32,6 +32,7 @@ import (
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	k6v1alpha1 "github.com/grafana/k6-operator/api/v1alpha1"
+	"github.com/grafana/k6-operator/pkg/cloud"
 	plzworkers "github.com/grafana/k6-operator/pkg/plz"
 )
 
@@ -218,14 +219,17 @@ func (r *PrivateLoadZoneReconciler) UpdateStatus(
 
 func (r *PrivateLoadZoneReconciler) loadToken(ctx context.Context, tokenName, ns string, logger logr.Logger) (
 	token string, proceed bool, result ctrl.Result) {
-	token, tokenReady, err := loadToken(ctx, logger, r.Client, tokenName, &client.ListOptions{Namespace: ns})
+
+	tokenInfo := cloud.NewTokenInfo(tokenName, ns)
+	err := tokenInfo.Load(ctx, logger, r.Client)
+
 	if err != nil {
 		// An error here means a very likely mis-configuration of the token.
 		logger.Error(err, "A problem while getting token.")
 		return "", false, ctrl.Result{}
 	}
-	if !tokenReady {
+	if !tokenInfo.Ready {
 		return "", false, ctrl.Result{RequeueAfter: time.Second * 5}
 	}
-	return token, true, ctrl.Result{}
+	return tokenInfo.Value(), true, ctrl.Result{}
 }
