@@ -57,6 +57,8 @@ kind load docker-image k6operator:foo
 IMG_NAME=k6operator IMG_TAG=foo make deploy
 ```
 
+All commands available in the Makefile can be seen with the `make help` command.
+
 There are different additional tools that allow for speeding up the development. For contributors, the development of the k6 Operator is not restricted to any one tool: use whatever works best for you.
 
 As an example, the repo contains the [DevSpace](https://www.devspace.sh/) setup, and it can be used in the following way:
