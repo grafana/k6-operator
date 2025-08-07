@@ -11,7 +11,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: privateloadzones.k6.io
 spec:
   group: k6.io
@@ -173,7 +173,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: testruns.k6.io
 spec:
   group: k6.io
@@ -2135,6 +2135,7 @@ spec:
                 format: int32
                 type: integer
               paused:
+                default: "true"
                 type: string
               ports:
                 items:
@@ -2157,6 +2158,7 @@ spec:
                   type: object
                 type: array
               quiet:
+                default: "true"
                 type: string
               runner:
                 properties:
@@ -6166,6 +6168,8 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - pods
+  - pods/log
   - secrets
   verbs:
   - get
@@ -6216,15 +6220,6 @@ rules:
   - get
   - list
   - update
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - pods/log
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - k6.io
   resources:
@@ -6364,12 +6359,12 @@ spec:
       containers:
       - args:
         - --metrics-bind-address=:8443
-        - --metrics-bind-address=127.0.0.1:8080
+        - --metrics-bind-address=:8080
         - --leader-elect
         - --health-probe-bind-address=:8081
         command:
         - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v0.0.22
+        image: ghcr.io/grafana/k6-operator:controller-v0.0.23
         livenessProbe:
           httpGet:
             path: /healthz
