@@ -4,7 +4,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 # Current Operator version
-VERSION ?= 0.0.22
+VERSION ?= 0.0.23
 # Image to use for building Go
 GO_BUILDER_IMG ?= "golang:1.23"
 # Image URL to use all building/pushing image targets

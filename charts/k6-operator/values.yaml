@@ -286,7 +286,7 @@ manager:
     # type: string
     # @schema
     # manager.image.tag -- controller-manager image tag
-    tag: controller-v0.0.22
+    tag: controller-v0.0.23
     # @schema
     # required: false
     # type: string
@@ -320,7 +320,7 @@ manager:
   # @schema
   # manager.readinessProbe -- Readiness probe in Probe format
   readinessProbe:
-  # @schema
+    # @schema
     # required: false
     # type: object
     # additionalProperties: true
