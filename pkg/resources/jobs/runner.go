@@ -79,10 +79,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 
 	command = script.UpdateCommand(command)
 
-	var (
-		zero   int64 = 0
-		zero32 int32 = 0
-	)
+	var zero32 int32 = 0
 
 	image := "grafana/k6:latest"
 	if k6.GetSpec().Runner.Image != "" {
@@ -200,7 +197,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 						ReadinessProbe:  generateProbe(k6.GetSpec().Runner.ReadinessProbe),
 						SecurityContext: &k6.GetSpec().Runner.ContainerSecurityContext,
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: k6.GetSpec().Runner.TerminationGracePeriodSeconds,
 					Volumes:                       volumes,
 				},
 			},
