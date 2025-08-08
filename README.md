@@ -7,7 +7,7 @@
 - `TestRun` CRD
 - `PrivateLoadZone` CRD
 
-The `TestRun` CRD is a representation of a single k6 test executed once. `TestRun` supports various configuration options that allow you to adapt to different Kubernetes setups. You can find a description of the more common options [here](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/usage/common-options/), and the full list of options can be found in the [definition itself](https://github.com/grafana/k6-operator/blob/main/config/crd/bases/k6.io_testruns.yaml).
+The `TestRun` CRD is a representation of a single k6 test executed once. `TestRun` supports various configuration options that allow you to adapt to different Kubernetes setups. You can find a description of the more common options [here](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/usage/configuring-testrun-crd/), and the full list of options can be found in the [docs/crd-generated.md](https://github.com/grafana/k6-operator/blob/main/docs/crd-generated.md).
 
 The `PrivateLoadZone` CRD is a representation of a [load zone](https://grafana.com/docs/grafana-cloud/testing/k6/author-run/use-load-zones/), which is a k6 term for a set of nodes within a cluster designated to execute k6 test runs. `PrivateLoadZone` is integrated with [Grafana Cloud k6](https://grafana.com/products/cloud/k6/) and requires a [Grafana Cloud account](https://grafana.com/auth/sign-up/create-user). You can find a guide describing how to set up a `PrivateLoadZone` [here](https://grafana.com/docs/grafana-cloud/testing/k6/author-run/private-load-zone-v2/), while billing details can be found [here](https://grafana.com/docs/grafana-cloud/cost-management-and-billing/understand-your-invoice/k6-invoice/).
 
