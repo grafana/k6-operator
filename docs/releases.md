@@ -21,3 +21,7 @@ Current release process is rather heavy on manual interventions:
     git commit -m 'release: update for v0.0.x'
     ```
 5. "Helm release" workflow is triggered, publishing to Helm Grafana repo.
+
+### Errors on release
+
+Currently, if Helm JSON schema is not up-to-date, the Helm release will fail. [`helm-release.yaml` workflow](https://github.com/grafana/k6-operator/blob/main/.github/workflows/helm-release.yaml) will create a PR with the necessary changes and `exit 1` to force the maintainer to review the changes and re-run the release workflow.
