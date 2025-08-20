@@ -81,6 +81,12 @@ func (r *TestRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	if k6.Spec.Parallelism < 1 {
+		err = fmt.Errorf("Parallelism of TestRun cannot be less than 1; provided value is %d.", k6.Spec.Parallelism)
+		log.Error(err, "Stopping reconciliation.")
+		return ctrl.Result{}, err
+	}
+
 	return r.reconcile(ctx, req, log, k6)
 }
 
