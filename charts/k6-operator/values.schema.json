@@ -397,6 +397,12 @@
       "title": "podLabels",
       "type": "object"
     },
+    "portName": {
+      "default": "https",
+      "description": "portName -- Name for controller-manager HTTP port",
+      "title": "portName",
+      "type": "string"
+    },
     "rbac": {
       "additionalProperties": false,
       "properties": {

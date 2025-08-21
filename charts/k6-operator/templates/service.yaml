@@ -19,10 +19,10 @@ metadata:
     {{- end }}
 spec:
   ports:
-  - name: https
+  - name: {{ include "k6-operator.portName" . }}
     port: 8443
     protocol: TCP
-    targetPort: https
+    targetPort: {{ include "k6-operator.portName" . }}
   selector:
     control-plane: "controller-manager"
 {{- end }}

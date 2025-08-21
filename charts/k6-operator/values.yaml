@@ -11,6 +11,13 @@ nameOverride: ""
 fullnameOverride: ""
 
 # @schema
+# required: false
+# type: string
+# @schema
+# portName -- Name for controller-manager HTTP port
+portName: "https"
+
+# @schema
 # additionalProperties: true
 # required: false
 # type: object
