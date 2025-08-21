@@ -397,12 +397,6 @@
       "title": "podLabels",
       "type": "object"
     },
-    "portName": {
-      "default": "https",
-      "description": "portName -- Name for controller-manager HTTP port",
-      "title": "portName",
-      "type": "string"
-    },
     "rbac": {
       "additionalProperties": false,
       "properties": {
@@ -437,6 +431,12 @@
           "description": "service.labels -- service custom labels",
           "title": "labels",
           "type": "object"
+        },
+        "portName": {
+          "default": "https",
+          "description": "service.portName -- Name for controller-manager HTTP port",
+          "title": "portName",
+          "type": "string"
         }
       },
       "title": "service",

@@ -19,10 +19,10 @@ metadata:
     {{- end }}
 spec:
   ports:
-  - name: {{ .Values.portName }}
+  - name: {{ .Values.service.portName }}
     port: 8443
     protocol: TCP
-    targetPort: {{ .Values.portName }}
+    targetPort: {{ .Values.service.portName }}
   selector:
     control-plane: "controller-manager"
 {{- end }}
