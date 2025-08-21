@@ -76,5 +76,6 @@ Kubernetes: `>=1.16.0-0`
 | service.annotations | object | `{}` | service custom annotations |
 | service.enabled | bool | `true` | enables the k6-operator service (default: false) |
 | service.labels | object | `{}` | service custom labels |
+| service.portName | string | `"https"` | Name for controller-manager HTTP port |
 | tolerations | list | `[]` | Tolerations to be applied on all containers |
 

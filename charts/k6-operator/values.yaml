@@ -233,6 +233,12 @@ service:
   # @schema
   # service.annotations -- service custom annotations
   annotations: {}
+  # @schema
+  # required: false
+  # type: string
+  # @schema
+  # service.portName -- Name for controller-manager HTTP port
+  portName: "https"
 
 # @schema
 # required: false
