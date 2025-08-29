@@ -1,6 +1,6 @@
 # Maintenance of k6 Operator
 
-Just as with any project, k6 Operator requires regular maintenance updates to stay up-to-date with the changes and patches. There are several types of maintenance updates in this project, and they need to be addressed at different frequencies. Let's take a closer look at each of them.
+Just as with any project, k6 Operator requires regular maintenance updates to stay up-to-date with any changes and patches. There are several types of maintenance updates in this project, and they need to be addressed at different frequencies. Let's take a closer look at each of them.
 
 ## Update of dependencies
 
