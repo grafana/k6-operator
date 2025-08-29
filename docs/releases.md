@@ -80,7 +80,7 @@ The `main` branch of the k6 Operator should be seen as a development branch. It 
 
 We do not commit to any stability guarantees of Golang interfaces at this point in time. However, in practice, the [Golang package for CRD types](https://github.com/grafana/k6-operator/tree/main/api/v1alpha1) is closely tied to changes in CRD and follows the same guidelines as the corresponding CRD type.
 
-### How release is done
+### Release process
 
 Release procedure is fully described in the [internal docs](https://github.com/grafana/k6-operator/blob/main/docs/release-workflow.md).
 
