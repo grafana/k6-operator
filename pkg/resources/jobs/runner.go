@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"fmt"
+	"github.com/buildkite/interpolate"
 	"strconv"
 	"strings"
 
@@ -48,8 +49,50 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 		return nil, err
 	}
 
+	// Conslidate envs
+	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
+
+	// this is a cloud test run
+	if len(k6.TestRunID()) > 0 {
+		// cloud output case
+		tokenVar := corev1.EnvVar{
+			Name:  "K6_CLOUD_TOKEN",
+			Value: tokenInfo.Value(),
+		}
+
+		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+			// temporary hack
+			k6.GetStatus().AggregationVars = "2|5s|3s|10s|10"
+			tokenVar = corev1.EnvVar{
+				Name: "K6_CLOUD_TOKEN",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: tokenInfo.SecretName()},
+						Key:                  "token",
+					},
+				},
+			}
+		}
+
+		aggregationVars, err := cloud.DecodeAggregationConfig(k6.GetStatus().AggregationVars)
+		if err != nil {
+			return nil, err
+		}
+		env = append(env, aggregationVars...)
+		env = append(env, corev1.EnvVar{
+			Name:  "K6_CLOUD_PUSH_REF_ID",
+			Value: k6.GetStatus().TestRunID,
+		}, tokenVar)
+	}
+
+	env = append(env, k6.GetSpec().Runner.Env...)
+
 	if k6.GetSpec().Arguments != "" {
-		args := strings.Split(k6.GetSpec().Arguments, " ")
+		// Expand on environment variables using envmap from `env`
+		envStringSlice := convertEnvVarsToStringSlice(env)
+		envMap := interpolate.NewSliceEnv(envStringSlice)
+		expandedArgs, _ := interpolate.Interpolate(envMap, k6.GetSpec().Arguments)
+		args := strings.Split(expandedArgs, " ")
 		command = append(command, args...)
 	}
 
@@ -117,43 +160,43 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
 	ports = append(ports, k6.GetSpec().Ports...)
 
-	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
-
-	// this is a cloud test run
-	if len(k6.TestRunID()) > 0 {
-		// cloud output case
-		tokenVar := corev1.EnvVar{
-			Name:  "K6_CLOUD_TOKEN",
-			Value: tokenInfo.Value(),
-		}
-
-		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
-			// temporary hack
-			k6.GetStatus().AggregationVars = "2|5s|3s|10s|10"
-			tokenVar = corev1.EnvVar{
-				Name: "K6_CLOUD_TOKEN",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: tokenInfo.SecretName()},
-						Key:                  "token",
-					},
-				},
-			}
-		}
-
-		aggregationVars, err := cloud.DecodeAggregationConfig(k6.GetStatus().AggregationVars)
-		if err != nil {
-			return nil, err
-		}
-		env = append(env, aggregationVars...)
-		env = append(env, corev1.EnvVar{
-			Name:  "K6_CLOUD_PUSH_REF_ID",
-			Value: k6.GetStatus().TestRunID,
-		}, tokenVar)
-	}
-
-	env = append(env, k6.GetSpec().Runner.Env...)
-
+	// env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
+	//
+	// // this is a cloud test run
+	// if len(k6.TestRunID()) > 0 {
+	// 	// cloud output case
+	// 	tokenVar := corev1.EnvVar{
+	// 		Name:  "K6_CLOUD_TOKEN",
+	// 		Value: tokenInfo.Value(),
+	// 	}
+	//
+	// 	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+	// 		// temporary hack
+	// 		k6.GetStatus().AggregationVars = "2|5s|3s|10s|10"
+	// 		tokenVar = corev1.EnvVar{
+	// 			Name: "K6_CLOUD_TOKEN",
+	// 			ValueFrom: &corev1.EnvVarSource{
+	// 				SecretKeyRef: &corev1.SecretKeySelector{
+	// 					LocalObjectReference: corev1.LocalObjectReference{Name: tokenInfo.SecretName()},
+	// 					Key:                  "token",
+	// 				},
+	// 			},
+	// 		}
+	// 	}
+	//
+	// 	aggregationVars, err := cloud.DecodeAggregationConfig(k6.GetStatus().AggregationVars)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	env = append(env, aggregationVars...)
+	// 	env = append(env, corev1.EnvVar{
+	// 		Name:  "K6_CLOUD_PUSH_REF_ID",
+	// 		Value: k6.GetStatus().TestRunID,
+	// 	}, tokenVar)
+	// }
+	//
+	// env = append(env, k6.GetSpec().Runner.Env...)
+	//
 	volumes := script.Volume()
 	volumes = append(volumes, k6.GetSpec().Runner.Volumes...)
 
