@@ -280,7 +280,7 @@ func TestNewRunnerJob(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -356,7 +356,7 @@ func TestNewRunnerJob(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
@@ -413,7 +413,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -480,7 +480,7 @@ func TestNewRunnerJobNoisy(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
@@ -528,7 +528,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -595,7 +595,7 @@ func TestNewRunnerJobUnpaused(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
@@ -643,7 +643,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -710,7 +710,7 @@ func TestNewRunnerJobArguments(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
@@ -759,7 +759,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -826,7 +826,7 @@ func TestNewRunnerJobServiceAccount(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
@@ -876,7 +876,7 @@ func TestNewRunnerJobIstio(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -956,7 +956,7 @@ func TestNewRunnerJobIstio(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
@@ -1006,7 +1006,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -1081,7 +1081,7 @@ func TestNewRunnerJobCloud(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
@@ -1132,7 +1132,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 		Type:     "LocalFile",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -1198,7 +1198,7 @@ func TestNewRunnerJobLocalFile(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
@@ -1245,7 +1245,7 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -1340,7 +1340,7 @@ func TestNewRunnerJobWithInitContainer(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
@@ -1412,7 +1412,7 @@ func TestNewRunnerJobWithVolume(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -1519,7 +1519,7 @@ func TestNewRunnerJobWithVolume(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       expectedVolumes,
 				},
 			},
@@ -1613,7 +1613,7 @@ func TestNewRunnerJobPLZTestRun(t *testing.T) {
 		Type:     "ConfigMap",
 	}
 
-	var zero int64 = 0
+	var zero *int64 = nil
 	automountServiceAccountToken := true
 
 	expectedLabels := map[string]string{
@@ -1689,7 +1689,7 @@ func TestNewRunnerJobPLZTestRun(t *testing.T) {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
+					TerminationGracePeriodSeconds: zero,
 					Volumes:                       script.Volume(),
 				},
 			},
