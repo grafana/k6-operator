@@ -3,6 +3,7 @@ module github.com/grafana/k6-operator
 go 1.23.0
 
 require (
+	github.com/buildkite/interpolate v0.1.5
 	github.com/go-logr/logr v1.4.2
 	github.com/go-test/deep v1.0.7
 	github.com/google/uuid v1.6.0

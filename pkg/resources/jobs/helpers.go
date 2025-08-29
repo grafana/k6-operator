@@ -147,3 +147,13 @@ func getInitContainers(pod *v1alpha1.Pod, script *types.Script) []corev1.Contain
 
 	return initContainers
 }
+
+func convertEnvVarsToStringSlice(envVars []corev1.EnvVar) []string {
+	var envSlice []string
+	for _, envVar := range envVars {
+		if envVar.Value != "" {
+			envSlice = append(envSlice, envVar.Name+"="+envVar.Value)
+		}
+	}
+	return envSlice
+}

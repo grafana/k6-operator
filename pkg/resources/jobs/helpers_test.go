@@ -153,3 +153,69 @@ func TestNewIstioEnvVarFalseValues(t *testing.T) {
 		t.Errorf("new envVars were incorrect, got: %v, want: %v.", envVars, expectedOutcome)
 	}
 }
+func TestConvertEnvVars(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    []corev1.EnvVar
+		expected []string
+	}{
+		{
+			name:     "empty slice",
+			input:    []corev1.EnvVar{},
+			expected: []string{},
+		},
+		{
+			name: "single env var",
+			input: []corev1.EnvVar{
+				{Name: "TEST_VAR", Value: "test_value"},
+			},
+			expected: []string{"TEST_VAR=test_value"},
+		},
+		{
+			name: "multiple env vars",
+			input: []corev1.EnvVar{
+				{Name: "VAR1", Value: "value1"},
+				{Name: "VAR2", Value: "value2"},
+				{Name: "my-env", Value: "myValue"},
+			},
+			expected: []string{"VAR1=value1", "VAR2=value2", "my-env=myValue"},
+		},
+		{
+			name: "empty value should be skipped",
+			input: []corev1.EnvVar{
+				{Name: "EMPTY_VAR", Value: ""},
+				{Name: "VALID_VAR", Value: "valid_value"},
+			},
+			expected: []string{"VALID_VAR=valid_value"},
+		},
+		{
+			name: "special characters in value",
+			input: []corev1.EnvVar{
+				{Name: "SPECIAL", Value: "value with spaces!@#"},
+				{Name: "URL", Value: "https://example.com?param=value"},
+			},
+			expected: []string{"SPECIAL=value with spaces!@#", "URL=https://example.com?param=value"},
+		},
+		{
+			name:     "nil slice",
+			input:    nil,
+			expected: []string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := convertEnvVarsToStringSlice(tc.input)
+
+			// Check if both are empty (handles nil vs empty slice issue)
+			if len(result) == 0 && len(tc.expected) == 0 {
+				return // Both empty, test passes
+			}
+
+			// For non-empty cases, use reflect.DeepEqual
+			if !reflect.DeepEqual(result, tc.expected) {
+				t.Errorf("%s failed. Got %v, expected %v", tc.name, result, tc.expected)
+			}
+		})
+	}
+}
