@@ -154,6 +154,20 @@
             "periodSeconds"
           ]
         },
+        "logging": {
+          "additionalProperties": false,
+          "properties": {
+            "development": {
+              "default": true,
+              "description": "manager.logging.development -- Set to true to enable development mode logging (human-readable console format). Set to false for production mode logging (JSON format).",
+              "title": "development",
+              "type": "boolean"
+            }
+          },
+          "description": "manager.logging -- controller-manager logging configuration",
+          "title": "logging",
+          "type": "object"
+        },
         "podSecurityContext": {
           "additionalProperties": true,
           "description": "manager.podSecurityContext -- A security context defines privileges and access control settings for a pod.",
