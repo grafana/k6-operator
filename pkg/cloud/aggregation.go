@@ -17,13 +17,13 @@ var aggregationVarNames = []string{
 	"K6_CLOUD_METRIC_PUSH_CONCURRENCY",
 }
 
-func EncodeAggregationConfig(testRun *cloudapi.Config) string {
+func EncodeAggregationConfig(runtimeConfig *cloudapi.Config) string {
 	return fmt.Sprintf("%d|%s|%s|%s|%d",
 		2, // version of protocol
-		testRun.AggregationPeriod.String(),
-		testRun.AggregationWaitPeriod.String(),
-		testRun.MetricPushInterval.String(),
-		testRun.MetricPushConcurrency.Int64)
+		runtimeConfig.AggregationPeriod.String(),
+		runtimeConfig.AggregationWaitPeriod.String(),
+		runtimeConfig.MetricPushInterval.String(),
+		runtimeConfig.MetricPushConcurrency.Int64)
 }
 
 func DecodeAggregationConfig(encoded string) ([]corev1.EnvVar, error) {
@@ -46,4 +46,12 @@ func DecodeAggregationConfig(encoded string) ([]corev1.EnvVar, error) {
 	}
 
 	return vars, nil
+}
+
+// AggregationEnvVars is a quick shortcut to encode-decode all at once, for times
+// when we don't care to store aggregation env vars anywhere.
+func AggregationEnvVars(runtimeConfig *cloudapi.Config) []corev1.EnvVar {
+	encoded := EncodeAggregationConfig(runtimeConfig)
+	envVars, _ := DecodeAggregationConfig(encoded)
+	return envVars
 }
