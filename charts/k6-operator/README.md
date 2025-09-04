@@ -32,7 +32,7 @@ Kubernetes: `>=1.16.0-0`
 | global.image.pullSecrets | list | `[]` | Optional set of global image pull secrets |
 | global.image.registry | string | `""` | Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...) |
 | installCRDs | bool | `true` | Installs CRDs as part of the release |
-| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.23"},"livenessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":15,"periodSeconds":20},"podSecurityContext":{},"readinessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":5,"periodSeconds":10},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
+| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v0.0.23"},"livenessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":15,"periodSeconds":20},"logging":{"development":true},"podSecurityContext":{},"readinessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":5,"periodSeconds":10},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
 | manager.containerSecurityContext | object | `{}` | A security context defines privileges and access control settings for the container. |
 | manager.env | list | `[]` | List of environment variables to set in the controller |
 | manager.envFrom | list | `[]` | List of sources to populate environment variables in the controller |
@@ -42,6 +42,8 @@ Kubernetes: `>=1.16.0-0`
 | manager.image.tag | string | `"controller-v0.0.23"` | controller-manager image tag |
 | manager.livenessProbe | object | `{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":15,"periodSeconds":20}` | Liveness probe in Probe format |
 | manager.livenessProbe.httpGet | object | `{"path":"/healthz","port":8081}` | HTTP liveness probe |
+| manager.logging | object | `{"development":true}` | controller-manager logging configuration |
+| manager.logging.development | bool | `true` | Set to true to enable development mode logging (human-readable console format). Set to false for production mode logging (JSON format). |
 | manager.podSecurityContext | object | `{}` | A security context defines privileges and access control settings for a pod. |
 | manager.readinessProbe | object | `{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":5,"periodSeconds":10}` | Readiness probe in Probe format |
 | manager.readinessProbe.httpGet | object | `{"path":"/healthz","port":8081}` | HTTP readiness probe |

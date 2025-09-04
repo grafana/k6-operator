@@ -248,6 +248,18 @@ service:
 manager:
   # @schema
   # required: false
+  # type: object
+  # @schema
+  # manager.logging -- controller-manager logging configuration
+  logging:
+    # @schema
+    # required: false
+    # type: boolean
+    # @schema
+    # manager.logging.development -- Set to true to enable development mode logging (human-readable console format). Set to false for production mode logging (JSON format).
+    development: true
+  # @schema
+  # required: false
   # type: integer
   # @schema
   # manager.replicas -- number of controller-manager replicas (default: 1)
