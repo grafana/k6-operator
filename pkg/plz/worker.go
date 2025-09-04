@@ -153,6 +153,8 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 		Value: cloud.K6CloudHost(),
 	})
 
+	envVars = append(envVars, cloud.AggregationEnvVars(&trData.RuntimeConfig)...)
+
 	tr.Spec.Runner.Image = trData.RunnerImage
 	tr.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		initContainer,

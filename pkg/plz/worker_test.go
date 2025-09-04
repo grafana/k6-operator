@@ -15,6 +15,7 @@ import (
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/containers"
 	"github.com/grafana/k6-operator/pkg/testrun"
+	"go.k6.io/k6/cloudapi"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,10 +98,10 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 							volumeMount,
 						),
 					},
-					Env: []corev1.EnvVar{{
+					Env: append([]corev1.EnvVar{{
 						Name:  "K6_CLOUD_HOST",
 						Value: mainIngest,
-					}},
+					}}, cloud.AggregationEnvVars(&cloudapi.Config{})...),
 					EnvFrom: []corev1.EnvFromSource{},
 				},
 				Script: v1alpha1.K6Script{
@@ -171,7 +172,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	cloudFieldsTestRun.Spec.Parallelism = int32(someInstances)
 
 	cloudEnvVarsTestRun = cloudFieldsTestRun // build up on top of cloud fields case
-	cloudEnvVarsTestRun.Spec.Runner.Env = []corev1.EnvVar{
+	cloudEnvVarsTestRun.Spec.Runner.Env = append([]corev1.EnvVar{
 		{
 			Name:  "ENV",
 			Value: "VALUE",
@@ -180,11 +181,8 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			Name:  "foo",
 			Value: "bar",
 		},
-		{
-			Name:  "K6_CLOUD_HOST",
-			Value: mainIngest,
-		},
-	}
+	}, defaultTestRun.Spec.Runner.Env...)
+
 	testCases := []struct {
 		name      string
 		plz       *v1alpha1.PrivateLoadZone
