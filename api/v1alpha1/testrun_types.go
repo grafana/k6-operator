@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	"errors"
 	"path/filepath"
+	"strings"
 
 	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
@@ -144,6 +145,9 @@ type K6VolumeClaim struct {
 	Name string `json:"name"`
 	// Name of the file to execute (.js or .tar), stored on the Volume.
 	File string `json:"file,omitempty"`
+	// Path specifies the directory path where the script file is located.
+	// If not specified, defaults to "/test/".
+	Path string `json:"path,omitempty"`
 	// ReadOnly shows whether the volume should be mounted as `readOnly`.
 	ReadOnly bool `json:"readOnly,omitempty"`
 }
@@ -154,6 +158,9 @@ type K6Configmap struct {
 	Name string `json:"name"`
 	// Name of the file to execute (.js or .tar), stored as a key in the ConfigMap.
 	File string `json:"file,omitempty"`
+	// Path specifies the directory path where the script file is located.
+	// If not specified, defaults to "/test/".
+	Path string `json:"path,omitempty"`
 }
 
 //TODO: cleanup pre-execution?
@@ -218,6 +225,13 @@ func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 			s.ReadOnly = spec.VolumeClaim.ReadOnly
 		}
 
+		if spec.VolumeClaim.Path != "" {
+			s.Path = spec.VolumeClaim.Path
+			if !strings.HasSuffix(s.Path, "/") {
+				s.Path += "/"
+			}
+		}
+
 		s.Type = "VolumeClaim"
 		return s, nil
 	}
@@ -227,6 +241,13 @@ func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 
 		if spec.ConfigMap.File != "" {
 			s.Filename = spec.ConfigMap.File
+		}
+
+		if spec.ConfigMap.Path != "" {
+			s.Path = spec.ConfigMap.Path
+			if !strings.HasSuffix(s.Path, "/") {
+				s.Path += "/"
+			}
 		}
 
 		s.Type = "ConfigMap"
