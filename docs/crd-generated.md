@@ -782,6 +782,14 @@ K6Configmap describes the location of the script in the ConfigMap.
           Name of the file to execute (.js or .tar), stored as a key in the ConfigMap.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path specifies the directory path where the script file is located.
+If not specified, defaults to "/test/".<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -815,6 +823,14 @@ It is mounted as a `/test` folder to all k6 Pods.<br/>
         <td>string</td>
         <td>
           Name of the file to execute (.js or .tar), stored on the Volume.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path specifies the directory path where the script file is located.
+If not specified, defaults to "/test/".<br/>
         </td>
         <td>false</td>
       </tr><tr>

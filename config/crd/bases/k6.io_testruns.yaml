@@ -3916,6 +3916,8 @@ spec:
                         type: string
                       name:
                         type: string
+                      path:
+                        type: string
                     required:
                     - name
                     type: object
@@ -3926,6 +3928,8 @@ spec:
                       file:
                         type: string
                       name:
+                        type: string
+                      path:
                         type: string
                       readOnly:
                         type: boolean
