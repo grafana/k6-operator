@@ -6,7 +6,7 @@ SHELL = /usr/bin/env bash -o pipefail
 # Current Operator version
 VERSION ?= 0.0.23
 # Image to use for building Go
-GO_BUILDER_IMG ?= "golang:1.23"
+GO_BUILDER_IMG ?= "golang:1.25"
 # Image URL to use all building/pushing image targets
 IMG_NAME ?= ghcr.io/grafana/k6-operator
 IMG_TAG ?= latest

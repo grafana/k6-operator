@@ -14,7 +14,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: "1.25.x"
           cache: false
       - name: lint
         # this is v6.5.2
