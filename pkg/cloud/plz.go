@@ -31,7 +31,7 @@ func RegisterPLZ(client *cloudapi.Client, data PLZRegistrationData) error {
 		} `json:"error"`
 	}
 	if err = client.Do(req, &resp); err != nil {
-		return fmt.Errorf("Received error `%s`. Message from server `%s`", err.Error(), resp.Error.Message)
+		return fmt.Errorf("received error `%s`. Message from server `%s`", err.Error(), resp.Error.Message)
 	}
 
 	return nil

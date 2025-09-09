@@ -82,7 +82,7 @@ func (r *TestRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if k6.Spec.Parallelism < 1 {
-		err = fmt.Errorf("Parallelism of TestRun cannot be less than 1; provided value is %d.", k6.Spec.Parallelism)
+		err = fmt.Errorf("parallelism of TestRun cannot be less than 1; provided value is %d", k6.Spec.Parallelism)
 		log.Error(err, "Stopping reconciliation.")
 		return ctrl.Result{}, err
 	}
@@ -148,7 +148,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		if err != nil || !ready {
 			if t, ok := v1alpha1.LastUpdate(k6, v1alpha1.TestRunRunning); !ok {
 				// this should never happen
-				return res, errors.New("Cannot find condition TestRunRunning")
+				return res, errors.New("cannot find condition TestRunRunning")
 			} else {
 				// let's try this approach
 				if time.Since(t).Minutes() > 5 {

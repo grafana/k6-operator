@@ -26,7 +26,7 @@ func (w *PLZWorkers) GetWorker(name string) (worker *PLZWorker, err error) {
 	}
 
 	if worker, ok = ptr.(*PLZWorker); !ok {
-		return nil, fmt.Errorf("Cannot load PLZ worker: this might be a bug!")
+		return nil, fmt.Errorf("cannot load PLZ worker: this might be a bug")
 	}
 
 	return worker, nil

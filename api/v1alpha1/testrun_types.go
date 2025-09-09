@@ -240,7 +240,7 @@ func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 		return s, nil
 	}
 
-	return nil, errors.New("Script definition should contain one of: ConfigMap, VolumeClaim, LocalFile")
+	return nil, errors.New("script definition should contain one of: ConfigMap, VolumeClaim, LocalFile")
 }
 
 // TestRunI implementation for TestRun

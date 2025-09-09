@@ -92,7 +92,7 @@ func (ti *TokenInfo) Load(ctx context.Context, log logr.Logger, c k8sClient.Clie
 
 		if len(secrets.Items) < 1 {
 			// we should stop execution in case of this error
-			returnErr = fmt.Errorf("No secret with k6 Cloud token found.")
+			returnErr = fmt.Errorf("no secret with k6 Cloud token found")
 			log.Error(returnErr, returnErr.Error(), "labelset", secretOpts.LabelSelector.String(), "secretNamespace", secretOpts.Namespace)
 			return
 		}
@@ -102,7 +102,7 @@ func (ti *TokenInfo) Load(ctx context.Context, log logr.Logger, c k8sClient.Clie
 
 	if t, ok := secret.Data[tokenSecretKey]; !ok {
 		// we should stop execution in case of this error
-		returnErr = fmt.Errorf("The secret doesn't have a field `%s` for k6 Cloud token.", tokenSecretKey)
+		returnErr = fmt.Errorf("the secret doesn't have a field `%s` for k6 Cloud token", tokenSecretKey)
 		log.Error(returnErr, returnErr.Error())
 		return
 	} else {

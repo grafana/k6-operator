@@ -50,7 +50,7 @@ func NewTestRunPoller(host, token, plzName string, logger logr.Logger) *TestRunP
 		Client: cloudapi.NewClient(logrusLogger, token, host, consts.Version, time.Duration(time.Minute)),
 	}
 
-	testRunPoller.Poller.OnInterval = func() {
+	testRunPoller.OnInterval = func() {
 		list, err := testRunPoller.getTestRuns(plzName)
 		if err != nil {
 			logger.Error(err, "Failed to get test runs from k6 Cloud.")

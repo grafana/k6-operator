@@ -31,7 +31,7 @@ func DecodeAggregationConfig(encoded string) ([]corev1.EnvVar, error) {
 
 	if len(values) != len(aggregationVarNames) {
 		return nil, fmt.Errorf(
-			"Aggregation vars got corrupted: there are %d values instead of %d. Encoded value: `%s`.",
+			"aggregation vars got corrupted: there are %d values instead of %d. Encoded value: `%s`",
 			len(values),
 			len(aggregationVarNames),
 			encoded)

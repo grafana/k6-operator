@@ -26,21 +26,21 @@ func isJobRunning(log logr.Logger, service *v1.Service) bool {
 	// Response has been received so assume the job is running.
 
 	if resp.StatusCode >= 400 {
-		log.Error(err, fmt.Sprintf("status from from runner job %v is %d", service.ObjectMeta.Name, resp.StatusCode))
+		log.Error(err, fmt.Sprintf("status from from runner job %v is %d", service.Name, resp.StatusCode))
 		return true
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Error(err, fmt.Sprintf("Error on reading status of the runner job %v", service.ObjectMeta.Name))
+		log.Error(err, fmt.Sprintf("Error on reading status of the runner job %v", service.Name))
 		return true
 	}
 
 	var status k6api.StatusJSONAPI
 	if err := json.Unmarshal(data, &status); err != nil {
-		log.Error(err, fmt.Sprintf("Error on parsing status of the runner job %v", service.ObjectMeta.Name))
+		log.Error(err, fmt.Sprintf("Error on parsing status of the runner job %v", service.Name))
 		return true
 	}
 

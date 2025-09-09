@@ -97,7 +97,7 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 		returnErr = err
 		return
 	}
-	defer podLogs.Close()
+	defer podLogs.Close() //nolint:errcheck
 
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, podLogs)
@@ -141,10 +141,10 @@ func (r *TestRunReconciler) hostnames(ctx context.Context, log logr.Logger, abor
 	for _, service := range sl.Items {
 		log.Info(fmt.Sprintf("Checking service %s", service.Name))
 		if isServiceReady(log, &service) {
-			log.Info(fmt.Sprintf("%v service is ready", service.ObjectMeta.Name))
+			log.Info(fmt.Sprintf("%v service is ready", service.Name))
 			hostnames = append(hostnames, service.Spec.ClusterIP)
 		} else {
-			err = fmt.Errorf("%v service is not ready", service.ObjectMeta.Name)
+			err = fmt.Errorf("%v service is not ready", service.Name)
 			log.Info(err.Error())
 			if abortOnUnready {
 				return nil, err

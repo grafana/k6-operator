@@ -20,7 +20,7 @@ func isServiceReady(log logr.Logger, service *v1.Service) bool {
 	resp, err := http.Get(fmt.Sprintf("http://%v:6565/v1/status", service.Spec.ClusterIP))
 
 	if err != nil {
-		log.Error(err, fmt.Sprintf("failed to get status from %v", service.ObjectMeta.Name))
+		log.Error(err, fmt.Sprintf("failed to get status from %v", service.Name))
 		return false
 	}
 
@@ -59,7 +59,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 	if count != int(k6.GetSpec().Parallelism) {
 		if t, ok := v1alpha1.LastUpdate(k6, v1alpha1.TestRunRunning); !ok {
 			// this should never happen
-			return res, errors.New("Cannot find condition TestRunRunning")
+			return res, errors.New("cannot find condition TestRunRunning")
 		} else {
 			// let's try this approach
 			if time.Since(t).Minutes() > 5 {
