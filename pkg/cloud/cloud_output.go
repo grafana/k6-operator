@@ -8,7 +8,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	"go.k6.io/k6/cloudapi"
-	"go.k6.io/k6/lib/consts"
 	null "gopkg.in/guregu/null.v3"
 )
 
@@ -39,7 +38,8 @@ func NewClient(log logr.Logger, token, host string) *cloudapi.Client {
 		host = cloudConfig.Host.String
 	}
 
-	return cloudapi.NewClient(logger, token, host, consts.Version, time.Duration(time.Minute))
+	// TODO: how to get the version now?
+	return cloudapi.NewClient(logger, token, host, "1.2.3", time.Duration(time.Minute))
 }
 
 func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*cloudapi.CreateTestRunResponse, error) {
