@@ -155,7 +155,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	optionalFieldsTestRun.Spec.Starter.NodeSelector = someNodeSelector
 
 	cloudFieldsTestRun = requiredFieldsTestRun // build up on top of required field case
-	cloudFieldsTestRun.ObjectMeta.Name = testrun.PLZTestName(fmt.Sprintf("%d", someTestRunID))
+	cloudFieldsTestRun.Name = testrun.PLZTestName(fmt.Sprintf("%d", someTestRunID))
 	cloudFieldsTestRun.Spec.TestRunID = fmt.Sprintf("%d", someTestRunID)
 	cloudFieldsTestRun.Spec.Arguments = strings.Replace(requiredFieldsTestRun.Spec.Arguments,
 		"test_run_id=0",

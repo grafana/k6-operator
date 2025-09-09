@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
-	k6v1alpha1 "github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	plzworkers "github.com/grafana/k6-operator/pkg/plz"
 )
@@ -167,7 +166,7 @@ func (r *PrivateLoadZoneReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 // SetupWithManager sets up the controller with the Manager.
 func (r *PrivateLoadZoneReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&k6v1alpha1.PrivateLoadZone{}).
+		For(&v1alpha1.PrivateLoadZone{}).
 		Complete(r)
 }
 
