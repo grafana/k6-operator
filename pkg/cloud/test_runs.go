@@ -10,7 +10,6 @@ import (
 	"github.com/grafana/k6-operator/pkg/cloud/conn"
 	"github.com/sirupsen/logrus"
 	"go.k6.io/k6/cloudapi"
-	"go.k6.io/k6/lib/consts"
 )
 
 type TestRunPoller struct {
@@ -47,7 +46,7 @@ func NewTestRunPoller(host, token, plzName string, logger logr.Logger) *TestRunP
 		logger:    logger,
 		testRunCh: testRunsCh,
 
-		Client: cloudapi.NewClient(logrusLogger, token, host, consts.Version, time.Duration(time.Minute)),
+		Client: cloudapi.NewClient(logrusLogger, token, host, "1.2.3", time.Duration(time.Minute)),
 	}
 
 	testRunPoller.OnInterval = func() {
