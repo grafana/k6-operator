@@ -64,7 +64,7 @@ spec:
             - --leader-elect
             {{- end }}
             - --metrics-bind-address=:8443
-            - --zap-devel={{ if hasKey .Values.manager.logging "development" }}{{ .Values.manager.logging.development | toString }}{{ else }}true{{ end }}
+            - --zap-devel={{- include "k6-operator.manager.zap-devel" . }}
           ports:
             - containerPort: 8443
               name: {{ .Values.service.portName }}

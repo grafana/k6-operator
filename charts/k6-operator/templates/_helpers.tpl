@@ -103,3 +103,10 @@ Create the name of the service account to use
     {{- .Release.Namespace | indent 1 }}
   {{- end }}
 {{- end -}}
+
+{{/*
+Create the --zap-devel flag for the manager
+*/}}
+{{- define "k6-operator.manager.zap-devel" -}}
+{{- if hasKey .Values.manager.logging "development" }}{{ .Values.manager.logging.development | toString }}{{ else }}true{{ end }}
+{{- end -}}
