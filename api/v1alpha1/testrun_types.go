@@ -17,7 +17,6 @@ package v1alpha1
 import (
 	"errors"
 	"path/filepath"
-	"strings"
 
 	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
@@ -144,10 +143,8 @@ type K6VolumeClaim struct {
 	// It is mounted as a `/test` folder to all k6 Pods.
 	Name string `json:"name"`
 	// Name of the file to execute (.js or .tar), stored on the Volume.
+	// Can include a path component (e.g., "subdir/script.js").
 	File string `json:"file,omitempty"`
-	// Path specifies the directory path where the script file is located.
-	// If not specified, defaults to "/test/".
-	Path string `json:"path,omitempty"`
 	// ReadOnly shows whether the volume should be mounted as `readOnly`.
 	ReadOnly bool `json:"readOnly,omitempty"`
 }
@@ -157,10 +154,8 @@ type K6Configmap struct {
 	// Name of the ConfigMap. It is expected to be in the sanme namespace as the `TestRun`.
 	Name string `json:"name"`
 	// Name of the file to execute (.js or .tar), stored as a key in the ConfigMap.
+	// Can include a path component (e.g., "subdir/script.js").
 	File string `json:"file,omitempty"`
-	// Path specifies the directory path where the script file is located.
-	// If not specified, defaults to "/test/".
-	Path string `json:"path,omitempty"`
 }
 
 //TODO: cleanup pre-execution?
@@ -213,23 +208,19 @@ func init() {
 // Parse extracts Script data bits from K6 spec and performs basic validation
 func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 	spec := k6.Script
-	s := &types.Script{
-		Filename: "test.js",
-		Path:     "/test/",
-	}
+	s := &types.Script{}
 
 	if spec.VolumeClaim.Name != "" {
 		s.Name = spec.VolumeClaim.Name
 		if spec.VolumeClaim.File != "" {
-			s.Filename = spec.VolumeClaim.File
+			s.Path, s.Filename = filepath.Split(spec.VolumeClaim.File)
 			s.ReadOnly = spec.VolumeClaim.ReadOnly
 		}
-
-		if spec.VolumeClaim.Path != "" {
-			s.Path = spec.VolumeClaim.Path
-			if !strings.HasSuffix(s.Path, "/") {
-				s.Path += "/"
-			}
+		if s.Path == "" {
+			s.Path = "/test/"
+		}
+		if s.Filename == "" {
+			s.Filename = "test.js"
 		}
 
 		s.Type = "VolumeClaim"
@@ -240,14 +231,13 @@ func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 		s.Name = spec.ConfigMap.Name
 
 		if spec.ConfigMap.File != "" {
-			s.Filename = spec.ConfigMap.File
+			s.Path, s.Filename = filepath.Split(spec.ConfigMap.File)
 		}
-
-		if spec.ConfigMap.Path != "" {
-			s.Path = spec.ConfigMap.Path
-			if !strings.HasSuffix(s.Path, "/") {
-				s.Path += "/"
-			}
+		if s.Path == "" {
+			s.Path = "/test/"
+		}
+		if s.Filename == "" {
+			s.Filename = "test.js"
 		}
 
 		s.Type = "ConfigMap"
