@@ -131,3 +131,33 @@ func TestNewInitializerJob(t *testing.T) {
 		t.Error(diff)
 	}
 }
+
+func TestInitializerJob_TTLSecondsAfterFinished(t *testing.T) {
+    ttl := int32(600)
+
+    k6 := &v1alpha1.TestRun{
+        ObjectMeta: metav1.ObjectMeta{
+            Name:      "test",
+            Namespace: "test",
+        },
+        Spec: v1alpha1.TestRunSpec{
+            Script: v1alpha1.K6Script{
+                ConfigMap: v1alpha1.K6Configmap{
+                    Name: "test",
+                    File: "test.js",
+                },
+            },
+            TTLSecondsAfterFinished: &ttl,
+            Initializer: &v1alpha1.Pod{},
+        },
+    }
+
+    job, err := NewInitializerJob(k6, "")
+    if err != nil {
+        t.Fatalf("NewInitializerJob errored: %v", err)
+    }
+
+    if job.Spec.TTLSecondsAfterFinished == nil || *job.Spec.TTLSecondsAfterFinished != ttl {
+        t.Fatalf("expected TTLSecondsAfterFinished=%d, got %v", ttl, job.Spec.TTLSecondsAfterFinished)
+    }
+}

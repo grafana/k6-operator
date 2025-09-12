@@ -219,6 +219,37 @@ func TestNewAntiAffinity(t *testing.T) {
 	}
 }
 
+func TestRunnerJob_TTLSecondsAfterFinished(t *testing.T) {
+    ttl := int32(300)
+
+    k6 := &v1alpha1.TestRun{
+        ObjectMeta: metav1.ObjectMeta{
+            Name:      "test",
+            Namespace: "test",
+        },
+        Spec: v1alpha1.TestRunSpec{
+            Script: v1alpha1.K6Script{
+                ConfigMap: v1alpha1.K6Configmap{
+                    Name: "test",
+                    File: "test.js",
+                },
+            },
+            Runner: v1alpha1.Pod{},
+            TTLSecondsAfterFinished: &ttl,
+            Parallelism: 1,
+        },
+    }
+
+    job, err := NewRunnerJob(k6, 1, nil)
+    if err != nil {
+        t.Fatalf("NewRunnerJob errored: %v", err)
+    }
+
+    if job.Spec.TTLSecondsAfterFinished == nil || *job.Spec.TTLSecondsAfterFinished != ttl {
+        t.Fatalf("expected TTLSecondsAfterFinished=%d, got %v", ttl, job.Spec.TTLSecondsAfterFinished)
+    }
+}
+
 func TestNewRunnerService(t *testing.T) {
 	expectedOutcome := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
