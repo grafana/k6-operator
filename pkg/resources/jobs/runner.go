@@ -211,7 +211,6 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
         job.Spec.Template.Spec.Affinity = newAntiAffinity()
     }
 
-    // Propagate TTLSecondsAfterFinished from TestRun, if set
     if k6.GetSpec().TTLSecondsAfterFinished != nil {
         job.Spec.TTLSecondsAfterFinished = k6.GetSpec().TTLSecondsAfterFinished
     }

@@ -134,7 +134,6 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 		},
 	}
 
-    // Propagate TTLSecondsAfterFinished from TestRun, if set
     if k6.GetSpec().TTLSecondsAfterFinished != nil {
         job.Spec.TTLSecondsAfterFinished = k6.GetSpec().TTLSecondsAfterFinished
     }
