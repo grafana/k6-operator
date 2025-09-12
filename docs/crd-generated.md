@@ -707,6 +707,17 @@ using the podAntiAffinity rule.<br/>
           Token is reserved by Grafana Cloud k6. Do not set it manually.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>ttlSecondsAfterFinished</b></td>
+        <td>integer</td>
+        <td>
+          TTLSecondsAfterFinished, when set, specifies the TTL for Jobs created by this TestRun
+after they finish successfully or fail. Mirrors Job's TTLSecondsAfterFinished behavior.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
