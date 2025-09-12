@@ -96,6 +96,7 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 							resourceRequirements,
 						),
 					},
+					PriorityClassName: k6.GetSpec().Starter.PriorityClassName,
 				},
 			},
 		},

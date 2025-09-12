@@ -926,6 +926,8 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  priorityClassName:
+                    type: string
                   readinessProbe:
                     properties:
                       exec:
@@ -2926,6 +2928,8 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  priorityClassName:
+                    type: string
                   readinessProbe:
                     properties:
                       exec:
@@ -4947,6 +4951,8 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  priorityClassName:
+                    type: string
                   readinessProbe:
                     properties:
                       exec:

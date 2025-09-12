@@ -934,6 +934,13 @@ alive or ready to receive traffic.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>priorityClassName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecinitializerreadinessprobe">readinessProbe</a></b></td>
         <td>object</td>
         <td>
@@ -9779,6 +9786,13 @@ alive or ready to receive traffic.<br/>
       </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>priorityClassName</b></td>
+        <td>string</td>
         <td>
           <br/>
         </td>
@@ -18651,6 +18665,13 @@ alive or ready to receive traffic.<br/>
       </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>priorityClassName</b></td>
+        <td>string</td>
         <td>
           <br/>
         </td>
