@@ -278,3 +278,32 @@ func TestNewStarterJobCustomResources(t *testing.T) {
 		t.Errorf("custom resources not applied: %v", diff)
 	}
 }
+
+func TestStarterJob_TTLSecondsAfterFinished(t *testing.T) {
+    ttl := int32(120)
+
+    k6 := &v1alpha1.TestRun{
+        ObjectMeta: metav1.ObjectMeta{
+            Name:      "test",
+            Namespace: "test",
+        },
+        Spec: v1alpha1.TestRunSpec{
+            Script: v1alpha1.K6Script{
+                ConfigMap: v1alpha1.K6Configmap{
+                    Name: "test",
+                    File: "test.js",
+                },
+            },
+            Starter: v1alpha1.Pod{
+                Image: "image",
+            },
+            TTLSecondsAfterFinished: &ttl,
+        },
+    }
+
+    job := NewStarterJob(k6, []string{"runner-0"})
+
+    if job.Spec.TTLSecondsAfterFinished == nil || *job.Spec.TTLSecondsAfterFinished != ttl {
+        t.Fatalf("expected TTLSecondsAfterFinished=%d, got %v", ttl, job.Spec.TTLSecondsAfterFinished)
+    }
+}
