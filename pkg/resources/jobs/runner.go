@@ -202,6 +202,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 					}},
 					TerminationGracePeriodSeconds: &zero,
 					Volumes:                       volumes,
+					PriorityClassName:             k6.GetSpec().Runner.PriorityClassName,
 				},
 			},
 		},
