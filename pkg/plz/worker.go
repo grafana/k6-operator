@@ -12,6 +12,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -160,7 +161,12 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 		initContainer,
 	}
 	tr.Spec.Runner.Env = envVars
+
 	tr.Spec.Parallelism = int32(trData.InstanceCount)
+	if len(trData.Instances) > 0 {
+		w.resourceOverride(tr, trData.Instances)
+	}
+
 	tr.Spec.Arguments = fmt.Sprintf(`--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
 		w.plz.Name,
 		trData.TestRunID())
@@ -204,4 +210,25 @@ func (w *PLZWorker) handle(testRunId string) {
 	}
 
 	w.logger.Info("Created new test run", "testRunId", testRunId)
+}
+
+// ATM, this override can happen only for internal, Grafana Cloud k6 tests.
+func (w *PLZWorker) resourceOverride(tr *v1alpha1.TestRun, instancesData []cloud.CloudInstanceSpec) {
+	// initial version: just take the first value
+	// (the rest needs modification of TestRun CRD)
+	tr.Spec.Parallelism = int32(len(instancesData))
+
+	cpu := resource.NewMilliQuantity(instancesData[0].PodConfig.CPUm, resource.DecimalSI)
+	memory := resource.NewQuantity(instancesData[0].PodConfig.MemoryMB*1000*1000, resource.DecimalSI)
+
+	tr.Spec.Runner.Resources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    *cpu,
+			corev1.ResourceMemory: *memory,
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    *cpu,
+			corev1.ResourceMemory: *memory,
+		},
+	}
 }
