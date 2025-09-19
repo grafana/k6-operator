@@ -24,8 +24,10 @@ type TestRun struct {
 	Instances         int32               `json:"instances"`
 }
 
-func NewClient(log logr.Logger, token, host string) *cloudapi.Client {
-	logger := &logrus.Logger{
+// logger is currently unused, because of logrus dependency in cloudapi.
+// This will have a re-visit during or after https://github.com/grafana/k6-operator/issues/571
+func NewClient(logger logr.Logger, token, host string) *cloudapi.Client {
+	l := &logrus.Logger{
 		Out:       os.Stdout,
 		Formatter: new(logrus.TextFormatter),
 		Hooks:     make(logrus.LevelHooks),
@@ -38,15 +40,13 @@ func NewClient(log logr.Logger, token, host string) *cloudapi.Client {
 		host = cloudConfig.Host.String
 	}
 
+	logrusLogger := l.WithFields(logrus.Fields{"k6_cloud_host": host})
+
 	// TODO: how to get the version now?
-	return cloudapi.NewClient(logger, token, host, "1.2.3", time.Duration(time.Minute))
+	return cloudapi.NewClient(logrusLogger, token, host, "1.2.3", time.Duration(time.Minute))
 }
 
 func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*cloudapi.CreateTestRunResponse, error) {
-	if client == nil {
-		client = NewClient(log, token, host)
-	}
-
 	cloudConfig := cloudapi.NewConfig()
 
 	if opts.ProjectID() > 0 {
