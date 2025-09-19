@@ -63,6 +63,7 @@ type InitContainer struct {
 	Args          []string                       `json:"args,omitempty"`
 	WorkingDir    string                         `json:"workingDir,omitempty"`
 	VolumeMounts  []corev1.VolumeMount           `json:"volumeMounts,omitempty"`
+	Resources     corev1.ResourceRequirements    `json:"resources,omitempty"`
 	RestartPolicy *corev1.ContainerRestartPolicy `json:"restartPolicy,omitempty"`
 }
 
