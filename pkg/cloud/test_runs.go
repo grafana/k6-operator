@@ -24,12 +24,16 @@ type TestRunPoller struct {
 }
 
 func NewTestRunPoller(host, token, plzName string, logger logr.Logger) *TestRunPoller {
-	logrusLogger := &logrus.Logger{
+	// We need two loggers here because of logrus dependency in cloudapi.
+	// This will have a re-visit during or after https://github.com/grafana/k6-operator/issues/571
+	l := &logrus.Logger{
 		Out:       os.Stdout,
 		Formatter: new(logrus.TextFormatter),
 		Hooks:     make(logrus.LevelHooks),
 		Level:     logrus.InfoLevel,
 	}
+	logrusLogger := l.WithFields(logrus.Fields{"k6_cloud_host": host})
+	logger = logger.WithValues("k6_cloud_host", host)
 
 	testRunsCh := make(chan string)
 
@@ -110,35 +114,46 @@ func GetTestRunData(client *cloudapi.Client, refID string) (*TestRunData, error)
 }
 
 // called by TestRun controller
-func GetTestRunState(client *cloudapi.Client, refID string, log logr.Logger) (TestRunStatus, error) {
-	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status", ApiURL(client.BaseURL()), refID)
+// If there's an error, it'll be logged.
+func GetTestRunState(client *cloudapi.Client, refID string, logger logr.Logger) (TestRunStatus, error) {
+	host := ApiURL(client.BaseURL())
+	logger = logger.WithValues("k6_cloud_host", host)
+
+	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status", host, refID)
 	trData, err := getTestRun(client, url)
 	if err != nil {
+		logger.Error(err, "Failed to get test run state.")
 		return TestRunStatus(cloudapi.RunStatusRunning), err
 	}
 
-	return TestRunStatus(trData.RunStatus), nil
+	status := TestRunStatus(trData.RunStatus)
+	logger.Info(fmt.Sprintf("Received test run status %v", status))
+
+	return status, nil
 }
 
 // called by TestRun controller
 // If there's an error, it'll be logged.
-func SendTestRunEvents(client *cloudapi.Client, refID string, log logr.Logger, events *Events) {
+func SendTestRunEvents(client *cloudapi.Client, refID string, logger logr.Logger, events *Events) {
 	if len(*events) == 0 {
 		return
 	}
 
-	url := fmt.Sprintf("%s/orchestrator/v1/testruns/%s/events", strings.TrimSuffix(client.BaseURL(), "/v1"), refID)
+	host := strings.TrimSuffix(client.BaseURL(), "/v1")
+	logger = logger.WithValues("k6_cloud_host", host)
+
+	url := fmt.Sprintf("%s/orchestrator/v1/testruns/%s/events", host, refID)
 	req, err := client.NewRequest("POST", url, events)
 
 	if err != nil {
-		log.Error(err, fmt.Sprintf("Failed to create events HTTP request %+v", events))
+		logger.Error(err, fmt.Sprintf("Failed to create events HTTP request %+v", events))
 		return
 	}
 
-	log.Info(fmt.Sprintf("Sending events to k6 Cloud %+v", *events))
+	logger.Info(fmt.Sprintf("Sending events to k6 Cloud %+v", *events))
 
 	// status code is checked in Do
 	if err = client.Do(req, nil); err != nil {
-		log.Error(err, fmt.Sprintf("Failed to send events %+v", events))
+		logger.Error(err, fmt.Sprintf("Failed to send events %+v", events))
 	}
 }

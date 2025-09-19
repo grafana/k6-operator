@@ -432,15 +432,10 @@ func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRu
 
 	status, err := cloud.GetTestRunState(r.k6CloudClient, k6.TestRunID(), log)
 	if err != nil {
-		log.Error(err, "Failed to get test run state.")
 		return false
 	}
 
-	isAborted := status.Aborted()
-
-	log.Info(fmt.Sprintf("Received test run status %v", status))
-
-	return isAborted
+	return status.Aborted()
 }
 
 func (r *TestRunReconciler) createClient(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) (bool, error) {
