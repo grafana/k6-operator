@@ -154,7 +154,6 @@ type K6Configmap struct {
 	// Name of the ConfigMap. It is expected to be in the sanme namespace as the `TestRun`.
 	Name string `json:"name"`
 	// Name of the file to execute (.js or .tar), stored as a key in the ConfigMap.
-	// Can include a path component (e.g., "subdir/script.js").
 	File string `json:"file,omitempty"`
 }
 
@@ -210,6 +209,7 @@ func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 	spec := k6.Script
 	s := &types.Script{}
 
+	// VolumeClaim: allow file to include a path component (e.g. "subdir/script.js").
 	if spec.VolumeClaim.Name != "" {
 		s.Name = spec.VolumeClaim.Name
 		if spec.VolumeClaim.File != "" {
@@ -227,17 +227,15 @@ func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 		return s, nil
 	}
 
+	// ConfigMap: supports file name only (no path components)
 	if spec.ConfigMap.Name != "" {
+		s.Path = "/test/"
+		s.Filename = "test.js"
+
 		s.Name = spec.ConfigMap.Name
 
 		if spec.ConfigMap.File != "" {
-			s.Path, s.Filename = filepath.Split(spec.ConfigMap.File)
-		}
-		if s.Path == "" {
-			s.Path = "/test/"
-		}
-		if s.Filename == "" {
-			s.Filename = "test.js"
+			s.Filename = spec.ConfigMap.File
 		}
 
 		s.Type = "ConfigMap"
@@ -251,7 +249,7 @@ func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 		return s, nil
 	}
 
-	return nil, errors.New("Script definition should contain one of: ConfigMap, VolumeClaim, LocalFile")
+	return nil, errors.New("script definition should contain one of: ConfigMap, VolumeClaim, LocalFile")
 }
 
 // TestRunI implementation for TestRun
