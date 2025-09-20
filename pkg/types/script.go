@@ -57,27 +57,24 @@ func (s *Script) Volume() []corev1.Volume {
 // VolumeMount creates a VolumeMount spec for the script
 func (s *Script) VolumeMount() []corev1.VolumeMount {
 
-	mountPath := s.Path
-	if mountPath == "" {
-		mountPath = "/test/"
-	}
-
 	switch s.Type {
 
+	// VolumeClaim: mounts the volume at s.Path (default "/test").
 	case "VolumeClaim":
 		return []corev1.VolumeMount{
 			corev1.VolumeMount{
 				Name:      "k6-test-volume",
-				MountPath: mountPath,
+				MountPath: s.Path,
 				ReadOnly:  s.ReadOnly,
 			},
 		}
 
+	// ConfigMap: always mounted at "/test" since keys cannot represent nested directories.
 	case "ConfigMap":
 		return []corev1.VolumeMount{
 			corev1.VolumeMount{
 				Name:      "k6-test-volume",
-				MountPath: mountPath,
+				MountPath: "/test",
 				ReadOnly:  true,
 			},
 		}
