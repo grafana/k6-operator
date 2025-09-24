@@ -1121,6 +1121,10 @@ spec:
                     type: object
                   serviceAccountName:
                     type: string
+                  terminationGracePeriodSeconds:
+                    default: 30
+                    format: int64
+                    type: integer
                   tolerations:
                     items:
                       properties:
@@ -3121,6 +3125,10 @@ spec:
                     type: object
                   serviceAccountName:
                     type: string
+                  terminationGracePeriodSeconds:
+                    default: 30
+                    format: int64
+                    type: integer
                   tolerations:
                     items:
                       properties:
@@ -5142,6 +5150,10 @@ spec:
                     type: object
                   serviceAccountName:
                     type: string
+                  terminationGracePeriodSeconds:
+                    default: 30
+                    format: int64
+                    type: integer
                   tolerations:
                     items:
                       properties:
