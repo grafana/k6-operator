@@ -62,42 +62,48 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 		resourceRequirements = k6.GetSpec().Starter.Resources
 	}
 
-	return &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-starter", k6.NamespacedName().Name),
-			Namespace:   k6.NamespacedName().Namespace,
-			Labels:      starterLabels,
-			Annotations: starterAnnotations,
-		},
-		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      starterLabels,
-					Annotations: starterAnnotations,
-				},
-				Spec: corev1.PodSpec{
-					AutomountServiceAccountToken: &automountServiceAccountToken,
-					ServiceAccountName:           serviceAccountName,
-					Affinity:                     k6.GetSpec().Starter.Affinity,
-					NodeSelector:                 k6.GetSpec().Starter.NodeSelector,
-					Tolerations:                  k6.GetSpec().Starter.Tolerations,
-					TopologySpreadConstraints:    k6.GetSpec().Starter.TopologySpreadConstraints,
-					RestartPolicy:                corev1.RestartPolicyNever,
-					SecurityContext:              &k6.GetSpec().Starter.SecurityContext,
-					ImagePullSecrets:             k6.GetSpec().Starter.ImagePullSecrets,
-					Containers: []corev1.Container{
-						containers.NewStartContainer(
-							hostname,
-							starterImage,
-							k6.GetSpec().Starter.ImagePullPolicy,
-							command,
-							env,
-							k6.GetSpec().Starter.ContainerSecurityContext,
-							resourceRequirements,
-						),
-					},
-				},
-			},
-		},
-	}
+    job := &batchv1.Job{
+        ObjectMeta: metav1.ObjectMeta{
+            Name:        fmt.Sprintf("%s-starter", k6.NamespacedName().Name),
+            Namespace:   k6.NamespacedName().Namespace,
+            Labels:      starterLabels,
+            Annotations: starterAnnotations,
+        },
+        Spec: batchv1.JobSpec{
+            Template: corev1.PodTemplateSpec{
+                ObjectMeta: metav1.ObjectMeta{
+                    Labels:      starterLabels,
+                    Annotations: starterAnnotations,
+                },
+                Spec: corev1.PodSpec{
+                    AutomountServiceAccountToken: &automountServiceAccountToken,
+                    ServiceAccountName:           serviceAccountName,
+                    Affinity:                     k6.GetSpec().Starter.Affinity,
+                    NodeSelector:                 k6.GetSpec().Starter.NodeSelector,
+                    Tolerations:                  k6.GetSpec().Starter.Tolerations,
+                    TopologySpreadConstraints:    k6.GetSpec().Starter.TopologySpreadConstraints,
+                    RestartPolicy:                corev1.RestartPolicyNever,
+                    SecurityContext:              &k6.GetSpec().Starter.SecurityContext,
+                    ImagePullSecrets:             k6.GetSpec().Starter.ImagePullSecrets,
+                    Containers: []corev1.Container{
+                        containers.NewStartContainer(
+                            hostname,
+                            starterImage,
+                            k6.GetSpec().Starter.ImagePullPolicy,
+                            command,
+                            env,
+                            k6.GetSpec().Starter.ContainerSecurityContext,
+                            resourceRequirements,
+                        ),
+                    },
+                },
+            },
+        },
+    }
+
+    if k6.GetSpec().TTLSecondsAfterFinished != nil {
+        job.Spec.TTLSecondsAfterFinished = k6.GetSpec().TTLSecondsAfterFinished
+    }
+
+    return job
 }

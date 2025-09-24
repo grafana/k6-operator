@@ -122,6 +122,11 @@ type TestRunSpec struct {
 
 	Cleanup Cleanup `json:"cleanup,omitempty"`
 
+	// TTLSecondsAfterFinished, when set, specifies the TTL for Jobs created by this TestRun
+	// after they finish successfully or fail. Mirrors Job's TTLSecondsAfterFinished behavior.
+	// +kubebuilder:validation:Minimum=0
+	TTLSecondsAfterFinished *int32 `json:"ttlSecondsAfterFinished,omitempty"`
+
 	// TestRunID is reserved by Grafana Cloud k6. Do not set it manually.
 	TestRunID string `json:"testRunId,omitempty"` // PLZ reserved field
 

@@ -160,58 +160,62 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	volumeMounts := script.VolumeMount()
 	volumeMounts = append(volumeMounts, k6.GetSpec().Runner.VolumeMounts...)
 
-	job := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   k6.NamespacedName().Namespace,
-			Labels:      runnerLabels,
-			Annotations: runnerAnnotations,
-		},
-		Spec: batchv1.JobSpec{
-			BackoffLimit: &zero32,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      runnerLabels,
-					Annotations: runnerAnnotations,
-				},
-				Spec: corev1.PodSpec{
-					AutomountServiceAccountToken: &automountServiceAccountToken,
-					ServiceAccountName:           serviceAccountName,
-					Hostname:                     name,
-					RestartPolicy:                corev1.RestartPolicyNever,
-					Affinity:                     k6.GetSpec().Runner.Affinity,
-					NodeSelector:                 k6.GetSpec().Runner.NodeSelector,
-					Tolerations:                  k6.GetSpec().Runner.Tolerations,
-					TopologySpreadConstraints:    k6.GetSpec().Runner.TopologySpreadConstraints,
-					SecurityContext:              &k6.GetSpec().Runner.SecurityContext,
-					ImagePullSecrets:             k6.GetSpec().Runner.ImagePullSecrets,
-					InitContainers:               getInitContainers(&k6.GetSpec().Runner, script),
-					Containers: []corev1.Container{{
-						Image:           image,
-						ImagePullPolicy: k6.GetSpec().Runner.ImagePullPolicy,
-						Name:            "k6",
-						Command:         command,
-						Env:             env,
-						Resources:       k6.GetSpec().Runner.Resources,
-						VolumeMounts:    volumeMounts,
-						Ports:           ports,
-						EnvFrom:         k6.GetSpec().Runner.EnvFrom,
-						LivenessProbe:   generateProbe(k6.GetSpec().Runner.LivenessProbe),
-						ReadinessProbe:  generateProbe(k6.GetSpec().Runner.ReadinessProbe),
-						SecurityContext: &k6.GetSpec().Runner.ContainerSecurityContext,
-					}},
-					TerminationGracePeriodSeconds: &zero,
-					Volumes:                       volumes,
-				},
-			},
-		},
-	}
+    job := &batchv1.Job{
+        ObjectMeta: metav1.ObjectMeta{
+            Name:        name,
+            Namespace:   k6.NamespacedName().Namespace,
+            Labels:      runnerLabels,
+            Annotations: runnerAnnotations,
+        },
+        Spec: batchv1.JobSpec{
+            BackoffLimit: &zero32,
+            Template: corev1.PodTemplateSpec{
+                ObjectMeta: metav1.ObjectMeta{
+                    Labels:      runnerLabels,
+                    Annotations: runnerAnnotations,
+                },
+                Spec: corev1.PodSpec{
+                    AutomountServiceAccountToken: &automountServiceAccountToken,
+                    ServiceAccountName:           serviceAccountName,
+                    Hostname:                     name,
+                    RestartPolicy:                corev1.RestartPolicyNever,
+                    Affinity:                     k6.GetSpec().Runner.Affinity,
+                    NodeSelector:                 k6.GetSpec().Runner.NodeSelector,
+                    Tolerations:                  k6.GetSpec().Runner.Tolerations,
+                    TopologySpreadConstraints:    k6.GetSpec().Runner.TopologySpreadConstraints,
+                    SecurityContext:              &k6.GetSpec().Runner.SecurityContext,
+                    ImagePullSecrets:             k6.GetSpec().Runner.ImagePullSecrets,
+                    InitContainers:               getInitContainers(&k6.GetSpec().Runner, script),
+                    Containers: []corev1.Container{{
+                        Image:           image,
+                        ImagePullPolicy: k6.GetSpec().Runner.ImagePullPolicy,
+                        Name:            "k6",
+                        Command:         command,
+                        Env:             env,
+                        Resources:       k6.GetSpec().Runner.Resources,
+                        VolumeMounts:    volumeMounts,
+                        Ports:           ports,
+                        EnvFrom:         k6.GetSpec().Runner.EnvFrom,
+                        LivenessProbe:   generateProbe(k6.GetSpec().Runner.LivenessProbe),
+                        ReadinessProbe:  generateProbe(k6.GetSpec().Runner.ReadinessProbe),
+                        SecurityContext: &k6.GetSpec().Runner.ContainerSecurityContext,
+                    }},
+                    TerminationGracePeriodSeconds: &zero,
+                    Volumes:                       volumes,
+                },
+            },
+        },
+    }
 
-	if k6.GetSpec().Separate {
-		job.Spec.Template.Spec.Affinity = newAntiAffinity()
-	}
+    if k6.GetSpec().Separate {
+        job.Spec.Template.Spec.Affinity = newAntiAffinity()
+    }
 
-	return job, nil
+    if k6.GetSpec().TTLSecondsAfterFinished != nil {
+        job.Spec.TTLSecondsAfterFinished = k6.GetSpec().TTLSecondsAfterFinished
+    }
+
+    return job, nil
 }
 
 func NewRunnerService(k6 *v1alpha1.TestRun, index int) (*corev1.Service, error) {

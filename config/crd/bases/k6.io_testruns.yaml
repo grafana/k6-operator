@@ -6039,6 +6039,10 @@ spec:
                 type: string
               token:
                 type: string
+              ttlSecondsAfterFinished:
+                format: int32
+                minimum: 0
+                type: integer
             required:
             - parallelism
             - script

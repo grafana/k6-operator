@@ -134,5 +134,9 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 		},
 	}
 
-	return job, nil
+    if k6.GetSpec().TTLSecondsAfterFinished != nil {
+        job.Spec.TTLSecondsAfterFinished = k6.GetSpec().TTLSecondsAfterFinished
+    }
+
+    return job, nil
 }
