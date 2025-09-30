@@ -3557,6 +3557,13 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#testrunspecinitializerinitcontainersindexresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          ResourceRequirements describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>restartPolicy</b></td>
         <td>string</td>
         <td>
@@ -4037,6 +4044,95 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TestRun.spec.initializer.initContainers[index].resources
+<sup><sup>[↩ Parent](#testrunspecinitializerinitcontainersindex)</sup></sup>
+
+
+
+ResourceRequirements describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#testrunspecinitializerinitcontainersindexresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims,
+that are used by this container.
+
+This field depends on the
+DynamicResourceAllocation feature gate.
+
+This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TestRun.spec.initializer.initContainers[index].resources.claims[index]
+<sup><sup>[↩ Parent](#testrunspecinitializerinitcontainersindexresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of
+the Pod where this field is used. It makes that resource available
+inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>request</b></td>
+        <td>string</td>
+        <td>
+          Request is the name chosen for a request in the referenced claim.
+If empty, everything from the claim is made available, otherwise
+only the result of this request.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12407,6 +12503,13 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#testrunspecrunnerinitcontainersindexresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          ResourceRequirements describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>restartPolicy</b></td>
         <td>string</td>
         <td>
@@ -12887,6 +12990,95 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TestRun.spec.runner.initContainers[index].resources
+<sup><sup>[↩ Parent](#testrunspecrunnerinitcontainersindex)</sup></sup>
+
+
+
+ResourceRequirements describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#testrunspecrunnerinitcontainersindexresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims,
+that are used by this container.
+
+This field depends on the
+DynamicResourceAllocation feature gate.
+
+This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TestRun.spec.runner.initContainers[index].resources.claims[index]
+<sup><sup>[↩ Parent](#testrunspecrunnerinitcontainersindexresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of
+the Pod where this field is used. It makes that resource available
+inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>request</b></td>
+        <td>string</td>
+        <td>
+          Request is the name chosen for a request in the referenced claim.
+If empty, everything from the claim is made available, otherwise
+only the result of this request.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21279,6 +21471,13 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#testrunspecstarterinitcontainersindexresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          ResourceRequirements describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>restartPolicy</b></td>
         <td>string</td>
         <td>
@@ -21759,6 +21958,95 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TestRun.spec.starter.initContainers[index].resources
+<sup><sup>[↩ Parent](#testrunspecstarterinitcontainersindex)</sup></sup>
+
+
+
+ResourceRequirements describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#testrunspecstarterinitcontainersindexresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims,
+that are used by this container.
+
+This field depends on the
+DynamicResourceAllocation feature gate.
+
+This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TestRun.spec.starter.initContainers[index].resources.claims[index]
+<sup><sup>[↩ Parent](#testrunspecstarterinitcontainersindexresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of
+the Pod where this field is used. It makes that resource available
+inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>request</b></td>
+        <td>string</td>
+        <td>
+          Request is the name chosen for a request in the referenced claim.
+If empty, everything from the claim is made available, otherwise
+only the result of this request.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
