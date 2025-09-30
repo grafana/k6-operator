@@ -60,6 +60,7 @@ func (in *InitContainer) DeepCopyInto(out *InitContainer) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	if in.RestartPolicy != nil {
 		in, out := &in.RestartPolicy, &out.RestartPolicy
 		*out = new(v1.ContainerRestartPolicy)
