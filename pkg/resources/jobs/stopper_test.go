@@ -13,6 +13,7 @@ import (
 
 func TestNewStopperJob(t *testing.T) {
 	automountServiceAccountToken := true
+	zero := int32(0)
 
 	expectedOutcome := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -28,6 +29,7 @@ func TestNewStopperJob(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: &zero,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -93,6 +95,7 @@ func TestNewStopperJob(t *testing.T) {
 
 func TestNewStopJobIstio(t *testing.T) {
 	automountServiceAccountToken := true
+	zero := int32(0)
 
 	expectedOutcome := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -108,6 +111,7 @@ func TestNewStopJobIstio(t *testing.T) {
 			},
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: &zero,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
