@@ -25,7 +25,7 @@ func NewStartContainer(hostnames []string, image string, imagePullPolicy corev1.
 
 	var parts []string
 	for _, hostname := range hostnames {
-		parts = append(parts, fmt.Sprintf("curl --retry 3 -X PATCH -H 'Content-Type: application/json' http://%s/v1/status -d '%s'", net.JoinHostPort(hostname, "6565"), req))
+		parts = append(parts, fmt.Sprintf("curl --retry 3 -X PATCH -H 'Content-Type: application/json' http://%s/v1/status -d '%s' -s -w '\n{\"http_code\":%%{http_code},\"time_total\":%%{time_total},\"time_starttransfer\":%%{time_starttransfer},\"url\":\"%%{url_effective}\",\"remote_ip\":\"%%{remote_ip}\",\"errormsg\":\"%%{errormsg}\"}'", net.JoinHostPort(hostname, "6565"), req))
 	}
 
 	return corev1.Container{
