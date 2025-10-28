@@ -130,6 +130,7 @@ tests=(
   "init-container-volume"
   "multifile"
   "error-stage"
+  "invalid-arguments"
   "testrun-simultaneous"
   "testrun-watch-namespace"
   "testrun-watch-namespaces"
