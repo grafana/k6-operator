@@ -1,6 +1,9 @@
 package types
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // CLI is an internal type to support k6 invocation in initialization stage.
 // Not all k6 commands allow the same set of arguments so CLI is an object
@@ -12,7 +15,7 @@ type CLI struct {
 	HasCloudOut bool
 }
 
-func ParseCLI(arguments string) *CLI {
+func ParseCLI(arguments string) (*CLI, error) {
 	lastArgV := func(start int, args []string) (end int) {
 		end = start
 		for end < len(args) {
@@ -25,7 +28,10 @@ func ParseCLI(arguments string) *CLI {
 		return
 	}
 
-	var cli CLI
+	var (
+		cli CLI
+		err error
+	)
 
 	args := strings.Split(arguments, " ")
 	i := 0
@@ -66,8 +72,11 @@ func ParseCLI(arguments string) *CLI {
 				cli.ArchiveArgs += strings.Join(args[i:end], " ")
 			}
 			i = end
+		} else {
+			err = fmt.Errorf("encountered an invalid value for k6 CLI argument: `%s`", args[i])
+			break
 		}
 	}
 
-	return &cli
+	return &cli, err
 }

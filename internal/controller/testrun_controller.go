@@ -126,6 +126,14 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 	case "":
 		log.Info("Initialize test")
 
+		if err := k6.GetSpec().Validate(); err != nil {
+			log.Error(err, "Invalid TestRun")
+			log.Info("Changing stage of TestRun status to error")
+			k6.GetStatus().Stage = "error"
+			_, err := r.UpdateStatus(ctx, k6, log)
+			return ctrl.Result{}, err
+		}
+
 		v1alpha1.Initialize(k6)
 
 		if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
