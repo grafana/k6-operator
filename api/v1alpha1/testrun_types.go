@@ -205,6 +205,12 @@ func init() {
 	SchemeBuilder.Register(&TestRun{}, &TestRunList{})
 }
 
+func (k6 *TestRunSpec) Validate() error {
+	// Currently, we validate "manually" only arguments field.
+	_, err := types.ParseCLI(k6.Arguments)
+	return err
+}
+
 // Parse extracts Script data bits from K6 spec and performs basic validation
 func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 	spec := k6.Script

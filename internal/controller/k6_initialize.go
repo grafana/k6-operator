@@ -21,7 +21,8 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 	// initializer is a quick job so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
-	cli := types.ParseCLI(k6.GetSpec().Arguments)
+	// validation has already happened, so error here can be ignored
+	cli, _ := types.ParseCLI(k6.GetSpec().Arguments)
 
 	var initializer *batchv1.Job
 	if initializer, err = jobs.NewInitializerJob(k6, cli.ArchiveArgs); err != nil {
@@ -50,7 +51,8 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 	// initializer is a quick job so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
-	cli := types.ParseCLI(k6.GetSpec().Arguments)
+	// validation has already happened, so error here can be ignored
+	cli, _ := types.ParseCLI(k6.GetSpec().Arguments)
 
 	inspectOutput, inspectReady, err := inspectTestRun(ctx, log, k6, r.Client)
 	if err != nil {
@@ -63,7 +65,7 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 				WithAbort()
 			cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
 		} else {
-			// if there is any error, we have to reflect it on the K6 manifest
+			// if there is any error, we have to reflect it on the TestRun manifest
 			k6.GetStatus().Stage = "error"
 			if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
 				return ctrl.Result{}, ready, err

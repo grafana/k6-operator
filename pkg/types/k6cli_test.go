@@ -8,14 +8,16 @@ import (
 
 func Test_ParseCLI(t *testing.T) {
 	tests := []struct {
-		name    string
-		argLine string
-		cli     CLI
+		name           string
+		argLine        string
+		cli            CLI
+		validArguments bool
 	}{
 		{
 			"EmptyArgs",
 			"",
 			CLI{},
+			false,
 		},
 		{
 			"ShortArchiveArgs",
@@ -23,6 +25,7 @@ func Test_ParseCLI(t *testing.T) {
 			CLI{
 				ArchiveArgs: "-u 10 -d 5",
 			},
+			false,
 		},
 		{
 			"LongArchiveArgs",
@@ -30,6 +33,7 @@ func Test_ParseCLI(t *testing.T) {
 			CLI{
 				ArchiveArgs: "--vus 10 --duration 5",
 			},
+			false,
 		},
 		{
 			"ShortNonArchiveArg",
@@ -37,6 +41,7 @@ func Test_ParseCLI(t *testing.T) {
 			CLI{
 				ArchiveArgs: "-u 10 -d 5",
 			},
+			false,
 		},
 		{
 			"LongNonArchiveArgs",
@@ -44,6 +49,7 @@ func Test_ParseCLI(t *testing.T) {
 			CLI{
 				ArchiveArgs: "--vus 10 --duration 5",
 			},
+			false,
 		},
 		{
 			"OutWithoutCloudArgs",
@@ -52,6 +58,7 @@ func Test_ParseCLI(t *testing.T) {
 				ArchiveArgs: "--vus 10",
 				HasCloudOut: false,
 			},
+			false,
 		},
 		{
 			"OutWithCloudArgs",
@@ -60,6 +67,7 @@ func Test_ParseCLI(t *testing.T) {
 				ArchiveArgs: "--vus 10",
 				HasCloudOut: true,
 			},
+			false,
 		},
 		{
 			"VerboseOutWithCloudArgs",
@@ -68,6 +76,7 @@ func Test_ParseCLI(t *testing.T) {
 				ArchiveArgs: "--vus 10",
 				HasCloudOut: true,
 			},
+			false,
 		},
 		{
 			"OmitLogOutput",
@@ -76,6 +85,13 @@ func Test_ParseCLI(t *testing.T) {
 				ArchiveArgs: "--no-thresholds",
 				HasCloudOut: true,
 			},
+			false,
+		},
+		{
+			"InvalidArguments",
+			`run this-argument-does-not-matter.js -o json`,
+			CLI{},
+			true,
 		},
 	}
 
@@ -83,8 +99,9 @@ func Test_ParseCLI(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			cli := ParseCLI(test.argLine)
+			cli, err := ParseCLI(test.argLine)
 
+			assert.Equal(t, test.validArguments, err != nil)
 			assert.Equal(t, test.cli.ArchiveArgs, cli.ArchiveArgs)
 			assert.Equal(t, test.cli.HasCloudOut, cli.HasCloudOut)
 		})
