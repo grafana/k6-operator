@@ -141,6 +141,7 @@ func getInitContainers(pod *v1alpha1.Pod, script *types.Script) []corev1.Contain
 			ImagePullPolicy: pod.ImagePullPolicy,
 			SecurityContext: &pod.ContainerSecurityContext,
 			RestartPolicy:   k6InitContainer.RestartPolicy,
+			Resources:       k6InitContainer.Resources,
 		}
 		initContainers = append(initContainers, initContainer)
 	}
