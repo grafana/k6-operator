@@ -62,6 +62,8 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 		resourceRequirements = k6.GetSpec().Starter.Resources
 	}
 
+	var zero32 int32
+
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fmt.Sprintf("%s-starter", k6.NamespacedName().Name),
@@ -70,6 +72,7 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 			Annotations: starterAnnotations,
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: &zero32,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      starterLabels,
