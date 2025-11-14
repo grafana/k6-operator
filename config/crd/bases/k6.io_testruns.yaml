@@ -558,7 +558,7 @@ spec:
                             type: string
                         type: object
                     type: object
-                  disable:
+                  disabled:
                     default: false
                     type: boolean
                   env:
@@ -2596,7 +2596,7 @@ spec:
                             type: string
                         type: object
                     type: object
-                  disable:
+                  disabled:
                     default: false
                     type: boolean
                   env:
@@ -4655,7 +4655,7 @@ spec:
                             type: string
                         type: object
                     type: object
-                  disable:
+                  disabled:
                     default: false
                     type: boolean
                   env:
