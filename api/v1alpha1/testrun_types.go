@@ -32,6 +32,9 @@ type PodMetadata struct {
 }
 
 type Pod struct {
+	// +optional
+	// +kubebuilder:default=false
+	Disabled                     bool                              `json:"disabled"`
 	Affinity                     *corev1.Affinity                  `json:"affinity,omitempty"`
 	AutomountServiceAccountToken string                            `json:"automountServiceAccountToken,omitempty"`
 	Env                          []corev1.EnvVar                   `json:"env,omitempty"`
@@ -298,4 +301,11 @@ func (k6 *TestRun) ListOptions() *client.ListOptions {
 	})
 
 	return &client.ListOptions{LabelSelector: selector, Namespace: k6.NamespacedName().Namespace}
+}
+
+func (k6 *TestRun) IsInitializerDisabled() bool {
+	if k6.GetSpec().Initializer == nil {
+		return false
+	}
+	return k6.GetSpec().Initializer.Disabled == true
 }

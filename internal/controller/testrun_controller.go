@@ -140,6 +140,24 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			return ctrl.Result{}, err
 		}
 
+		// Not a clout test and initializer is set to disabled
+		// -> skip creating initializer job
+		if !isCloudTestRun(k6) && k6.IsInitializerDisabled() {
+			log.Info("Initializer is disabled, skipping initialization step")
+			v1alpha1.UpdateCondition(k6, v1alpha1.InitializerSkipped, metav1.ConditionTrue)
+			v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRun, metav1.ConditionFalse)
+			v1alpha1.UpdateCondition(k6, v1alpha1.CloudPLZTestRun, metav1.ConditionFalse)
+
+			log.Info("Changing stage of TestRun status to initialized")
+
+			k6.GetStatus().Stage = "initialized"
+			if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
+				return ctrl.Result{}, err
+			} else if updateHappened {
+				return ctrl.Result{}, nil
+			}
+		}
+
 		log.Info("Changing stage of TestRun status to initialization")
 		k6.GetStatus().Stage = "initialization"
 
