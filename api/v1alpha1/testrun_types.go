@@ -34,7 +34,7 @@ type PodMetadata struct {
 type Pod struct {
 	// +optional
 	// +kubebuilder:default=false
-	Disabled                     bool                              `json:"disabled"`
+	Disabled                     bool                              `json:"disabled,omitempty"`
 	Affinity                     *corev1.Affinity                  `json:"affinity,omitempty"`
 	AutomountServiceAccountToken string                            `json:"automountServiceAccountToken,omitempty"`
 	Env                          []corev1.EnvVar                   `json:"env,omitempty"`
@@ -307,5 +307,5 @@ func (k6 *TestRun) IsInitializerDisabled() bool {
 	if k6.GetSpec().Initializer == nil {
 		return false
 	}
-	return k6.GetSpec().Initializer.Disabled == true
+	return k6.GetSpec().Initializer.Disabled
 }

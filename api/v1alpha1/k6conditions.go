@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	InitializerSkipped = "InitializerSkipped"
 	// TestRunRunning indicates if the test run is currently running.
 	// - if empty / Unknown, it's any stage before k6 resume (starter)
 	// - if False, it's after all runners have finished successfully or with error
