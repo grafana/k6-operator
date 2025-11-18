@@ -870,6 +870,15 @@ are set, the values in SecurityContext take precedence.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>disabled</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecinitializerenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -9820,6 +9829,15 @@ Configuration for a runner Pod.
           SecurityContext holds security configuration that will be applied to a container.
 Some fields are present in both SecurityContext and PodSecurityContext.  When both
 are set, the values in SecurityContext take precedence.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>disabled</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -18795,6 +18813,15 @@ Configuration for the starter Pod.
           SecurityContext holds security configuration that will be applied to a container.
 Some fields are present in both SecurityContext and PodSecurityContext.  When both
 are set, the values in SecurityContext take precedence.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>disabled</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr><tr>
