@@ -36,6 +36,9 @@ Kubernetes: `>=1.16.0-0`
 | manager.containerSecurityContext | object | `{}` | A security context defines privileges and access control settings for the container. |
 | manager.env | list | `[]` | List of environment variables to set in the controller |
 | manager.envFrom | list | `[]` | List of sources to populate environment variables in the controller |
+| manager.dns | object | `{}` | DNS configuration for the controller pod |
+| manager.dns.config | object | `{}` | DNS config options for the controller pod |
+| manager.dns.policy | string | `"Default"` | DNS policy for the controller pod |
 | manager.image | object | `{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v1.1.0"}` | controller-manager image configuration |
 | manager.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent) |
 | manager.image.repository | string | `"grafana/k6-operator"` | controller-manager image repository |
