@@ -78,6 +78,25 @@
           "title": "envFrom",
           "type": "array"
         },
+        "dns": {
+          "additionalProperties": true,
+          "properties": {
+            "config": {
+              "additionalProperties": true,
+              "description": "manager.dns.config -- DNS configuration options for the controller",
+              "title": "config",
+              "type": "object"
+            },
+            "policy": {
+              "description": "manager.dns.policy -- DNS policy for the controller",
+              "title": "policy",
+              "type": "string"
+            }
+          },
+          "description": "manager.dns -- DNS configuration for the controller",
+          "title": "dns",
+          "type": "object"
+        },
         "image": {
           "additionalProperties": false,
           "properties": {
