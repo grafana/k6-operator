@@ -67,7 +67,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
-	github.com/redis/go-redis/v9 v9.5.5 // indirect
+	github.com/redis/go-redis/v9 v9.6.3 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
