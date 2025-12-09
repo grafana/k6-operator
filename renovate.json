@@ -1,0 +1,68 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "github>grafana/grafana-renovate-config//presets/base",
+        "schedule:weekly"
+    ],
+    "ignorePaths": [
+        "config/*"
+    ],
+    "packageRules": [
+        {
+            "groupName": "golang",
+            "description": "Golang packages",
+            "matchManagers": [
+                "gomod"
+            ],
+            "enabled": true,
+            "postUpdateOptions": [
+                "gomodTidy",
+                "gomodUpdateImportPaths"
+            ]
+        },
+        {
+            "description": "No indirect dependencies",
+            "matchManagers": [
+                "gomod"
+            ],
+            "matchDepTypes": [
+                "indirect"
+            ],
+            "enabled": false
+        },
+        {
+            "groupName": "kubernetes",
+            "description": "Kubernetes Golang packages",
+            "matchManagers": [
+                "gomod"
+            ],
+            "matchPackageNames": [
+                "sigs.k8s.io/controller-runtime",
+                "k8s.io/*"
+            ],
+            "extends": [
+                "schedule:quarterly"
+            ]
+        },
+        {
+            "groupName": "k6-golang",
+            "description": "k6 Golang packages",
+            "matchManagers": [
+                "gomod"
+            ],
+            "matchPackageNames": [
+                "go.k6.io/k6"
+            ]
+        },
+        {
+            "description": "Disable updates",
+            "matchManagers": [
+                "gomod"
+            ],
+            "enabled": false,
+            "matchPackageNames": [
+                "github.com/sirupsen/logrus"
+            ]
+        }
+    ]
+}
