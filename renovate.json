@@ -31,8 +31,8 @@
             "enabled": false
         },
         {
-            "groupName": "kubernetes",
-            "description": "Kubernetes Golang packages",
+            "groupName": "kubernetes-major-minor",
+            "description": "Kubernetes Golang packages, major and minor versions",
             "matchManagers": [
                 "gomod"
             ],
@@ -42,7 +42,30 @@
             ],
             "extends": [
                 "schedule:quarterly"
-            ]
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "major"
+            ],
+            // Disabling this one because we aren't allowed to set `postUpgradeTasks`
+            // at this point of time. The automated PR might be invalid without it.
+            // For now, this update will be done manually, once per quarter (matching Kubernetes release).
+            "enabled": false
+        },
+        {
+            "groupName": "kubernetes-patch",
+            "description": "Kubernetes Golang packages, patch versions",
+            "matchManagers": [
+                "gomod"
+            ],
+            "matchPackageNames": [
+                "sigs.k8s.io/controller-runtime",
+                "k8s.io/*"
+            ],
+            "matchUpdateTypes": [
+                "patch"
+            ],
+            "enabled": true
         },
         {
             "groupName": "k6-golang",
@@ -62,6 +85,15 @@
             "enabled": false,
             "matchPackageNames": [
                 "github.com/sirupsen/logrus"
+            ]
+        },
+        {
+            "description": "Github actions",
+            "matchManagers": [
+                "github-actions"
+            ],
+            "extends": [
+                "schedule:monthly"
             ]
         }
     ]
