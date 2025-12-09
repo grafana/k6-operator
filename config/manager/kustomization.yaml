@@ -3,6 +3,6 @@ resources:
 images:
 - name: controller
   newName: ghcr.io/grafana/k6-operator
-  newTag: latest
+  newTag: latest@sha256:a7b5a8884d157f0494424540df894d7c045a39b50f492570ff15feabfa41ca1d
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
