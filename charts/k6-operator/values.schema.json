@@ -411,6 +411,11 @@
       "title": "podLabels",
       "type": "object"
     },
+    "priorityClassName": {
+      "default": "",
+      "title": "priorityClassName",
+      "type": "string"
+    },
     "rbac": {
       "additionalProperties": false,
       "properties": {
