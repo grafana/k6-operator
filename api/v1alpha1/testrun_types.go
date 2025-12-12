@@ -222,8 +222,14 @@ func (k6 TestRunSpec) ParseScript() (*types.Script, error) {
 		s.Name = spec.VolumeClaim.Name
 		if spec.VolumeClaim.File != "" {
 			s.Path, s.Filename = filepath.Split(spec.VolumeClaim.File)
+			if !filepath.IsAbs(s.Path) {
+				// if the path is not absolute, treat this as a default case
+				s.Filename = spec.VolumeClaim.File
+				s.Path = ""
+			}
 			s.ReadOnly = spec.VolumeClaim.ReadOnly
 		}
+
 		if s.Path == "" {
 			s.Path = "/test/"
 		}

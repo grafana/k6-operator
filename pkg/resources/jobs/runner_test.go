@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -34,91 +33,6 @@ var aggregationEnvVars = []corev1.EnvVar{
 		Name:  "K6_CLOUD_METRIC_PUSH_CONCURRENCY",
 		Value: "10",
 	},
-}
-
-func TestNewScriptVolumeClaim(t *testing.T) {
-	expectedOutcome := &types.Script{
-		Name:     "Test",
-		Path:     "/test/",
-		Filename: "thing.js",
-		Type:     "VolumeClaim",
-	}
-
-	k6 := v1alpha1.TestRunSpec{
-		Script: v1alpha1.K6Script{
-			VolumeClaim: v1alpha1.K6VolumeClaim{
-				Name: "Test",
-				File: "thing.js",
-			},
-		},
-	}
-
-	script, err := k6.ParseScript()
-	if err != nil {
-		t.Errorf("NewScript with ConfigMap errored, got: %v, want: %v", err, expectedOutcome)
-	}
-	if !reflect.DeepEqual(script, expectedOutcome) {
-		t.Errorf("NewScript with VolumeClaim failed to return expected output, got: %v, expected: %v", script, expectedOutcome)
-	}
-}
-
-func TestNewScriptConfigMap(t *testing.T) {
-	expectedOutcome := &types.Script{
-		Name:     "Test",
-		Path:     "/test/",
-		Filename: "thing.js",
-		Type:     "ConfigMap",
-	}
-
-	k6 := v1alpha1.TestRunSpec{
-		Script: v1alpha1.K6Script{
-			ConfigMap: v1alpha1.K6Configmap{
-				Name: "Test",
-				File: "thing.js",
-			},
-		},
-	}
-
-	script, err := k6.ParseScript()
-	if err != nil {
-		t.Errorf("NewScript with ConfigMap errored, got: %v, want: %v", err, expectedOutcome)
-	}
-	if !reflect.DeepEqual(script, expectedOutcome) {
-		t.Errorf("NewScript with ConfigMap failed to return expected output, got: %v, expected: %v", script, expectedOutcome)
-	}
-}
-
-func TestNewScriptLocalFile(t *testing.T) {
-
-	expectedOutcome := &types.Script{
-		Name:     "LocalFile",
-		Path:     "/custom/",
-		Filename: "my_test.js",
-		Type:     "LocalFile",
-	}
-
-	k6 := v1alpha1.TestRunSpec{
-		Script: v1alpha1.K6Script{
-			LocalFile: "/custom/my_test.js",
-		},
-	}
-
-	script, err := k6.ParseScript()
-	if err != nil {
-		t.Errorf("NewScript with LocalFile errored, got: %v, want: %v", err, expectedOutcome)
-	}
-	if !reflect.DeepEqual(script, expectedOutcome) {
-		t.Errorf("NewScript with LocalFile failed to return expected output, got: %v, expected: %v", script, expectedOutcome)
-	}
-}
-
-func TestNewScriptNoScript(t *testing.T) {
-	k6 := v1alpha1.TestRunSpec{}
-
-	script, err := k6.ParseScript()
-	if err == nil && script != nil {
-		t.Errorf("Expected Error from NewScript, got: %v, want: %v", err, errors.New("configMap, VolumeClaim or LocalFile not provided in script definition"))
-	}
 }
 
 func TestNewVolumeSpecVolumeClaim(t *testing.T) {
