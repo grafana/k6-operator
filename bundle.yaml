@@ -6628,7 +6628,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v1.1.0
+        image: ghcr.io/grafana/k6-operator:controller-v1.1.1
         livenessProbe:
           httpGet:
             path: /healthz
