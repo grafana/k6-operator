@@ -30,6 +30,13 @@ spec:
       securityContext:
         {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
       {{- end }}
+      {{- if .Values.manager.dns.config }}
+      dnsConfig:
+        {{- toYaml .Values.manager.dns.config | nindent 8 }}
+      {{- end }}
+      {{- with .Values.manager.dns.policy }}
+      dnsPolicy: {{ . | quote }}
+      {{- end }}
       containers:
         - name: manager
           image: "{{ .Values.global.image.registry | default .Values.manager.image.registry }}/{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
