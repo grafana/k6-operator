@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -155,21 +156,33 @@ func (r *TestRunReconciler) hostnames(ctx context.Context, log logr.Logger, abor
 	return hostnames, nil
 }
 
-func runSetup(ctx context.Context, hostnames []string, log logr.Logger) error {
+// runSetup returns an outcome of HTTP calls, as well as
+// a retry bool showing whether operation should be retried
+// despite the error.
+// (for example, if there was a networking glitch).
+func runSetup(ctx context.Context, hostnames []string, log logr.Logger) (error, bool) {
 	log.Info("Invoking setup() on the first runner")
 
 	setupData, err := testrun.RunSetup(ctx, hostnames[0])
 	if err != nil {
-		return err
+		// Is there a better way to get this error? Where is NDE...
+		if strings.Contains(err.Error(), "Error executing") {
+			// setup has failed: we need to abort the test
+			return err, false
+		}
+
+		// if we're here, this may be a networking error
+		return err, true
 	}
 
 	log.Info("Sending setup data to the runners")
 
 	if err = testrun.SetSetupData(ctx, hostnames, setupData); err != nil {
-		return err
+		// we cannot retry this operation without preserving setupData somewhere
+		return err, false
 	}
 
-	return nil
+	return nil, false
 }
 
 func runTeardown(ctx context.Context, hostnames []string, log logr.Logger) {

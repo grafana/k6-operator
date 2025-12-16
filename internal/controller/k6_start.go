@@ -93,8 +93,18 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 	// setup
 
 	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
-		if err := runSetup(ctx, hostnames, log); err != nil {
-			return ctrl.Result{}, err
+		if err, retry := runSetup(ctx, hostnames, log); err != nil {
+			if retry {
+				return ctrl.Result{}, err
+			}
+
+			log.Error(err, "Setup function failed, requesting abort.")
+			events := cloud.ErrorEvent(cloud.SetupError).
+				WithDetail(fmt.Sprintf("setup function failed: %v", err)).
+				WithAbort()
+			cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
+
+			return ctrl.Result{Requeue: false}, nil
 		}
 	}
 
