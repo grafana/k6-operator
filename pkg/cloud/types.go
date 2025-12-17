@@ -60,17 +60,28 @@ type testRunList struct {
 // TestRunData holds the output from /loadtests/v4/test_runs(%s)
 type TestRunData struct {
 	TestRunId     int `json:"id"`
-	Instances     int `json:"instances"`
 	LZConfig      `json:"k8s_load_zones_config"`
 	RunStatus     cloudapi.RunStatus `json:"run_status"`
 	RuntimeConfig cloudapi.Config    `json:"k6_runtime_config"`
 }
 
 type LZConfig struct {
-	RunnerImage   string            `json:"load_runner_image,omitempty"`
-	InstanceCount int               `json:"instance_count,omitempty"`
-	ArchiveURL    string            `json:"k6_archive_temp_public_url,omitempty"`
-	Environment   map[string]string `json:"environment,omitempty"`
+	RunnerImage   string              `json:"load_runner_image,omitempty"`
+	InstanceCount int                 `json:"instance_count,omitempty"`
+	Instances     []CloudInstanceSpec `json:"instances,omitempty"`
+	ArchiveURL    string              `json:"k6_archive_temp_public_url,omitempty"`
+	Environment   map[string]string   `json:"environment,omitempty"`
+}
+
+type CloudInstanceSpec struct {
+	Segment   string            `json:"execution_segment"`
+	PodConfig CloudPodResources `json:"pod_config"`
+}
+
+// by a whim of GCk6, this must be a separate struct
+type CloudPodResources struct {
+	CPUm     int64 `json:"cpu_millicores"`
+	MemoryMB int64 `json:"memory_megabytes"`
 }
 
 func (trd *TestRunData) TestRunID() string {
