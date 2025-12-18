@@ -36,6 +36,7 @@ type PrivateLoadZoneSpec struct {
 	// +kubebuilder:validation:Type=string
 	Token string `json:"token"`
 
+	// +kubebuilder:validation:XValidation:rule="has(self.limits.cpu) && has(self.limits.memory)",message="resources.limits is mandatory to register with Grafana Cloud k6"
 	Resources corev1.ResourceRequirements `json:"resources"`
 
 	// Service account name which should be associated with all created Pods.
