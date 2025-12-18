@@ -113,6 +113,10 @@ spec:
                       x-kubernetes-int-or-string: true
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: resources.limits is mandatory to register with Grafana
+                    Cloud k6
+                  rule: has(self.limits.cpu) && has(self.limits.memory)
               serviceAccountName:
                 type: string
               token:
