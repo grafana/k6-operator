@@ -110,3 +110,21 @@ Create the --zap-devel flag for the manager
 {{- define "k6-operator.manager.zap-devel" -}}
 {{- if hasKey .Values.manager.logging "development" }}{{ .Values.manager.logging.development | toString }}{{ else }}true{{ end }}
 {{- end -}}
+
+{{/*
+Define env vars for the manager, taking into account whether deployment is namespaced.
+*/}}
+{{- define "k6-operator.manager.env" -}}
+  {{- if or .Values.manager.env .Values.rbac.namespaced }}
+    {{- printf "env:" | nindent 10 }}
+  {{- end }}
+  {{- if .Values.manager.env }}
+    {{- with .Values.manager.env }}
+      {{- toYaml . | nindent 12 }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.rbac.namespaced }}
+    {{- printf "- name: WATCH_NAMESPACE" | nindent 12 }}
+    {{- printf "value: %s" (include "k6-operator.namespace" .) | nindent 14 }}
+  {{- end }}
+{{- end -}}

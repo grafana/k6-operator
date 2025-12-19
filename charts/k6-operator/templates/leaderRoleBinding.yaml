@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "k6-operator.fullname" . }}-leader-election-rolebinding
+  namespace: {{- include "k6-operator.namespace" . }}
+  labels:
+    app.kubernetes.io/component: controller
+    {{- include "k6-operator.labels" . | nindent 4 }}
+    {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
+  annotations:
+    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "k6-operator.fullname" . }}-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.manager.serviceAccount.name }}
+  namespace: {{- include "k6-operator.namespace" . }}
