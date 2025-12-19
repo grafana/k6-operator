@@ -1,8 +1,14 @@
 apiVersion: rbac.authorization.k8s.io/v1
+{{- if not .Values.rbac.namespaced }}
+kind: ClusterRoleBinding
+{{- else }}
 kind: RoleBinding
+{{- end }}
 metadata:
-  name: {{ include "k6-operator.fullname" . }}-leader-election-rolebinding
+  name: {{ include "k6-operator.fullname" . }}-manager-rolebinding
+  {{- if .Values.rbac.namespaced }}
   namespace: {{- include "k6-operator.namespace" . }}
+  {{- end }}
   labels:
     app.kubernetes.io/component: controller
     {{- include "k6-operator.labels" . | nindent 4 }}
@@ -11,9 +17,41 @@ metadata:
     {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
+  {{- if not .Values.rbac.namespaced }}
+  kind: ClusterRole
+  {{- else }}
   kind: Role
-  name: {{ include "k6-operator.fullname" . }}-leader-election-role
+  {{- end }}
+  name: {{ include "k6-operator.fullname" . }}-manager-role
 subjects:
-- kind: ServiceAccount
-  name: {{ .Values.manager.serviceAccount.name }}
+  - kind: ServiceAccount
+    name: {{ include "k6-operator.serviceAccountName" . }}
+    namespace: {{- include "k6-operator.namespace" . }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+{{- if not .Values.rbac.namespaced }}
+kind: ClusterRoleBinding
+{{- else }}
+kind: RoleBinding
+{{- end }}
+metadata:
+  name: {{ include "k6-operator.fullname" . }}-metrics-auth-rolebinding
+  {{- if .Values.rbac.namespaced }}
   namespace: {{- include "k6-operator.namespace" . }}
+  {{- end }}
+  labels:
+    {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
+  annotations:
+    {{- include "k6-operator.customAnnotations" . | default "" | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  {{- if not .Values.rbac.namespaced }}
+  kind: ClusterRole
+  {{- else }}
+  kind: Role
+  {{- end }}
+  name: {{ include "k6-operator.fullname" . }}-metrics-auth-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "k6-operator.serviceAccountName" . }}
+    namespace: {{- include "k6-operator.namespace" . }}

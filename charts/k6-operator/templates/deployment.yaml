@@ -47,22 +47,17 @@ spec:
             {{- toYaml .Values.manager.readinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}
-          {{- if .Values.manager.env }}
-          env:
-            {{- with .Values.manager.env }}
-              {{- toYaml . | nindent 12 }}
-            {{- end }}
-          {{- end }}
+          {{- include "k6-operator.manager.env" . }}
           {{- if .Values.manager.envFrom }}
           envFrom:
             {{- with .Values.manager.envFrom }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
-         {{- if .Values.manager.containerSecurityContext }}
+          {{- if .Values.manager.containerSecurityContext }}
           securityContext:
             {{- toYaml .Values.manager.containerSecurityContext | nindent 12 }}
-         {{- end }}
+          {{- end }}
           command:
             - /manager
           args:
