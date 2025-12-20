@@ -32,13 +32,12 @@ Kubernetes: `>=1.16.0-0`
 | global.image.pullSecrets | list | `[]` | Optional set of global image pull secrets |
 | global.image.registry | string | `""` | Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...) |
 | installCRDs | bool | `true` | Installs CRDs as part of the release |
-| manager | object | `{"containerSecurityContext":{},"env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v1.1.0"},"livenessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":15,"periodSeconds":20},"logging":{"development":true},"podSecurityContext":{},"readinessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":5,"periodSeconds":10},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
+| manager | object | `{"containerSecurityContext":{},"dnsConfig":{},"dnsPolicy":"","env":[],"envFrom":[],"image":{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v1.1.0"},"livenessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":15,"periodSeconds":20},"logging":{"development":true},"podSecurityContext":{},"readinessProbe":{"httpGet":{"path":"/healthz","port":8081},"initialDelaySeconds":5,"periodSeconds":10},"replicas":1,"resources":{"limits":{"cpu":"100m","memory":"100Mi"},"requests":{"cpu":"100m","memory":"50Mi"}},"serviceAccount":{"create":true,"name":"k6-operator-controller"}}` | controller-manager configuration |
 | manager.containerSecurityContext | object | `{}` | A security context defines privileges and access control settings for the container. |
+| manager.dnsConfig | object | `{}` | set the dns configuration of controller-manager |
+| manager.dnsPolicy | string | `""` | set the dns policy of controller-manager |
 | manager.env | list | `[]` | List of environment variables to set in the controller |
 | manager.envFrom | list | `[]` | List of sources to populate environment variables in the controller |
-| manager.dns | object | `{}` | DNS configuration for the controller pod |
-| manager.dns.config | object | `{}` | DNS config options for the controller pod |
-| manager.dns.policy | string | `"Default"` | DNS policy for the controller pod |
 | manager.image | object | `{"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"grafana/k6-operator","tag":"controller-v1.1.0"}` | controller-manager image configuration |
 | manager.image.pullPolicy | string | `"IfNotPresent"` | pull policy for the image possible values Always, Never, IfNotPresent (default: IfNotPresent) |
 | manager.image.repository | string | `"grafana/k6-operator"` | controller-manager image repository |
