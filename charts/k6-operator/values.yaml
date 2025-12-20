@@ -285,19 +285,14 @@ manager:
   # required: false
   # type: object
   # @schema
-  dns:
-    # @schema
-    # required: false
-    # type: object
-    # @schema
-    # manager.dns.config -- set the dns configuration of controller-manager
-    config: {}
-    # @schema
-    # required: false
-    # type: string
-    # @schema
-    # manager.dns.policy -- set the dns policy of controller-manager
-    policy: "Default"
+  # manager.dnsConfig -- set the dns configuration of controller-manager
+  dnsConfig: {}
+  # @schema
+  # required: false
+  # type: string
+  # @schema
+  # manager.dnsPolicy -- set the dns policy of controller-manager
+  dnsPolicy: ""
   # @schema
   # required: false
   # type: object

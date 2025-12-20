@@ -30,12 +30,12 @@ spec:
       securityContext:
         {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
       {{- end }}
-      {{- if .Values.manager.dns.config }}
+      {{- if .Values.manager.dnsConfig }}
       dnsConfig:
-        {{- toYaml .Values.manager.dns.config | nindent 8 }}
+        {{- toYaml .Values.manager.dnsConfig | nindent 8 }}
       {{- end }}
-      {{- with .Values.manager.dns.policy }}
-      dnsPolicy: {{ . | quote }}
+      {{- if .Values.manager.dnsPolicy }}
+      dnsPolicy: {{ .Values.manager.dnsPolicy | quote }}
       {{- end }}
       containers:
         - name: manager
