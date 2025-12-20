@@ -66,24 +66,17 @@
           "title": "containerSecurityContext",
           "type": "object"
         },
-        "dns": {
+        "dnsConfig": {
           "additionalProperties": false,
-          "properties": {
-            "config": {
-              "additionalProperties": false,
-              "description": "manager.dns.config -- set the dns configuration of controller-manager",
-              "title": "config",
-              "type": "object"
-            },
-            "policy": {
-              "default": "Default",
-              "description": "manager.dns.policy -- set the dns policy of controller-manager",
-              "title": "policy",
-              "type": "string"
-            }
-          },
-          "title": "dns",
+          "description": "manager.dnsConfig -- set the dns configuration of controller-manager",
+          "title": "dnsConfig",
           "type": "object"
+        },
+        "dnsPolicy": {
+          "default": "",
+          "description": "manager.dnsPolicy -- set the dns policy of controller-manager",
+          "title": "dnsPolicy",
+          "type": "string"
         },
         "env": {
           "items": {},
