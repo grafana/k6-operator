@@ -73,6 +73,7 @@ Kubernetes: `>=1.16.0-0`
 | nodeSelector | object | `{}` | Node Selector to be applied on all containers |
 | podAnnotations | object | `{}` | Custom Annotations to be applied on all pods |
 | podLabels | object | `{}` | Custom Label to be applied on all pods |
+| priorityClassName | string | `""` |  |
 | rbac | object | `{"namespaced":false}` | RBAC configuration |
 | rbac.namespaced | bool | `false` | If true, does not install cluster RBAC resources |
 | service.annotations | object | `{}` | service custom annotations |
