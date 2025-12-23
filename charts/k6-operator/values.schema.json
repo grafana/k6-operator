@@ -66,6 +66,18 @@
           "title": "containerSecurityContext",
           "type": "object"
         },
+        "dnsConfig": {
+          "additionalProperties": true,
+          "description": "manager.dnsConfig -- set the dns configuration of controller-manager",
+          "title": "dnsConfig",
+          "type": "object"
+        },
+        "dnsPolicy": {
+          "default": "",
+          "description": "manager.dnsPolicy -- set the dns policy of controller-manager",
+          "title": "dnsPolicy",
+          "type": "string"
+        },
         "env": {
           "items": {},
           "description": "manager.env -- List of environment variables to set in the controller",

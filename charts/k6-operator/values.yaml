@@ -284,6 +284,19 @@ manager:
   # @schema
   # required: false
   # type: object
+  # additionalProperties: true
+  # @schema
+  # manager.dnsConfig -- set the dns configuration of controller-manager
+  dnsConfig: {}
+  # @schema
+  # required: false
+  # type: string
+  # @schema
+  # manager.dnsPolicy -- set the dns policy of controller-manager
+  dnsPolicy: ""
+  # @schema
+  # required: false
+  # type: object
   # @schema
   # manager.image -- controller-manager image configuration
   image:
