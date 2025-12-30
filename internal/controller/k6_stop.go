@@ -7,9 +7,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -48,14 +51,24 @@ func StopJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Tes
 		log.Error(err, "Failed to set controller reference for the stop job")
 	}
 
-	// TODO: add a check for existence of stop job
-
-	if err = r.Create(ctx, stopJob); err != nil {
-		log.Error(err, "Failed to launch k6 test stop job.")
-		return res, nil
+	// Check if the stop job already exists
+	stopJobNamespacedName := types.NamespacedName{
+		Name:      stopJob.Name,
+		Namespace: stopJob.Namespace,
 	}
-
-	log.Info("Created stop job")
+	existingStopJob := &batchv1.Job{}
+	if err = r.Get(ctx, stopJobNamespacedName, existingStopJob); err == nil {
+		log.Info("Stop job already exists, skipping creation")
+	} else if !k8serrors.IsNotFound(err) {
+		log.Error(err, "Failed to check for existing stop job")
+		return res, nil
+	} else {
+		if err = r.Create(ctx, stopJob); err != nil {
+			log.Error(err, "Failed to launch k6 test stop job.")
+			return res, nil
+		}
+		log.Info("Created stop job")
+	}
 
 	log.Info("Changing stage of TestRun status to stopped")
 	k6.GetStatus().Stage = "stopped"
