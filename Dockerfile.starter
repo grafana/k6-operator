@@ -1,5 +1,5 @@
-FROM curlimages/curl:latest
+FROM curlimages/curl:latest@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3ff40
 
 # as defined by distroless for nonroot
 USER 65532:65532
-COPY --from=kvij/scuttle:latest /scuttle /bin/scuttle
+COPY --from=kvij/scuttle:latest@sha256:a74554fa3a918c86e1ac1a0e992c5c7e764d3e60055bc859457592158702b91b /scuttle /bin/scuttle
