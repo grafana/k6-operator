@@ -94,6 +94,8 @@ PrivateLoadZoneSpec defines the desired state of PrivateLoadZone
         <td>object</td>
         <td>
           ResourceRequirements describes the compute resource requirements.<br/>
+          <br/>
+            <i>Validations</i>:<li>has(self.limits.cpu) && has(self.limits.memory): resources.limits is mandatory to register with Grafana Cloud k6</li>
         </td>
         <td>true</td>
       </tr><tr>
