@@ -1,0 +1,39 @@
+---
+name: Helm Schema Check
+permissions: {}
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'charts/**'
+  pull_request:
+    branches-ignore:
+      - 'release-**/bundle-update'
+    paths:
+      - 'charts/**'
+
+jobs:
+  schema-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Generate Helm schema
+        run: make helm-schema
+
+      - name: Check for diff
+        run: |
+          if ! git diff --exit-code charts/k6-operator/values.schema.json; then
+            echo "::error::values.schema.json is out of date. Please run 'make helm-schema' and commit the changes."
+            exit 1
+          fi
