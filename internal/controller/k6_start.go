@@ -11,8 +11,11 @@ import (
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -116,14 +119,24 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 		log.Error(err, "Failed to set controller reference for the start job")
 	}
 
-	// TODO: add a check for existence of starter job
-
-	if err = r.Create(ctx, starter); err != nil {
-		log.Error(err, "Failed to launch k6 test starter")
-		return res, nil
+	// Check if the starter job already exists
+	starterNamespacedName := types.NamespacedName{
+		Name:      starter.Name,
+		Namespace: starter.Namespace,
 	}
-
-	log.Info("Created starter job")
+	existingStarterJob := &batchv1.Job{}
+	if err = r.Get(ctx, starterNamespacedName, existingStarterJob); err == nil {
+		log.Info("Starter job already exists, skipping creation")
+	} else if !k8serrors.IsNotFound(err) {
+		log.Error(err, "Failed to check for existing starter job")
+		return res, nil
+	} else {
+		if err = r.Create(ctx, starter); err != nil {
+			log.Error(err, "Failed to launch k6 test starter")
+			return res, nil
+		}
+		log.Info("Created starter job")
+	}
 
 	log.Info("Changing stage of TestRun status to started")
 	k6.GetStatus().Stage = "started"
