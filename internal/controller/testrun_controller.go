@@ -27,6 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
+	k6types "github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -140,9 +141,10 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			return ctrl.Result{}, err
 		}
 
-		// Not a clout test and initializer is set to disabled
-		// -> skip creating initializer job
-		if !isCloudTestRun(k6) && k6.IsInitializerDisabled() {
+		// Skip initializer if disabled, unless --out cloud is present
+		// (cloud output tests require initializer to run k6 inspect)
+		cli, _ := k6types.ParseCLI(k6.GetSpec().Arguments)
+		if !cli.HasCloudOut && k6.IsInitializerDisabled() {
 			log.Info("Initializer is disabled, skipping initialization step")
 			v1alpha1.UpdateCondition(k6, v1alpha1.InitializerSkipped, metav1.ConditionTrue)
 			v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRun, metav1.ConditionFalse)
