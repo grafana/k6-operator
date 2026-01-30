@@ -123,7 +123,7 @@ if [ ! -z "${TEST_NAME}" ]; then
 fi
 
 tests=(
-  "basic-testrun-1" 
+  "basic-testrun-1"
   "basic-testrun-4"
   "testrun-cleanup"
   "testrun-archive"
@@ -136,6 +136,7 @@ tests=(
   "testrun-watch-namespaces"
   "testrun-cloud-output"
   "testrun-simultaneous-cloud-output"
+  "initializer-disabled"
   # volume-claim
   # "kyverno"
   # "custom-domain"
