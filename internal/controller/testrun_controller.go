@@ -149,11 +149,10 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 
 			log.Info("Changing stage of TestRun status to initialized")
 			k6.GetStatus().Stage = "initialized"
-			if updateHappened, err := r.UpdateStatus(ctx, k6, log); err != nil {
+			if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
 				return ctrl.Result{}, err
-			} else if updateHappened {
-				return ctrl.Result{}, nil
 			}
+			return ctrl.Result{}, nil
 		}
 
 		v1alpha1.UpdateCondition(k6, v1alpha1.InitializerSkipped, metav1.ConditionFalse)
