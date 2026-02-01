@@ -14,7 +14,7 @@ jobs:
           persist-credentials: false
       - name: yaml-lint
         # this is v3.1.1
-        uses: ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c
+        uses: ibiqlik/action-yamllint@b74a2626a991d676b6ec243a6458ff86cccf2d2d
         with:
           file_or_dir: config/**/*.yaml e2e/*.yaml
           config_file: .yamllint.yaml
