@@ -46,7 +46,7 @@ jobs:
           version: v0.9.1 # Buildx version
       - name: "Build:login"
         # this is v3.4.0
-        uses: docker/login-action@28fdb31ff34708d19615a74d67103ddc2ea9725c
+        uses: docker/login-action@3227f5311cb93ffd14d13e65d8cc400d30f4dd8a
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
