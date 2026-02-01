@@ -56,7 +56,7 @@ jobs:
 
       - name: Create kind cluster
         # this is v1.12.0
-        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc
         with:
           node_image: "kindest/node:v1.27.1"
 
@@ -94,7 +94,7 @@ jobs:
 
       - name: Create kind cluster
         # this is v1.12.0
-        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc
         with:
           node_image: "kindest/node:v1.27.1"
 
