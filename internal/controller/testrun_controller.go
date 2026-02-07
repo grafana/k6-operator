@@ -146,7 +146,6 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		cli, _ := k6types.ParseCLI(k6.GetSpec().Arguments)
 		if !cli.HasCloudOut && k6.IsInitializerDisabled() {
 			log.Info("Initializer is disabled, skipping initialization step")
-			v1alpha1.UpdateCondition(k6, v1alpha1.InitializerSkipped, metav1.ConditionTrue)
 			v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRun, metav1.ConditionFalse)
 
 			log.Info("Changing stage of TestRun status to initialized")
@@ -157,7 +156,6 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			return ctrl.Result{}, nil
 		}
 
-		v1alpha1.UpdateCondition(k6, v1alpha1.InitializerSkipped, metav1.ConditionFalse)
 		log.Info("Changing stage of TestRun status to initialization")
 		k6.GetStatus().Stage = "initialization"
 

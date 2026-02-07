@@ -66,9 +66,6 @@ func SetIfNewer(cond *[]metav1.Condition,
 }
 
 var reasons = map[string]string{
-	"InitializerSkippedTrue":  "InitializerWasSkipped",
-	"InitializerSkippedFalse": "InitializerWasRequested",
-
 	"TestRunRunningUnknown": "TestRunPreparation",
 	"TestRunRunningTrue":    "TestRunRunningTrue",
 	"TestRunRunningFalse":   "TestRunRunningFalse",
