@@ -88,7 +88,7 @@ jobs:
 
       - name: Set up Helm
         # this is v4.3.0
-        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112
+        uses: azure/setup-helm@9651d9df522c20a9f1fef182b439689e91e24103
         with:
           version: v3.7.2
 
