@@ -17,7 +17,7 @@ jobs:
         uses: docker/setup-buildx-action@7c525be6cc8a882d5163ce04293cac18617c709f
         with:
           cache-binary: false
-          version: 0.31.1 # Buildx version
+          version: v0.31.1 # Buildx version
       - name: "Build:login"
         uses: docker/login-action@3227f5311cb93ffd14d13e65d8cc400d30f4dd8a
         with:
