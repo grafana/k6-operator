@@ -558,6 +558,9 @@ spec:
                             type: string
                         type: object
                     type: object
+                  disabled:
+                    default: false
+                    type: boolean
                   env:
                     items:
                       properties:
@@ -2593,6 +2596,9 @@ spec:
                             type: string
                         type: object
                     type: object
+                  disabled:
+                    default: false
+                    type: boolean
                   env:
                     items:
                       properties:
@@ -4649,6 +4655,9 @@ spec:
                             type: string
                         type: object
                     type: object
+                  disabled:
+                    default: false
+                    type: boolean
                   env:
                     items:
                       properties:

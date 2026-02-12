@@ -27,6 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
+	k6types "github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -138,6 +139,21 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 
 		if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
 			return ctrl.Result{}, err
+		}
+
+		// Skip initializer if disabled, unless --out cloud is present
+		// (cloud output tests require initializer to run k6 inspect)
+		cli, _ := k6types.ParseCLI(k6.GetSpec().Arguments)
+		if !cli.HasCloudOut && k6.IsInitializerDisabled() {
+			log.Info("Initializer is disabled, skipping initialization step")
+
+			log.Info("Changing stage of TestRun status to initialized")
+			k6.GetStatus().Stage = "initialized"
+			if _, err := r.UpdateStatus(ctx, k6, log); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			return ctrl.Result{}, nil
 		}
 
 		log.Info("Changing stage of TestRun status to initialization")
