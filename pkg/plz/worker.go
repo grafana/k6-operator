@@ -41,7 +41,7 @@ func NewPLZWorker(plz *v1alpha1.PrivateLoadZone, token string, k8sClient client.
 	}
 
 	w.createTemplate(plz)
-	w.poller = cloud.NewTestRunPoller(cloud.ApiURL(cloud.K6CloudHost()), w.token, w.plz.Name, w.logger)
+	w.poller = cloud.NewTestRunPoller(cloud.K6CloudApiURL(cloud.K6CloudURL()), w.token, w.plz.Name, w.logger)
 
 	return w
 }
@@ -150,7 +150,7 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 
 	envVars := append(trData.EnvVars(), corev1.EnvVar{
 		Name:  "K6_CLOUD_HOST",
-		Value: cloud.K6CloudHost(),
+		Value: cloud.K6CloudURL(),
 	})
 
 	envVars = append(envVars, cloud.AggregationEnvVars(&trData.RuntimeConfig)...)

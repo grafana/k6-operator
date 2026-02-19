@@ -116,7 +116,7 @@ func GetTestRunData(client *cloudapi.Client, refID string) (*TestRunData, error)
 // called by TestRun controller
 // If there's an error, it'll be logged.
 func GetTestRunState(client *cloudapi.Client, refID string, logger logr.Logger) (TestRunStatus, error) {
-	host := ApiURL(client.BaseURL())
+	host := K6CloudApiURL(client.BaseURL())
 	logger = logger.WithValues("k6_cloud_host", host)
 
 	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status", host, refID)

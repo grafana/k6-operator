@@ -49,19 +49,24 @@ func DeRegisterPLZ(client *cloudapi.Client, name string) error {
 }
 
 // temporary hack!
-func ApiURL(k6CloudHostEnvVar string) string {
-	url := defaultApiUrl
+func K6CloudApiURL(k6CloudHostEnvVar string) string {
+	url, ok := os.LookupEnv("K6_CLOUD_API_HOST")
+	if ok {
+		return url
+	}
+
+	url = defaultApiUrl
 	if strings.Contains(k6CloudHostEnvVar, "staging") {
 		url = "https://api.staging.k6.io"
 	}
 	return url
 }
 
-func K6CloudHost() string {
-	host, ok := os.LookupEnv("K6_CLOUD_HOST")
-	if !ok {
-		return "https://ingest.k6.io"
+func K6CloudURL() string {
+	url, ok := os.LookupEnv("K6_CLOUD_HOST")
+	if ok {
+		return url
 	}
 
-	return host
+	return defaultIngestUrl
 }
