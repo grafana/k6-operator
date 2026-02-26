@@ -54,6 +54,9 @@ type PrivateLoadZoneSpec struct {
 
 	// Configuration of the test runs specific for this `PrivateLoadZone`.
 	Config PrivateLoadZoneConfig `json:"config,omitempty"`
+
+	// Configuration of all Pods that are started by PrivateLoadZone (what can fit to the TestRun spec).
+	PodTemplate corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
 }
 
 // PrivateLoadZoneStatus defines the observed state of PrivateLoadZone

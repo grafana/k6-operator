@@ -120,12 +120,14 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 				VolumeMounts: []corev1.VolumeMount{
 					volumeMount,
 				},
-				EnvFrom: plz.Spec.Config.ToEnvFromSource(),
+				EnvFrom:     plz.Spec.Config.ToEnvFromSource(),
+				Tolerations: plz.Spec.PodTemplate.Spec.Tolerations,
 			},
 			Starter: v1alpha1.Pod{
 				ServiceAccountName: plz.Spec.ServiceAccountName,
 				NodeSelector:       plz.Spec.NodeSelector,
 				ImagePullSecrets:   plz.Spec.ImagePullSecrets,
+				Tolerations:        plz.Spec.PodTemplate.Spec.Tolerations,
 			},
 			Script: v1alpha1.K6Script{
 				LocalFile: "/test/archive.tar",
@@ -135,6 +137,18 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 
 			Token: plz.Spec.Token,
 		},
+	}
+
+	// There are no checks going on for PodTemplate's Containers yet, so a small workaround.
+	// This should be simplified, once TestRun supports PodTemplate too.
+	if len(plz.Spec.PodTemplate.Spec.Containers) > 0 && plz.Spec.PodTemplate.Spec.Containers[0].SecurityContext != nil {
+		w.template.Spec.Runner.ContainerSecurityContext = *plz.Spec.PodTemplate.Spec.Containers[0].SecurityContext
+		w.template.Spec.Starter.ContainerSecurityContext = *plz.Spec.PodTemplate.Spec.Containers[0].SecurityContext
+	}
+
+	if plz.Spec.PodTemplate.Spec.SecurityContext != nil {
+		w.template.Spec.Runner.SecurityContext = *plz.Spec.PodTemplate.Spec.SecurityContext
+		w.template.Spec.Starter.SecurityContext = *plz.Spec.PodTemplate.Spec.SecurityContext
 	}
 }
 
