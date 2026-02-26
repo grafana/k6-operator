@@ -1,0 +1,31 @@
+- op: replace
+  path: /spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/podTemplate/properties/spec
+  value:
+    type: object
+    properties:
+      securityContext:
+        type: object
+        x-kubernetes-preserve-unknown-fields: true
+      tolerations:
+        type: array
+        items:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+      containers:
+        type: array
+        maxItems: 1 # only 1 (k6) container is supported here ATM
+        items:
+          type: object
+          required: [name]
+          properties:
+            name:
+              type: string
+            securityContext:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+            resources:
+              type: object
+              # no other sub-properties allowed
+      resources:
+        type: object
+        # no other sub-properties allowed

@@ -116,7 +116,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			},
 		}
 
-		// non-empty values to use int test cases
+		// non-empty values to use in test cases
 		someToken        = "some-token"
 		someSA           = "some-service-account"
 		someNodeSelector = map[string]string{"foo": "bar"}
@@ -133,13 +133,37 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			"ENV": "VALUE",
 			"foo": "bar",
 		}
+		// podTemplate test values
+		someAllowPrivEscalation       = false
+		someRunAsUser           int64 = 1000
+		someTolerations               = []corev1.Toleration{
+			{
+				Key:      "dedicated",
+				Operator: corev1.TolerationOpEqual,
+				Value:    "k6",
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+		}
+		someContainerSecCtx = corev1.SecurityContext{
+			AllowPrivilegeEscalation: &someAllowPrivEscalation,
+		}
+		somePodSecCtx = corev1.PodSecurityContext{
+			RunAsUser: &someRunAsUser,
+		}
 
 		// TestRuns expected in different cases;
 		// see how they are populated below
+
 		requiredFieldsTestRun = defaultTestRun
 		optionalFieldsTestRun = defaultTestRun //nolint:ineffassign
 		cloudFieldsTestRun    = defaultTestRun //nolint:ineffassign
 		cloudEnvVarsTestRun   = defaultTestRun //nolint:ineffassign
+
+		// TestRuns expected for podTemplate cases
+		podTemplateTolerationsTestRun     = defaultTestRun //nolint:ineffassign
+		podTemplateContainerSecCtxTestRun = defaultTestRun //nolint:ineffassign
+		podTemplatePodSecCtxTestRun       = defaultTestRun //nolint:ineffassign
+		podTemplateAllTestRun             = defaultTestRun //nolint:ineffassign
 	)
 
 	// populate TestRuns for different test cases
@@ -182,6 +206,26 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			Value: "bar",
 		},
 	}, defaultTestRun.Spec.Runner.Env...)
+
+	podTemplateTolerationsTestRun = requiredFieldsTestRun
+	podTemplateTolerationsTestRun.Spec.Runner.Tolerations = someTolerations
+	podTemplateTolerationsTestRun.Spec.Starter.Tolerations = someTolerations
+
+	podTemplateContainerSecCtxTestRun = requiredFieldsTestRun
+	podTemplateContainerSecCtxTestRun.Spec.Runner.ContainerSecurityContext = someContainerSecCtx
+	podTemplateContainerSecCtxTestRun.Spec.Starter.ContainerSecurityContext = someContainerSecCtx
+
+	podTemplatePodSecCtxTestRun = requiredFieldsTestRun
+	podTemplatePodSecCtxTestRun.Spec.Runner.SecurityContext = somePodSecCtx
+	podTemplatePodSecCtxTestRun.Spec.Starter.SecurityContext = somePodSecCtx
+
+	podTemplateAllTestRun = requiredFieldsTestRun
+	podTemplateAllTestRun.Spec.Runner.Tolerations = someTolerations
+	podTemplateAllTestRun.Spec.Starter.Tolerations = someTolerations
+	podTemplateAllTestRun.Spec.Runner.ContainerSecurityContext = someContainerSecCtx
+	podTemplateAllTestRun.Spec.Starter.ContainerSecurityContext = someContainerSecCtx
+	podTemplateAllTestRun.Spec.Runner.SecurityContext = somePodSecCtx
+	podTemplateAllTestRun.Spec.Starter.SecurityContext = somePodSecCtx
 
 	testCases := []struct {
 		name      string
@@ -272,6 +316,94 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			},
 			ingestUrl: mainIngest,
 			expected:  &cloudEnvVarsTestRun,
+		},
+		{
+			name: "podTemplate with tolerations",
+			plz: &v1alpha1.PrivateLoadZone{
+				Spec: v1alpha1.PrivateLoadZoneSpec{
+					Token: someToken,
+					Resources: corev1.ResourceRequirements{
+						Limits: resourceLimits,
+					},
+					PodTemplate: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Tolerations: someTolerations,
+						},
+					},
+				},
+			},
+			cloudData: &cloud.TestRunData{},
+			ingestUrl: mainIngest,
+			expected:  &podTemplateTolerationsTestRun,
+		},
+		{
+			name: "podTemplate with container security context",
+			plz: &v1alpha1.PrivateLoadZone{
+				Spec: v1alpha1.PrivateLoadZoneSpec{
+					Token: someToken,
+					Resources: corev1.ResourceRequirements{
+						Limits: resourceLimits,
+					},
+					PodTemplate: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:            "k6",
+									SecurityContext: &someContainerSecCtx,
+								},
+							},
+						},
+					},
+				},
+			},
+			cloudData: &cloud.TestRunData{},
+			ingestUrl: mainIngest,
+			expected:  &podTemplateContainerSecCtxTestRun,
+		},
+		{
+			name: "podTemplate with pod security context",
+			plz: &v1alpha1.PrivateLoadZone{
+				Spec: v1alpha1.PrivateLoadZoneSpec{
+					Token: someToken,
+					Resources: corev1.ResourceRequirements{
+						Limits: resourceLimits,
+					},
+					PodTemplate: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							SecurityContext: &somePodSecCtx,
+						},
+					},
+				},
+			},
+			cloudData: &cloud.TestRunData{},
+			ingestUrl: mainIngest,
+			expected:  &podTemplatePodSecCtxTestRun,
+		},
+		{
+			name: "podTemplate with tolerations, container and pod security context",
+			plz: &v1alpha1.PrivateLoadZone{
+				Spec: v1alpha1.PrivateLoadZoneSpec{
+					Token: someToken,
+					Resources: corev1.ResourceRequirements{
+						Limits: resourceLimits,
+					},
+					PodTemplate: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Tolerations:     someTolerations,
+							SecurityContext: &somePodSecCtx,
+							Containers: []corev1.Container{
+								{
+									Name:            "k6",
+									SecurityContext: &someContainerSecCtx,
+								},
+							},
+						},
+					},
+				},
+			},
+			cloudData: &cloud.TestRunData{},
+			ingestUrl: mainIngest,
+			expected:  &podTemplateAllTestRun,
 		},
 	}
 
