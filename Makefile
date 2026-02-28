@@ -171,6 +171,19 @@ else
 HELM=$(shell which helm)
 endif
 
+.PHONY: patch-helm-crd
+patch-helm-crd: ## Copy CRDs from config/crd/bases to Helm chart templates with Helm templating.
+	cp config/crd/bases/k6.io_testruns.yaml charts/k6-operator/templates/crds/testrun.yaml
+	sed -i '1i\{{- if .Values.installCRDs -}}' charts/k6-operator/templates/crds/testrun.yaml
+	sed -i '/^metadata:$$/a\  labels:\n    app.kubernetes.io/component: controller\n    {{- include "k6-operator.labels" . | nindent 4 }}\n    {{- include "k6-operator.customLabels" . | nindent 4 }}' charts/k6-operator/templates/crds/testrun.yaml
+	sed -i '0,/^  annotations:$$/s//  annotations:\n    {{- include "k6-operator.customAnnotations" . | nindent 4 }}/' charts/k6-operator/templates/crds/testrun.yaml
+	echo '{{- end -}}' >> charts/k6-operator/templates/crds/testrun.yaml
+	cp config/crd/bases/k6.io_privateloadzones.yaml charts/k6-operator/templates/crds/plz.yaml
+	sed -i '1i\{{- if .Values.installCRDs -}}' charts/k6-operator/templates/crds/plz.yaml
+	sed -i '/^metadata:$$/a\  labels:\n    app.kubernetes.io/component: controller\n    {{- include "k6-operator.labels" . | nindent 4 }}\n    {{- include "k6-operator.customLabels" . | nindent 4 }}' charts/k6-operator/templates/crds/plz.yaml
+	sed -i '0,/^  annotations:$$/s//  annotations:\n    {{- include "k6-operator.customAnnotations" . | nindent 4 }}/' charts/k6-operator/templates/crds/plz.yaml
+	echo '{{- end -}}' >> charts/k6-operator/templates/crds/plz.yaml
+
 # ===============================================================
 # Dependencies
 # ===============================================================
