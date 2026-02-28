@@ -88,9 +88,6 @@ for f in $(find . -type f  -name '*.k6.io'); do mv $f ${f}.yaml; done
 rm bundle-to-test.yaml
 kustomize create --autodetect --recursive .
 
-# since CRDs are being extracted as k6.io, without yaml in the end, rename them:
-for f in $(find . -type f  -name '*.k6.io'); do mv $f ${f}.yaml; done
-
 # go back to e2e/
 cd ..
 
