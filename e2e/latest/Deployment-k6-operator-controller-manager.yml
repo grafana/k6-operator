@@ -20,12 +20,12 @@ spec:
       containers:
         - args:
             - --metrics-bind-address=:8443
-            - --metrics-bind-address=127.0.0.1:8080
+            - --metrics-bind-address=:8080
             - --leader-elect
             - --health-probe-bind-address=:8081
           command:
             - /manager
-          image: ghcr.io/grafana/k6-operator:controller-v0.0.22
+          image: ghcr.io/grafana/k6-operator:controller-v1.2.0
           livenessProbe:
             httpGet:
               path: /healthz

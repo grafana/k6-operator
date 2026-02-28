@@ -62,6 +62,14 @@ If the cloud environment variables are present in a `stack.env` file, they can b
 export $(cat stack.env | xargs)
 ```
 
+#### Git ignore changes to `Secret.yaml`
+
+Run the following command from the root of repository to help avoid committing secrets by mistake:
+
+```sh
+git update-index --skip-worktree e2e/testrun-cloud-output/manifests/secret.yaml e2e/testrun-simultaneous-cloud-output/manifests/secret.yaml
+```
+
 ## How to add a test
 
 Firstly, the existing tests can be used as a basis for many additional experiments. Otherwise, the skeleton for the test looks like this:

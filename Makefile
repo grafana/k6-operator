@@ -51,6 +51,16 @@ e2e-cleanup: ## Clean up end-to-end test resources.
 	kubectl delete configmap crocodile-stress-test
 	kubectl delete -f e2e/test.yaml
 
+e2e-update-latest: ## Update e2e/latest folder with the bundle.yaml.
+	echo -e "Regenerate ./e2e/latest from the bundle.yaml"
+	rm e2e/latest/*
+	cp bundle.yaml ./e2e/latest/bundle-to-test.yaml
+	cd e2e/latest && \
+	docker run --user "$$(id -u):$$(id -g)" --rm -v "${PWD}/e2e/latest":/workdir mikefarah/yq --no-doc  -s  '.kind + "-" + .metadata.name' bundle-to-test.yaml && \
+	for f in $$(find . -type f  -name '*.k6.io'); do mv $$f $${f}.yaml; done && \
+	rm bundle-to-test.yaml && \
+	kustomize create --autodetect --recursive .
+
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
