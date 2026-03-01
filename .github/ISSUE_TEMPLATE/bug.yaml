@@ -1,16 +1,21 @@
 ---
 name: Bug report
-description: Use this template for reporting bugs. Please search existing issues first.
+description: Use this template for reporting bugs.
 labels: bug
 body:
   - type: textarea
     attributes:
       label: Brief summary
+      value: |
+        ## Before submitting, please check the following:
+        - [ ] Please search existing [issues](https://github.com/grafana/k6-operator/issues).
+        - [ ] Check the [Troubleshooting guide](https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/troubleshooting/): it might contain the solution to your problem.
+        - [ ] If you're not on the [latest](https://github.com/grafana/k6-operator/releases) version of k6-operator, upgrade if possible and try to re-produce the issue on the latest.
     validations:
       required: true
   - type: markdown
     attributes:
-      value: '## Environment'
+      value: "## Environment"
   - type: input
     attributes:
       label: k6-operator version or image
@@ -32,7 +37,7 @@ body:
       label: Other environment details (if applicable)
   - type: markdown
     attributes:
-      value: '## Detailed issue description'
+      value: "## Detailed issue description"
   - type: textarea
     attributes:
       label: Steps to reproduce the problem
