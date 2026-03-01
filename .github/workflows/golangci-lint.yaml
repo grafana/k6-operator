@@ -17,7 +17,7 @@ jobs:
           go-version: "1.25.x"
           cache: false
       - name: lint
-        uses: golangci/golangci-lint-action@b62bd5d2341b1c3d8e43b6c576edb853a7e63ada
+        uses: golangci/golangci-lint-action@b207e52793e67a85c21e5e0e8f6b42f0c634489b
         with:
           version: v2.4.0
           args: --timeout=5m
