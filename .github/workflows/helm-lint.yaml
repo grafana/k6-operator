@@ -35,7 +35,7 @@ jobs:
           python-version: 3.13.1
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f
+        uses: helm/chart-testing-action@2e2940618cb426dce2999631d543b53cdcfc8527
 
       - name: Run chart-testing (lint)
         run: |
