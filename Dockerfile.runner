@@ -1,4 +1,4 @@
-FROM grafana/k6:latest
+FROM grafana/k6:latest@sha256:5e937f439684142ba7803722b42e3c9ac9233cfa01d561de0596c1c2794fd680
 
-COPY --from=kvij/scuttle:latest scuttle /bin/scuttle
+COPY --from=kvij/scuttle:latest@sha256:385f44bddd506fbff1256f6895a768e1bfd767620e71ab90b55cae6f48fe7706 scuttle /bin/scuttle
 ENTRYPOINT ["scuttle", "k6"]
