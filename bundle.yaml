@@ -83,6 +83,39 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              podTemplate:
+                properties:
+                  metadata:
+                    type: object
+                  spec:
+                    properties:
+                      containers:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            resources:
+                              type: object
+                            securityContext:
+                              type: object
+                              x-kubernetes-preserve-unknown-fields: true
+                          required:
+                          - name
+                          type: object
+                        maxItems: 1
+                        type: array
+                      resources:
+                        type: object
+                      securityContext:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      tolerations:
+                        items:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: array
+                    type: object
+                type: object
               resources:
                 properties:
                   claims:
@@ -732,6 +765,9 @@ spec:
                             type: string
                         type: object
                     type: object
+                  disabled:
+                    default: false
+                    type: boolean
                   env:
                     items:
                       properties:
@@ -2767,6 +2803,9 @@ spec:
                             type: string
                         type: object
                     type: object
+                  disabled:
+                    default: false
+                    type: boolean
                   env:
                     items:
                       properties:
@@ -4823,6 +4862,9 @@ spec:
                             type: string
                         type: object
                     type: object
+                  disabled:
+                    default: false
+                    type: boolean
                   env:
                     items:
                       properties:
@@ -6632,7 +6674,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v1.2.0
+        image: ghcr.io/grafana/k6-operator:controller-v1.3.0
         livenessProbe:
           httpGet:
             path: /healthz
