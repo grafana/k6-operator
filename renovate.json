@@ -47,10 +47,9 @@
                 "minor",
                 "major"
             ],
-            // Disabling this one because we aren't allowed to set `postUpgradeTasks`
-            // at this point of time. The automated PR might be invalid without it.
-            // For now, this update will be done manually, once per quarter (matching Kubernetes release).
-            "enabled": false
+            // NOTE: we aren't allowed to set `postUpgradeTasks` at this point of time. 
+            // The automated PR might be invalid without it and require manual intervention.
+            "enabled": true
         },
         {
             "groupName": "kubernetes-patch",
