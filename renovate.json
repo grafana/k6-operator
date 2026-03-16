@@ -95,6 +95,19 @@
             "extends": [
                 "schedule:monthly"
             ]
+        },
+        {
+            "description": "Github actions: by releases only",
+            "matchManagers": [
+                "github-actions"
+            ],
+            "matchPackageNames": [
+                "github.com/Azure/setup-helm"
+            ],
+            "matchUpdateTypes": [
+                "digest"
+            ],
+            "enabled": false
         }
     ]
 }
