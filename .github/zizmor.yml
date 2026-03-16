@@ -3,3 +3,7 @@ rules:
     ignore:
       - e2e-test.yaml:30
       - push.yaml:56
+  unpinned-uses:
+    config:
+      policies:
+        grafana/*: any # trust Grafana
