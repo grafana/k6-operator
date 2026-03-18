@@ -1,4 +1,17 @@
 - op: replace
+  path: /spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/podTemplate/properties/metadata
+  value:
+    type: object
+    properties:
+      annotations:
+        type: object
+        additionalProperties:
+          type: string
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+- op: replace
   path: /spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/podTemplate/properties/spec
   value:
     type: object
