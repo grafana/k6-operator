@@ -122,12 +122,20 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 				},
 				EnvFrom:     plz.Spec.Config.ToEnvFromSource(),
 				Tolerations: plz.Spec.PodTemplate.Spec.Tolerations,
+				Metadata: v1alpha1.PodMetadata{
+					Annotations: plz.Spec.PodTemplate.Annotations,
+					Labels:      plz.Spec.PodTemplate.Labels,
+				},
 			},
 			Starter: v1alpha1.Pod{
 				ServiceAccountName: plz.Spec.ServiceAccountName,
 				NodeSelector:       plz.Spec.NodeSelector,
 				ImagePullSecrets:   plz.Spec.ImagePullSecrets,
 				Tolerations:        plz.Spec.PodTemplate.Spec.Tolerations,
+				Metadata: v1alpha1.PodMetadata{
+					Annotations: plz.Spec.PodTemplate.Annotations,
+					Labels:      plz.Spec.PodTemplate.Labels,
+				},
 			},
 			Script: v1alpha1.K6Script{
 				LocalFile: "/test/archive.tar",
