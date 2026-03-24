@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"strings"
 	"testing"
 
 	deep "github.com/go-test/deep"
@@ -11,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestNewInitializerJob(t *testing.T) {
+func Test_NewInitializerJob(t *testing.T) {
 	script := &types.Script{
 		Name:     "test",
 		Filename: "test.js",
@@ -129,5 +130,103 @@ func TestNewInitializerJob(t *testing.T) {
 
 	if diff := deep.Equal(job, expectedOutcome); diff != nil {
 		t.Error(diff)
+	}
+}
+
+func Test_InitializerEnvVarFlags(t *testing.T) {
+	baseTestRun := func() *v1alpha1.TestRun {
+		return &v1alpha1.TestRun{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "test",
+			},
+			Spec: v1alpha1.TestRunSpec{
+				Script: v1alpha1.K6Script{
+					ConfigMap: v1alpha1.K6Configmap{
+						Name: "test",
+						File: "test.js",
+					},
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name             string
+		setup            func(k6 *v1alpha1.TestRun)
+		expectedInCmd    []string
+		expectedInEnvVar []string
+		noEFlag          bool
+	}{
+		{
+			name: "env vars set in initializer",
+			setup: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Initializer = &v1alpha1.Pod{
+					Env: []corev1.EnvVar{
+						{Name: "FOO", Value: "bar"},
+						{Name: "OTHER", Value: "42"},
+					},
+				}
+			},
+			expectedInCmd:    []string{"-e FOO=bar", "-e OTHER=42"},
+			expectedInEnvVar: []string{"FOO", "OTHER"},
+		},
+		{
+			name: "env vars set only in runner",
+			setup: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Runner = v1alpha1.Pod{
+					Env: []corev1.EnvVar{
+						{Name: "FOO", Value: "bar"},
+					},
+				}
+			},
+			expectedInCmd:    []string{"-e FOO=bar"},
+			expectedInEnvVar: []string{"FOO"},
+		},
+		{
+			name:    "no env vars",
+			setup:   func(k6 *v1alpha1.TestRun) {},
+			noEFlag: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			k6 := baseTestRun()
+			tt.setup(k6)
+
+			job, err := NewInitializerJob(k6, "")
+			if err != nil {
+				t.Fatalf("NewInitializerJob errored: %v", err)
+			}
+
+			cmd := strings.Join(job.Spec.Template.Spec.Containers[0].Command, " ")
+
+			for _, want := range tt.expectedInCmd {
+				if !strings.Contains(cmd, want) {
+					t.Errorf("command should contain %q, got: %s", want, cmd)
+				}
+			}
+
+			envVars := job.Spec.Template.Spec.Containers[0].Env
+			for _, expected := range tt.expectedInEnvVar {
+				found := false
+				for _, ev := range envVars {
+					if ev.Name == expected {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("container env should contain %q, got: %v", expected, envVars)
+				}
+			}
+
+			if tt.noEFlag {
+				if strings.Contains(cmd, " -e ") {
+					t.Errorf("command should NOT contain `-e`, got: %s", cmd)
+				}
+			}
+		})
 	}
 }
