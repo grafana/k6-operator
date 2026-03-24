@@ -54,6 +54,12 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 		automountServiceAccountToken, _ = strconv.ParseBool(k6.GetSpec().Initializer.AutomountServiceAccountToken)
 	}
 
+	// NOTE: only .env are passed to k6 CLI, not .envFrom
+	var envVarString string
+	for _, ev := range k6.GetSpec().Initializer.Env {
+		envVarString += fmt.Sprintf(" -e %s=%s", ev.Name, ev.Value)
+	}
+
 	var (
 		// k6 allows to run archive command on archives too so type of file here doesn't matter
 		scriptName  = script.FullName()
@@ -76,8 +82,8 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 		// printing JSON as usual. Then parse temp file only for errors, ignoring
 		// any other log messages.
 		// Related: https://github.com/grafana/k6-docs/issues/877
-		"mkdir -p $(dirname %s) && k6 archive %s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
-		archiveName, scriptName, archiveName, argLine,
+		"mkdir -p $(dirname %s) && k6 archive %s%s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
+		archiveName, scriptName, envVarString, archiveName, argLine,
 		archiveName))
 
 	env := append(newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled), k6.GetSpec().Initializer.Env...)
