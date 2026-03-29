@@ -109,21 +109,54 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 	}
 
 	// starter
-
-	starter := jobs.NewStarterJob(k6, hostnames)
-
-	if err = ctrl.SetControllerReference(k6, starter, r.Scheme); err != nil {
-		log.Error(err, "Failed to set controller reference for the start job")
+	
+	// Handle Linux command line length limitation (max ~500 IPs)
+	// Split hostnames into batches of 500 to avoid "argument list too long" error
+	const maxHostnamesPerBatch = 500
+	var hostnamesBatches [][]string
+	
+	// Split hostnames into batches
+	for i := 0; i < len(hostnames); i += maxHostnamesPerBatch {
+		end := i + maxHostnamesPerBatch
+		if end > len(hostnames) {
+			end = len(hostnames)
+		}
+		hostnamesBatches = append(hostnamesBatches, hostnames[i:end])
 	}
-
-	// TODO: add a check for existence of starter job
-
-	if err = r.Create(ctx, starter); err != nil {
-		log.Error(err, "Failed to launch k6 test starter")
+	
+	// Create a starter job for each batch
+	jobsCreated := 0
+	for batchIndex, batch := range hostnamesBatches {
+		// Create a starter job for this batch
+		starter := jobs.NewStarterJob(k6, batch)
+		
+		// Set a unique name for each starter job if there are multiple batches
+		if len(hostnamesBatches) > 1 {
+			starter.ObjectMeta.Name = fmt.Sprintf("%s-batch-%d", starter.ObjectMeta.Name, batchIndex+1)
+		}
+		
+		if err = ctrl.SetControllerReference(k6, starter, r.Scheme); err != nil {
+			log.Error(err, "Failed to set controller reference for the start job", "batch", batchIndex+1)
+			continue
+		}
+		
+		if err = r.Create(ctx, starter); err != nil {
+			log.Error(err, "Failed to launch k6 test starter", "batch", batchIndex+1)
+			continue
+		}
+		
+		jobsCreated++
+		log.Info("Created starter job", "batch", batchIndex+1, "hostnames", len(batch))
+	}
+	
+	if jobsCreated == 0 {
+		log.Error(fmt.Errorf("no starter jobs created"), "Failed to create any starter jobs")
 		return res, nil
 	}
-
-	log.Info("Created starter job")
+	
+	if len(hostnamesBatches) > 1 {
+		log.Info(fmt.Sprintf("Created %d starter jobs to handle %d hostnames", jobsCreated, len(hostnames)))
+	}
 
 	log.Info("Changing stage of TestRun status to started")
 	k6.GetStatus().Stage = "started"
