@@ -1,0 +1,113 @@
+# Source of truth for active e2e tests and their source dependencies.
+# Used by run-tests.sh (test list) and the select-e2e-tests agent (mapping).
+
+global_triggers:
+  # Changes to these paths trigger ALL tests.
+  - "api/v1alpha1/testrun_types.go"
+  - "internal/controller/testrun_controller.go"
+  - "internal/controller/common.go"
+  - "config/crd/"
+  - "config/default/"
+  - "config/manager/"
+  - "config/rbac/"
+  - "e2e/run-tests.sh"
+  - "e2e/latest/"
+
+skip_patterns:
+  # Changes ONLY to these paths trigger no tests.
+  - "*.md"
+  - "LICENSE"
+  - ".github/"
+  - ".claude/"
+  - "charts/"
+
+tests:
+  - name: basic-testrun-1
+    source_patterns:
+      - "internal/controller/k6_initialize.go"
+      - "pkg/resources/jobs/initializer.go"
+      - "pkg/types/script.go"
+
+  - name: basic-testrun-4
+    source_patterns:
+      - "internal/controller/k6_initialize.go"
+      - "internal/controller/k6_create.go"
+      - "internal/controller/k6_start.go"
+      - "pkg/resources/jobs/runner.go"
+      - "pkg/resources/jobs/starter.go"
+      - "pkg/resources/jobs/helpers.go"
+      - "pkg/resources/containers/curl_start.go"
+      - "pkg/segmentation/"
+      - "pkg/types/script.go"
+
+  - name: testrun-cleanup
+    source_patterns:
+      - "internal/controller/k6_finish.go"
+      - "internal/controller/k6_stop.go"
+      - "internal/controller/k6_stopped_jobs.go"
+      - "pkg/resources/jobs/stopper.go"
+      - "pkg/resources/containers/curl_stop.go"
+
+  - name: testrun-archive
+    source_patterns:
+      - "pkg/resources/jobs/initializer.go"
+
+  - name: init-container-volume
+    source_patterns:
+      - "internal/controller/k6_create.go"
+      - "pkg/resources/jobs/runner.go"
+      - "pkg/resources/jobs/helpers.go"
+      - "pkg/types/script.go"
+
+  - name: multifile
+    source_patterns:
+      - "internal/controller/k6_create.go"
+      - "pkg/segmentation/"
+      - "pkg/types/script.go"
+
+  - name: error-stage
+    source_patterns:
+      - "internal/controller/k6_initialize.go"
+      - "internal/controller/k6_finish.go"
+
+  - name: invalid-arguments
+    source_patterns:
+      - "pkg/types/k6cli.go"
+
+  - name: testrun-simultaneous
+    source_patterns:
+      - "internal/controller/k6_start.go"
+      - "pkg/resources/containers/curl_start.go"
+
+  - name: testrun-watch-namespace
+    source_patterns:
+      - "internal/controller/"
+
+  - name: testrun-watch-namespaces
+    source_patterns:
+      - "internal/controller/"
+
+  - name: testrun-cloud-output
+    source_patterns:
+      - "pkg/cloud/"
+      - "pkg/types/k6cli.go"
+      - "pkg/resources/jobs/runner.go"
+    requires_env: [CLOUD_TOKEN, PROJECT_ID]
+
+  - name: testrun-simultaneous-cloud-output
+    source_patterns:
+      - "pkg/cloud/"
+    requires_env: [CLOUD_TOKEN, PROJECT_ID]
+
+  - name: initializer-disabled
+    source_patterns:
+      - "internal/controller/k6_initialize.go"
+      - "pkg/resources/jobs/initializer.go"
+
+  # - name: volume-claim
+  # - name: kyverno
+  # - name: custom-domain
+  # - name: browser-1
+  # - name: cloud-abort
+  # - name: plz
+  # - name: ipv6

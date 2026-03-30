@@ -14,7 +14,7 @@ data:
         { target: 0, duration: '30s' },
       ],
       cloud: {
-        projectID: 3756871,
+        projectID: $PROJECT_ID,
         name: 'k6-operator-e2e-simultaneous-cloud-output'
       }
     };

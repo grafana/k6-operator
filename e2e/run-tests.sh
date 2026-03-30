@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Source .env for CLOUD_TOKEN, PROJECT_ID, etc.
+if [ -f "$(dirname "$0")/.env" ]; then
+  set -a
+  source "$(dirname "$0")/.env"
+  set +a
+fi
+
 show_help() {
   echo "Usage: $(basename $0) [-h] [-t GHCR_IMAGE_TAG] [-i IMAGE] [-p TEST_NAME]"
   echo "Options:"
@@ -14,13 +21,15 @@ show_help() {
 exec_test() {
   echo "Executing test $TEST_NAME"
   cd $TEST_NAME/manifests
-  for f in *.yaml; do envsubst '$CLOUD_TOKEN' < $f > out && mv out $f; done
+  for f in *.yaml; do envsubst '$CLOUD_TOKEN $PROJECT_ID' < $f > out && mv out $f; done
   cd .. # back to $TEST_NAME
   if ! ../k6 run test.js ; then
     echo "Test $TEST_NAME failed"
+    git checkout -- manifests/
     cd .. # back to root
     exit 1
   fi
+  git checkout -- manifests/
   cd .. # back to root
 }
 
@@ -119,29 +128,7 @@ if [ ! -z "${TEST_NAME}" ]; then
   exit 0
 fi
 
-tests=(
-  "basic-testrun-1"
-  "basic-testrun-4"
-  "testrun-cleanup"
-  "testrun-archive"
-  "init-container-volume"
-  "multifile"
-  "error-stage"
-  "invalid-arguments"
-  "testrun-simultaneous"
-  "testrun-watch-namespace"
-  "testrun-watch-namespaces"
-  "testrun-cloud-output"
-  "testrun-simultaneous-cloud-output"
-  "initializer-disabled"
-  # volume-claim
-  # "kyverno"
-  # "custom-domain"
-  # "browser-1"
-  # cloud abort
-  # plz
-  # ipv6
-  )
+tests=($(grep '^  - name:' tests.yaml | awk '{print $3}'))
 
 for folder in "${tests[@]}"; do
     TEST_NAME=$folder
