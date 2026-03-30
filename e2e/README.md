@@ -16,6 +16,8 @@ It is assumed that there is a Kubernetes cluster to execute the tests in and `ku
 
 The [vcluster](https://www.vcluster.com/install) CLI should also be installed as it is currently a dependency of xk6-environment. See the [issue](https://github.com/grafana/xk6-environment/issues/1) for details.
 
+The list of all e2e tests is maintained in the machine-readable [tests.yaml](./tests.yaml).
+
 ## Under the hood
 
 `run-tests.sh` does not build any images but it can be customized with custom image and a tag for k6-operator image. At the same time the script uses the current k6-operator folder to get manifests. So for example, in order to test a certain branch, one has to switch to that branch locally first.
@@ -42,24 +44,18 @@ docker exec -it kind-control-plane crictl images | grep k6operator
 In order to execute Grafana Cloud k6 tests (cloud output or, in the future, PLZ), one is expected to create environment variables containing the tokens for authentication:
 
 ```sh
-# personal GCk6 token
+# Personal GCk6 token
 # Encode your token with base64:
 echo -n '<MY PERSONAL TOKEN HERE>' | base64
 
-# The output can contain an additional newline in terminal so remove it, then export it like this:
-export CLOUD_TOKEN=... # in base64!
-```
-
-A similar process will be needed for an organization token (required for PLZ):
-```sh
+# An organization token (required for PLZ):
 echo -n '<MY ORG TOKEN HERE>' | base64
-
-export CLOUD_ORG_TOKEN=... # in base64!
 ```
 
-If the cloud environment variables are present in a `stack.env` file, they can be quickly exported before running the test suite with this command:
+`run-tests.sh` reads an `e2e/.env` file containing these values. You can create it on your own or use a `sample.env` and populate it with values for your stack:
 ```sh
-export $(cat stack.env | xargs)
+cp e2e/sample.env e2e/.env
+nano e2e/.env
 ```
 
 #### Git ignore changes to `Secret.yaml`
@@ -72,7 +68,7 @@ git update-index --skip-worktree e2e/testrun-cloud-output/manifests/secret.yaml 
 
 ## How to add a test
 
-Firstly, the existing tests can be used as a basis for many additional experiments. Otherwise, the skeleton for the test looks like this:
+Firstly, the existing tests can be used as a basis for many additional experiments. The skeleton for the test looks like this:
 
 ```sh
 new-test
