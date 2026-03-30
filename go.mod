@@ -12,7 +12,7 @@ require (
 	github.com/onsi/gomega v1.39.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.11.1
-	go.k6.io/k6 v1.6.1
+	go.k6.io/k6 v1.7.0
 	gopkg.in/guregu/null.v3 v3.5.0
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
