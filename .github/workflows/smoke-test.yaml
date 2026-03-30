@@ -1,9 +1,44 @@
 ---
-name: "Create cluster using KinD"
+name: "Smoke test for TestRun CRD"
 permissions: {}
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+      - "config/**"
+      - "charts/**"
   workflow_dispatch: {}
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      go-or-manifests: ${{ steps.filter.outputs.go-or-manifests }}
+      charts: ${{ steps.filter.outputs.charts }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - name: Detect changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            go-or-manifests:
+              - '**/*.go'
+              - 'go.mod'
+              - 'go.sum'
+              - 'config/**'
+            charts:
+              - 'charts/**'
+
   docker:
     runs-on: ubuntu-latest
     permissions:
@@ -36,7 +71,8 @@ jobs:
             ghcr.io/grafana/k6-operator:${{ github.sha }}
 
   kind-kustomize:
-    needs: ["docker"]
+    needs: ["changes", "docker"]
+    if: needs.changes.outputs.go-or-manifests == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout"
@@ -55,7 +91,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc
         with:
-          node_image: "kindest/node:v1.27.1"
+          node_image: "kindest/node:v1.35.1"
 
       - name: Test
         run: |
@@ -66,15 +102,13 @@ jobs:
           kubectl -n k6-operator-system describe deployment k6-operator-controller-manager
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
           kubectl apply -f e2e/test.yaml
-          sleep 30
-          kubectl get namespaces
-          kubectl get jobs -A
           kubectl wait --for=condition=complete --timeout=180s job/k6-sample-initializer
           kubectl delete configmap crocodile-stress-test
           kubectl delete -f e2e/test.yaml
 
   kind-helm:
-    needs: ["docker"]
+    needs: ["changes", "docker"]
+    if: needs.changes.outputs.charts == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -92,7 +126,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc
         with:
-          node_image: "kindest/node:v1.27.1"
+          node_image: "kindest/node:v1.35.1"
 
       - name: Testing
         run: |
@@ -101,9 +135,6 @@ jobs:
           kubectl -n k6-operator-system describe deployment k6-operator-controller-manager
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
           kubectl apply -f e2e/test.yaml
-          sleep 30
-          kubectl get namespaces
-          kubectl get jobs -A
           kubectl wait --for=condition=complete --timeout=180s job/k6-sample-1
           kubectl delete configmap crocodile-stress-test
           kubectl delete -f e2e/test.yaml
