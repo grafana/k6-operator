@@ -51,9 +51,6 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 	// initializer is a quick job so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
-	// validation has already happened, so error here can be ignored
-	cli, _ := types.ParseCLI(k6.GetSpec().Arguments)
-
 	inspectOutput, inspectReady, err := inspectTestRun(ctx, log, k6, r.Client)
 	if err != nil {
 		// Cloud output test run is not created yet at this point, so sending
@@ -63,7 +60,7 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 				WithDetail(fmt.Sprintf("Failed to inspect the test script: %v", err)).
 				WithAbort()
-			cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
+			cloud.SendTestRunEvents(r.k6CloudClient, k6.GetTestRunID(), log, events)
 		} else {
 			// if there is any error, we have to reflect it on the TestRun manifest
 			k6.GetStatus().Stage = "error"
@@ -102,7 +99,7 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 		return ctrl.Result{}, ready, nil
 	}
 
-	if cli.HasCloudOut {
+	if k6.GetSpec().IsCloudTest() {
 		v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRun, metav1.ConditionTrue)
 
 		if v1alpha1.IsUnknown(k6, v1alpha1.CloudTestRunCreated) {
@@ -139,7 +136,7 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 		return res, nil
 	}
 
-	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
+	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().GetToken(), k6.NamespacedName().Namespace)
 	err = tokenInfo.Load(ctx, log, r.Client)
 	if err != nil {
 		// An error here means a very likely mis-configuration of the token.

@@ -109,10 +109,14 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				},
 				Parallelism: int32(0),
 				Separate:    false,
-				Arguments:   "--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization=\"Token $(K6_CLOUD_TOKEN)\"",
+				Arguments:   "--no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization=\"Token $(K6_CLOUD_TOKEN)\"",
 				Cleanup:     v1alpha1.Cleanup("post"),
 
-				TestRunID: "0",
+				Cloud: &v1alpha1.CloudSpec{
+					Token:     "",
+					TestRunID: "0",
+					Stream:    true,
+				},
 			},
 		}
 
@@ -168,7 +172,8 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 
 	// populate TestRuns for different test cases
 
-	requiredFieldsTestRun.Spec.Token = someToken
+	requiredFieldsTestRun.Spec.Cloud = requiredFieldsTestRun.Spec.Cloud.DeepCopy()
+	requiredFieldsTestRun.Spec.Cloud.Token = someToken
 	requiredFieldsTestRun.Spec.Runner.Resources.Limits = resourceLimits
 
 	optionalFieldsTestRun = requiredFieldsTestRun // build up on top of required field case
@@ -179,8 +184,9 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	optionalFieldsTestRun.Spec.Starter.NodeSelector = someNodeSelector
 
 	cloudFieldsTestRun = requiredFieldsTestRun // build up on top of required field case
+	cloudFieldsTestRun.Spec.Cloud = requiredFieldsTestRun.Spec.Cloud.DeepCopy()
 	cloudFieldsTestRun.Name = testrun.PLZTestName(fmt.Sprintf("%d", someTestRunID))
-	cloudFieldsTestRun.Spec.TestRunID = fmt.Sprintf("%d", someTestRunID)
+	cloudFieldsTestRun.Spec.Cloud.TestRunID = fmt.Sprintf("%d", someTestRunID)
 	cloudFieldsTestRun.Spec.Arguments = strings.Replace(requiredFieldsTestRun.Spec.Arguments,
 		"test_run_id=0",
 		fmt.Sprintf("test_run_id=%d", someTestRunID),

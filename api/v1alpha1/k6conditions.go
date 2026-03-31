@@ -87,12 +87,12 @@ func Initialize(k6 *TestRun) {
 	UpdateCondition(k6, CloudTestRunAborted, metav1.ConditionFalse)
 
 	// PLZ test run case
-	if len(k6.GetSpec().TestRunID) > 0 {
+	if len(k6.GetSpec().GetTestRunID()) > 0 {
 		UpdateCondition(k6, CloudPLZTestRun, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudTestRunCreated, metav1.ConditionTrue)
 		UpdateCondition(k6, CloudTestRunFinalized, metav1.ConditionFalse)
 
-		k6.GetStatus().TestRunID = k6.GetSpec().TestRunID
+		k6.GetStatus().TestRunID = k6.GetSpec().GetTestRunID()
 	} else {
 		UpdateCondition(k6, CloudPLZTestRun, metav1.ConditionFalse)
 		// PLZ test run can be defined only via spec.testRunId;
