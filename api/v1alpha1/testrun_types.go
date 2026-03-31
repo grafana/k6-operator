@@ -88,6 +88,18 @@ type K6Scuttle struct {
 	QuitWithoutEnvoyTimeout string `json:"quitWithoutEnvoyTimeout,omitempty"`
 }
 
+// CloudSpec defines cloud-related configuration for k6 test runs.
+type CloudSpec struct {
+	// Token is the name of the Secret that contains the k6 Cloud token.
+	Token string `json:"token,omitempty"`
+
+	// TestRunID is the k6 Cloud test run ID. Reserved by Grafana Cloud k6.
+	TestRunID string `json:"testRunId,omitempty"`
+
+	// Stream enables streaming results to k6 Cloud via `k6 cloud run --local-execution`.
+	Stream bool `json:"stream,omitempty"`
+}
+
 // TestRunSpec defines the desired state of TestRun
 type TestRunSpec struct {
 	// Script describes where the k6 script is located.
@@ -134,9 +146,16 @@ type TestRunSpec struct {
 
 	Cleanup Cleanup `json:"cleanup,omitempty"`
 
+	// Cloud contains cloud-related configuration. Preferred over the
+	// top-level Token and TestRunID fields.
+	// +optional
+	Cloud *CloudSpec `json:"cloud,omitempty"`
+
+	// Use cloud.testRunId instead.
 	// TestRunID is reserved by Grafana Cloud k6. Do not set it manually.
 	TestRunID string `json:"testRunId,omitempty"` // PLZ reserved field
 
+	// Use cloud.token instead.
 	// Token is reserved by Grafana Cloud k6. Do not set it manually.
 	Token string `json:"token,omitempty"` // PLZ reserved field (for now)
 }
@@ -216,14 +235,36 @@ func init() {
 	SchemeBuilder.Register(&TestRun{}, &TestRunList{})
 }
 
-func (k6 *TestRunSpec) Validate() (warnings []string, err error) {
+func (k6 *TestRunSpec) Validate() (cli *types.CLI, warnings []string, err error) {
 	// Check for deprecated fields.
 	if len(k6.Scuttle.Enabled) > 0 {
 		warnings = append(warnings, "`.spec.scuttle` is deprecated and will be removed in the future. See https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/usage/istio/ on how to set up Istio.")
 	}
 
-	// Currently, we validate "manually" only arguments field.
-	_, err = types.ParseCLI(k6.Arguments)
+	cli, err = types.ParseCLI(k6.Arguments)
+	if err != nil {
+		return
+	}
+
+	// Support for `--out cloud` is for backwards compatibility only.
+	// There must be only one used at a time.
+	if cli.HasCloudOut && k6.IsCloudStream() {
+		err = errors.New("cannot use both `--out cloud` and cloud.stream; remove `--out cloud` and leave only cloud.stream")
+		return
+	}
+
+	// sanity checks
+	if k6.Cloud != nil {
+		if len(k6.Cloud.Token) > 0 && len(k6.Token) > 0 && k6.Cloud.Token != k6.Token {
+			err = errors.New("corrupted TestRun: cloud.token and token are both set with different values")
+			return
+		}
+		if len(k6.Cloud.TestRunID) > 0 && len(k6.TestRunID) > 0 && k6.Cloud.TestRunID != k6.TestRunID {
+			err = errors.New("corrupted TestRun: cloud.testRunId and testRunId are both set with different values")
+			return
+		}
+	}
+
 	return
 }
 
@@ -294,15 +335,46 @@ func (k6 *TestRun) NamespacedName() k8stypes.NamespacedName {
 	return k8stypes.NamespacedName{Namespace: k6.Namespace, Name: k6.Name}
 }
 
-// TestRunID is a tiny helper to get k6 Cloud test run ID.
+// GetTestRunID is a tiny helper to get k6 Cloud test run ID.
 // PLZ test run will have test run ID as part of spec,
 // while cloud output test run as part of status.
-func (k6 *TestRun) TestRunID() string {
-	specId := k6.GetSpec().TestRunID
+func (k6 *TestRun) GetTestRunID() string {
+	specId := k6.GetSpec().GetTestRunID()
 	if len(specId) > 0 {
 		return specId
 	}
 	return k6.GetStatus().TestRunID
+}
+
+// GetToken returns the cloud token name, preferring cloud.token over the
+// deprecated top-level field.
+func (spec *TestRunSpec) GetToken() string {
+	if spec.Cloud != nil && len(spec.Cloud.Token) > 0 {
+		return spec.Cloud.Token
+	}
+	return spec.Token
+}
+
+// GetTestRunID returns the cloud test run ID, preferring cloud.testRunId
+// over the deprecated top-level field.
+func (spec *TestRunSpec) GetTestRunID() string {
+	if spec.Cloud != nil && len(spec.Cloud.TestRunID) > 0 {
+		return spec.Cloud.TestRunID
+	}
+	return spec.TestRunID
+}
+
+// IsCloudStream returns true if cloud streaming is enabled via cloud.stream.
+func (spec *TestRunSpec) IsCloudStream() bool {
+	return spec.Cloud != nil && spec.Cloud.Stream
+}
+
+// IsCloudTest returns true if the test is configured for cloud output,
+// either via `--out cloud` (deprecated) or cloud.stream.
+// Includes both cloud output and PLZ mode.
+func (spec *TestRunSpec) IsCloudTest() bool {
+	cli, _ := types.ParseCLI(spec.Arguments)
+	return cli.HasCloudOut || spec.IsCloudStream()
 }
 
 func (k6 *TestRun) ListOptions() *client.ListOptions {
