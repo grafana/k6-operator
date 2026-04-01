@@ -50,7 +50,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: "Build:dockerimage"
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
         with:
           context: .
           push: true
@@ -60,7 +60,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/grafana/k6-operator:latest,ghcr.io/grafana/k6-operator:controller-${{env.IMAGETAG}}
       - name: "Build:dockerimage"
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
         with:
           context: .
           push: true
@@ -68,7 +68,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/grafana/k6-operator:latest-runner,ghcr.io/grafana/k6-operator:runner-${{env.IMAGETAG}}
       - name: "Build:dockerimage"
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
         with:
           context: .
           push: true
