@@ -64,7 +64,7 @@ func Test_NewInitializerJob(t *testing.T) {
 							Name:            "k6",
 							Command: []string{
 								"sh", "-c",
-								"mkdir -p $(dirname /tmp/test.js.archived.tar) && k6 archive /test/test.js -O /tmp/test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements /tmp/test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
+								"mkdir -p $(dirname /tmp/test.js.archived.tar) && k6 archive /test/test.js -O /tmp/test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements /tmp/test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level.*error'",
 							},
 							Env: []corev1.EnvVar{},
 							EnvFrom: []corev1.EnvFromSource{
@@ -168,7 +168,7 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{"-e FOO=bar", "-e OTHER=42"},
+			expectedInCmd:    []string{`-e FOO="bar"`, `-e OTHER="42"`},
 			expectedInEnvVar: []string{"FOO", "OTHER"},
 		},
 		{
@@ -180,13 +180,37 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{"-e FOO=bar"},
+			expectedInCmd:    []string{`-e FOO="bar"`},
 			expectedInEnvVar: []string{"FOO"},
 		},
 		{
 			name:    "no env vars",
 			setup:   func(k6 *v1alpha1.TestRun) {},
 			noEFlag: true,
+		},
+		{
+			name: "env vars with spaces",
+			setup: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Runner = v1alpha1.Pod{
+					Env: []corev1.EnvVar{
+						{Name: "TEST_TAG", Value: "2026-03-31 TS Dev Smoke 212"},
+					},
+				}
+			},
+			expectedInCmd:    []string{`-e TEST_TAG="2026-03-31 TS Dev Smoke 212"`},
+			expectedInEnvVar: []string{"TEST_TAG"},
+		},
+		{
+			name: "env vars with special chars",
+			setup: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Runner = v1alpha1.Pod{
+					Env: []corev1.EnvVar{
+						{Name: "THRESHOLDS", Value: "p(95),avg"},
+					},
+				}
+			},
+			expectedInCmd:    []string{`-e THRESHOLDS="p(95),avg"`},
+			expectedInEnvVar: []string{"THRESHOLDS"},
 		},
 	}
 
