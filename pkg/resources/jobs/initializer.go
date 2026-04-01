@@ -57,7 +57,7 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 	// NOTE: only .env are passed to k6 CLI, not .envFrom
 	var envVarString string
 	for _, ev := range k6.GetSpec().Initializer.Env {
-		envVarString += fmt.Sprintf(" -e %s=%s", ev.Name, ev.Value)
+		envVarString += fmt.Sprintf(` -e %s="%s"`, ev.Name, ev.Value)
 	}
 
 	var (
@@ -82,7 +82,7 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 		// printing JSON as usual. Then parse temp file only for errors, ignoring
 		// any other log messages.
 		// Related: https://github.com/grafana/k6-docs/issues/877
-		"mkdir -p $(dirname %s) && k6 archive %s%s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level=error'",
+		"mkdir -p $(dirname %s) && k6 archive %s%s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level.*error'",
 		archiveName, scriptName, envVarString, archiveName, argLine,
 		archiveName))
 
