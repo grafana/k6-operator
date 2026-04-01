@@ -100,7 +100,7 @@ jobs:
           fi
       - name: "Setup kustomize"
         # this is v2.1.0
-        uses: imranismail/setup-kustomize@049197ab4eedae719afdcfa2aa852ae69876d015
+        uses: imranismail/setup-kustomize@ab2f6c276a92396da9967066f67ef300563038cf
       - name: "Bundle"
         run: |
           cd config/default && kustomize edit set image ghcr.io/grafana/k6-operator=*:controller-${{env.IMAGETAG}} && kustomize build . > ../../bundle.yaml
