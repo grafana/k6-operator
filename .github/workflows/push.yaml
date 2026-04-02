@@ -44,7 +44,7 @@ jobs:
           cache-binary: false
           version: v0.31.1 # Buildx version
       - name: "Build:login"
-        uses: docker/login-action@3227f5311cb93ffd14d13e65d8cc400d30f4dd8a
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
