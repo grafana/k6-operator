@@ -102,6 +102,7 @@ jobs:
           kubectl -n k6-operator-system describe deployment k6-operator-controller-manager
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
           kubectl apply -f e2e/test.yaml
+          kubectl wait --for=create --timeout=60s job/k6-sample-1
           kubectl wait --for=condition=complete --timeout=180s job/k6-sample-initializer
           kubectl delete configmap crocodile-stress-test
           kubectl delete -f e2e/test.yaml
@@ -135,6 +136,7 @@ jobs:
           kubectl -n k6-operator-system describe deployment k6-operator-controller-manager
           kubectl create configmap crocodile-stress-test --from-file e2e/test.js
           kubectl apply -f e2e/test.yaml
+          kubectl wait --for=create --timeout=60s job/k6-sample-1
           kubectl wait --for=condition=complete --timeout=180s job/k6-sample-1
           kubectl delete configmap crocodile-stress-test
           kubectl delete -f e2e/test.yaml
