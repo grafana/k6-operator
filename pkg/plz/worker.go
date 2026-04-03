@@ -143,7 +143,10 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 			Separate: false,
 			Cleanup:  v1alpha1.Cleanup("post"),
 
-			Token: plz.Spec.Token,
+			Cloud: &v1alpha1.CloudSpec{
+				Token:  plz.Spec.Token,
+				Stream: true,
+			},
 		},
 	}
 
@@ -183,10 +186,10 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 	}
 	tr.Spec.Runner.Env = envVars
 	tr.Spec.Parallelism = int32(trData.InstanceCount)
-	tr.Spec.Arguments = fmt.Sprintf(`--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
+	tr.Spec.Arguments = fmt.Sprintf(`--no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
 		w.plz.Name,
 		trData.TestRunID())
-	tr.Spec.TestRunID = trData.TestRunID()
+	tr.Spec.Cloud.TestRunID = trData.TestRunID()
 }
 
 // handle creates a new PLZ TestRun from the given test run id

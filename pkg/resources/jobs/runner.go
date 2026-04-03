@@ -19,7 +19,11 @@ import (
 // secretName is the name of the Secret with Cloud token, which must be in the same namespace.
 func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (*batchv1.Job, error) {
 	name := fmt.Sprintf("%s-%d", k6.NamespacedName().Name, index)
+
 	postCommand := []string{"k6", "run"}
+	if k6.GetSpec().IsCloudStream() {
+		postCommand = []string{"k6", "cloud", "run", "--local-execution"}
+	}
 
 	command, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, postCommand)
 
@@ -120,7 +124,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
 
 	// this is a cloud test run: either cloud output or PLZ
-	if len(k6.TestRunID()) > 0 {
+	if len(k6.GetTestRunID()) > 0 {
 		// cloud output case
 		tokenVar := corev1.EnvVar{
 			Name:  "K6_CLOUD_TOKEN",
@@ -148,7 +152,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 
 		env = append(env, corev1.EnvVar{
 			Name:  "K6_CLOUD_PUSH_REF_ID",
-			Value: k6.TestRunID(),
+			Value: k6.GetTestRunID(),
 		}, tokenVar)
 	}
 

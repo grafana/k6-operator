@@ -1662,6 +1662,132 @@ func TestNewRunnerJobPLZTestRun(t *testing.T) {
 	}
 }
 
+func TestNewRunnerJobCloudStream(t *testing.T) {
+	script := &types.Script{
+		Name:     "test",
+		Filename: "thing.js",
+		Type:     "ConfigMap",
+	}
+
+	var zero int64 = 0
+	automountServiceAccountToken := true
+
+	expectedLabels := map[string]string{
+		"app":    "k6",
+		"k6_cr":  "test",
+		"runner": "true",
+	}
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-1",
+			Namespace: "test",
+			Labels:    expectedLabels,
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			BackoffLimit: new(int32),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: expectedLabels,
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Hostname:                     "test-1",
+					RestartPolicy:                corev1.RestartPolicyNever,
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					Tolerations:                  nil,
+					TopologySpreadConstraints:    nil,
+					ServiceAccountName:           "default",
+					SecurityContext:              &corev1.PodSecurityContext{},
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					Containers: []corev1.Container{{
+						Image:           "grafana/k6:latest",
+						ImagePullPolicy: "",
+						Name:            "k6",
+						Command:         []string{"k6", "cloud", "run", "--local-execution", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused", "--tag", "instance_id=1", "--tag", "job_name=test-1"},
+						Env: append(aggregationEnvVars,
+							corev1.EnvVar{
+								Name:  "K6_CLOUD_PUSH_REF_ID",
+								Value: "testrunid",
+							},
+							corev1.EnvVar{
+								Name:  "K6_CLOUD_TOKEN",
+								Value: "token",
+							},
+						),
+						Resources:    corev1.ResourceRequirements{},
+						VolumeMounts: script.VolumeMount(),
+						Ports:        []corev1.ContainerPort{{ContainerPort: 6565}},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Path:   "/v1/status",
+									Port:   intstr.IntOrString{IntVal: 6565},
+									Scheme: "HTTP",
+								},
+							},
+						},
+						SecurityContext: &corev1.SecurityContext{},
+					}},
+					TerminationGracePeriodSeconds: &zero,
+					Volumes:                       script.Volume(),
+				},
+			},
+		},
+	}
+	k6 := &v1alpha1.TestRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.TestRunSpec{
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Cloud: &v1alpha1.CloudSpec{
+				Stream: true,
+			},
+			Runner: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+			},
+		},
+		Status: v1alpha1.TestRunStatus{
+			TestRunID:       "testrunid",
+			AggregationVars: "2|5s|3s|10s|10",
+		},
+	}
+
+	job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", "").InjectValue("token"))
+	if err != nil {
+		t.Errorf("NewRunnerJob errored, got: %v", err)
+	}
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Errorf("NewRunnerJob returned unexpected data, diff: %s", diff)
+	}
+}
+
 func TestNewRunnerJobPriorityClassName(t *testing.T) {
 
 	script := &types.Script{
