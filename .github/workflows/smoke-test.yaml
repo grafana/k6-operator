@@ -82,7 +82,7 @@ jobs:
 
       - name: "Setup kustomize"
         # this is v2.1.0
-        uses: imranismail/setup-kustomize@049197ab4eedae719afdcfa2aa852ae69876d015
+        uses: imranismail/setup-kustomize@ab2f6c276a92396da9967066f67ef300563038cf
 
       - name: "Kustomize Build"
         run: |
