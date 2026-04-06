@@ -366,8 +366,67 @@ func Test_NewRunnerJob(t *testing.T) {
 			},
 		},
 		{
-			name: "PLZ test run",
+			name: "priority class name",
 			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Runner.PriorityClassName = "high-priority"
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.PriorityClassName = "high-priority"
+			},
+		},
+		{
+			name: "custom image",
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Runner.Image = "grafana/k6:0.50.0"
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Containers[0].Image = "grafana/k6:0.50.0"
+			},
+		},
+		{
+			name: "runner env vars",
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Runner.Env = []corev1.EnvVar{
+					{Name: "MY_VAR", Value: "my-value"},
+					{Name: "CONN_STR", Value: "host=db;port=5432;user=k6&timeout=30s"},
+				}
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
+					{Name: "MY_VAR", Value: "my-value"},
+					{Name: "CONN_STR", Value: "host=db;port=5432;user=k6&timeout=30s"},
+				}
+			},
+		},
+		{
+			name: "parallelism with segmentation",
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Parallelism = 3
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Containers[0].Command = []string{
+					"k6", "run", "--quiet",
+					"--execution-segment=0:1/3",
+					"--execution-segment-sequence=0,1/3,2/3,1",
+					"/test/test.js", "--address=0.0.0.0:6565", "--paused",
+					"--tag", "instance_id=1", "--tag", "job_name=test-1",
+				}
+			},
+		},
+		{
+			name: "separate triggers anti-affinity",
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Separate = true
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Affinity = newAntiAffinity()
+			},
+		},
+		{
+			name:      "PLZ test run",
+			tokenInfo: cloud.NewTokenInfo("plz-token-secret", "test"),
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.TestRunID = "plz-run-123"
 				k6.Spec.Runner.EnvFrom = envFromConfigMap("env")
 				k6.Spec.Runner.ImagePullPolicy = corev1.PullNever
 				k6.Status.Conditions = []metav1.Condition{
@@ -386,15 +445,18 @@ func Test_NewRunnerJob(t *testing.T) {
 					"--tag", "instance_id=1", "--tag", "job_name=test-1",
 					"--no-setup", "--no-teardown", "--linger",
 				}
-			},
-		},
-		{
-			name: "priority class name",
-			setupTestRun: func(k6 *v1alpha1.TestRun) {
-				k6.Spec.Runner.PriorityClassName = "high-priority"
-			},
-			setupExpectedJob: func(j *batchv1.Job) {
-				j.Spec.Template.Spec.PriorityClassName = "high-priority"
+				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
+					{Name: "K6_CLOUD_PUSH_REF_ID", Value: "plz-run-123"},
+					{
+						Name: "K6_CLOUD_TOKEN",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "plz-token-secret"},
+								Key:                  "token",
+							},
+						},
+					},
+				}
 			},
 		},
 	}

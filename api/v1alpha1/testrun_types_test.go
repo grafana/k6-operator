@@ -40,28 +40,29 @@ func Test_ParseScript(t *testing.T) {
 			},
 		},
 		{
-			"LocalFile",
-			false,
-			&types.Script{
-				Name:     "LocalFile",
-				Path:     "/custom/",
-				Filename: "my_test.js",
-				Type:     "LocalFile",
-			},
-
-			&TestRunSpec{
-				Script: K6Script{
-					LocalFile: "/custom/my_test.js",
-				},
-			},
-		},
-		{
-			"VolumeClaim default case /test/test.js",
+			"ConfigMap with no file defaults to test.js",
 			false,
 			&types.Script{
 				Name:     "Test",
 				Path:     "/test/",
-				Filename: "thing.js",
+				Filename: "test.js",
+				Type:     "ConfigMap",
+			},
+			&TestRunSpec{
+				Script: K6Script{
+					ConfigMap: K6Configmap{
+						Name: "Test",
+					},
+				},
+			},
+		},
+		{
+			"VolumeClaim: default case /test/script.js",
+			false,
+			&types.Script{
+				Name:     "Test",
+				Path:     "/test/",
+				Filename: "script.js",
 				Type:     "VolumeClaim",
 			},
 
@@ -69,13 +70,13 @@ func Test_ParseScript(t *testing.T) {
 				Script: K6Script{
 					VolumeClaim: K6VolumeClaim{
 						Name: "Test",
-						File: "thing.js",
+						File: "script.js",
 					},
 				},
 			},
 		},
 		{
-			"VolumeClaim custom path /foo/test.js",
+			"VolumeClaim: custom absolute path",
 			false,
 			&types.Script{
 				Name:     "Test",
@@ -94,7 +95,7 @@ func Test_ParseScript(t *testing.T) {
 			},
 		},
 		{
-			"VolumeClaim default case with subfolders /test/foo/test.js",
+			"VolumeClaim: with relative path",
 			false,
 			&types.Script{
 				Name:     "Test",
@@ -109,6 +110,74 @@ func Test_ParseScript(t *testing.T) {
 						Name: "Test",
 						File: "foo/test.js",
 					},
+				},
+			},
+		},
+		{
+			"VolumeClaim with no file defaults to /test/test.js",
+			false,
+			&types.Script{
+				Name:     "Test",
+				Path:     "/test/",
+				Filename: "test.js",
+				Type:     "VolumeClaim",
+			},
+			&TestRunSpec{
+				Script: K6Script{
+					VolumeClaim: K6VolumeClaim{
+						Name: "Test",
+					},
+				},
+			},
+		},
+		{
+			"VolumeClaim ReadOnly flag",
+			false,
+			&types.Script{
+				Name:     "Test",
+				Path:     "/test/",
+				Filename: "script.js",
+				Type:     "VolumeClaim",
+				ReadOnly: true,
+			},
+			&TestRunSpec{
+				Script: K6Script{
+					VolumeClaim: K6VolumeClaim{
+						Name:     "Test",
+						File:     "script.js",
+						ReadOnly: true,
+					},
+				},
+			},
+		},
+		{
+			"LocalFile",
+			false,
+			&types.Script{
+				Name:     "LocalFile",
+				Path:     "/custom/",
+				Filename: "my_test.js",
+				Type:     "LocalFile",
+			},
+
+			&TestRunSpec{
+				Script: K6Script{
+					LocalFile: "/custom/my_test.js",
+				},
+			},
+		},
+		{
+			"LocalFile at root path",
+			false,
+			&types.Script{
+				Name:     "LocalFile",
+				Path:     "/",
+				Filename: "test.js",
+				Type:     "LocalFile",
+			},
+			&TestRunSpec{
+				Script: K6Script{
+					LocalFile: "/test.js",
 				},
 			},
 		},
