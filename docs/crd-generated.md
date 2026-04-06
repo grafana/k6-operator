@@ -17211,7 +17211,9 @@ are set, the values in SecurityContext take precedence.<br/>
         <td><b>disabled</b></td>
         <td>boolean</td>
         <td>
-          <br/>
+          Disabled is supported only for initializer pod, and it allows to skip initializer execution.
+Use it when absolutely certain k6 script is valid and set up correctly in Kubernetes.
+It is ignored by cloud output test runs, as they depend on initializer.<br/>
           <br/>
             <i>Default</i>: false<br/>
         </td>
@@ -26173,7 +26175,9 @@ are set, the values in SecurityContext take precedence.<br/>
         <td><b>disabled</b></td>
         <td>boolean</td>
         <td>
-          <br/>
+          Disabled is supported only for initializer pod, and it allows to skip initializer execution.
+Use it when absolutely certain k6 script is valid and set up correctly in Kubernetes.
+It is ignored by cloud output test runs, as they depend on initializer.<br/>
           <br/>
             <i>Default</i>: false<br/>
         </td>
@@ -35157,7 +35161,9 @@ are set, the values in SecurityContext take precedence.<br/>
         <td><b>disabled</b></td>
         <td>boolean</td>
         <td>
-          <br/>
+          Disabled is supported only for initializer pod, and it allows to skip initializer execution.
+Use it when absolutely certain k6 script is valid and set up correctly in Kubernetes.
+It is ignored by cloud output test runs, as they depend on initializer.<br/>
           <br/>
             <i>Default</i>: false<br/>
         </td>
