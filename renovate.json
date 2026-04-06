@@ -101,7 +101,7 @@
                 "github-actions"
             ],
             "matchPackageNames": [
-                "github.com/Azure/setup-helm"
+                "azure/setup-helm"
             ],
             "matchUpdateTypes": [
                 "digest"
