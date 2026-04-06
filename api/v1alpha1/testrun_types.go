@@ -32,6 +32,9 @@ type PodMetadata struct {
 }
 
 type Pod struct {
+	// Disabled is supported only for initializer pod, and it allows to skip initializer execution.
+	// Use it when absolutely certain k6 script is valid and set up correctly in Kubernetes.
+	// It is ignored by cloud output test runs, as they depend on initializer.
 	// +optional
 	// +kubebuilder:default=false
 	Disabled                     bool                              `json:"disabled,omitempty"`
