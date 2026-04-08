@@ -8,11 +8,12 @@ import (
 )
 
 func Test_ParseScript(t *testing.T) {
-	testCases := []struct {
+	t.Parallel()
+	tests := []struct {
 		name        string
 		expectedErr bool
 		expected    *types.Script
-		tr          *TestRunSpec
+		spec        *TestRunSpec
 	}{
 		{
 			"Empty script",
@@ -183,20 +184,19 @@ func Test_ParseScript(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		testCase := testCase
-		t.Run(testCase.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			script, err := testCase.tr.ParseScript()
-			if testCase.expectedErr && err == nil {
+			script, err := tt.spec.ParseScript()
+			if tt.expectedErr && err == nil {
 				t.Errorf("ParseScript should have returned an error.")
 			}
-			if !testCase.expectedErr && err != nil {
+			if !tt.expectedErr && err != nil {
 				t.Errorf("ParseScript returned unexpected error: %v", err)
 			}
-			if !reflect.DeepEqual(script, testCase.expected) {
-				t.Errorf("ParseScript failed to return expected output, got: %v, expected: %v", script, testCase.expected)
+			if !reflect.DeepEqual(script, tt.expected) {
+				t.Errorf("ParseScript() = %v, want %v", script, tt.expected)
 			}
 		})
 	}
