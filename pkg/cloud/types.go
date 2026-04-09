@@ -57,6 +57,12 @@ type testRunList struct {
 	} `json:"object"`
 }
 
+// SecretsConfig holds the secrets configuration returned by k6 Cloud.
+type SecretsConfig struct {
+	Endpoint     string `json:"endpoint"`
+	ResponsePath string `json:"response_path"`
+}
+
 // TestRunData holds the output from /loadtests/v4/test_runs(%s)
 type TestRunData struct {
 	TestRunId     int `json:"id"`
@@ -64,6 +70,8 @@ type TestRunData struct {
 	LZConfig      `json:"k8s_load_zones_config"`
 	RunStatus     cloudapi.RunStatus `json:"run_status"`
 	RuntimeConfig cloudapi.Config    `json:"k6_runtime_config"`
+	TestRunToken  string             `json:"test_run_token,omitempty"`
+	SecretsConfig *SecretsConfig     `json:"secrets_config,omitempty"`
 }
 
 type LZConfig struct {

@@ -177,6 +177,20 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 
 	envVars = append(envVars, cloud.AggregationEnvVars(&trData.RuntimeConfig)...)
 
+	if trData.SecretsConfig != nil {
+		envVars = append(envVars,
+			corev1.EnvVar{Name: "K6_SECRET_SOURCE", Value: "url"},
+			corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_URL_TEMPLATE", Value: trData.SecretsConfig.Endpoint},
+			corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_RESPONSE_PATH", Value: trData.SecretsConfig.ResponsePath},
+		)
+		if trData.TestRunToken != "" {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION",
+				Value: "Bearer " + trData.TestRunToken,
+			})
+		}
+	}
+
 	tr.Spec.Runner.Image = trData.RunnerImage
 	tr.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		initContainer,
