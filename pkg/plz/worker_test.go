@@ -239,7 +239,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 
 	secretsWithTokenTestRun = cloudFieldsTestRun
 	secretsWithTokenTestRun.Spec.Runner.Env = append(
-		append([]corev1.EnvVar{}, defaultTestRun.Spec.Runner.Env...),
+		append([]corev1.EnvVar{}, cloudFieldsTestRun.Spec.Runner.Env...),
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE", Value: "url"},
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_URL_TEMPLATE", Value: someSecretsConfig.Endpoint},
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_RESPONSE_PATH", Value: someSecretsConfig.ResponsePath},
@@ -248,7 +248,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 
 	secretsWithoutTokenTestRun = cloudFieldsTestRun
 	secretsWithoutTokenTestRun.Spec.Runner.Env = append(
-		append([]corev1.EnvVar{}, defaultTestRun.Spec.Runner.Env...),
+		append([]corev1.EnvVar{}, cloudFieldsTestRun.Spec.Runner.Env...),
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE", Value: "url"},
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_URL_TEMPLATE", Value: someSecretsConfig.Endpoint},
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_RESPONSE_PATH", Value: someSecretsConfig.ResponsePath},
