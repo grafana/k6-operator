@@ -8,10 +8,10 @@ import (
 
 func Test_ParseCLI(t *testing.T) {
 	tests := []struct {
-		name           string
-		argLine        string
-		cli            CLI
-		validArguments bool
+		name             string
+		argLine          string
+		cli              CLI
+		invalidArguments bool
 	}{
 		{
 			"EmptyArgs",
@@ -88,6 +88,15 @@ func Test_ParseCLI(t *testing.T) {
 			false,
 		},
 		{
+			"OmitLogOutputInDiffOrder",
+			`--out cloud --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,label.test_run_id=1111,header.Authorization="Token $(K6_CLOUD_TOKEN)" --no-thresholds`,
+			CLI{
+				ArchiveArgs: "--no-thresholds",
+				HasCloudOut: true,
+			},
+			false,
+		},
+		{
 			"InvalidArguments",
 			`run this-argument-does-not-matter.js -o json`,
 			CLI{},
@@ -142,8 +151,7 @@ func Test_ParseCLI(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			cli, err := ParseCLI(test.argLine)
-
-			assert.Equal(t, test.validArguments, err != nil)
+			assert.Equal(t, test.invalidArguments, err != nil)
 			assert.Equal(t, test.cli.ArchiveArgs, cli.ArchiveArgs)
 			assert.Equal(t, test.cli.HasCloudOut, cli.HasCloudOut)
 		})
