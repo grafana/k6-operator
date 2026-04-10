@@ -103,13 +103,12 @@ func getTestRun(client *cloudapi.Client, url string) (*TestRunData, error) {
 	if err = client.Do(req, &trData); err != nil {
 		return nil, err
 	}
-
 	return &trData, nil
 }
 
 // called by PLZworker
 func GetTestRunData(client *cloudapi.Client, refID string) (*TestRunData, error) {
-	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status,k8s_load_zones_config,k6_runtime_config", strings.TrimSuffix(client.BaseURL(), "/v1"), refID)
+	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status,k8s_load_zones_config,k6_runtime_config,load_zone_distribution", strings.TrimSuffix(client.BaseURL(), "/v1"), refID)
 	return getTestRun(client, url)
 }
 

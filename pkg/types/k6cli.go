@@ -48,7 +48,16 @@ func ParseCLI(arguments string) (*CLI, error) {
 				// `k6 archive` ignores this argument but if it contains an env var
 				// for token (cloud logs for PLZ test runs), it will break the shell;
 				// so omit it.
-				break
+				i = end
+				continue
+			}
+
+			// Unsupported by `k6 archive`.
+			if strings.HasPrefix(args[i], "--block-hostnames") ||
+				strings.HasPrefix(args[i], "--blacklist-ip") ||
+				strings.HasPrefix(args[i], "--user-agent") {
+				i = end
+				continue
 			}
 
 			switch args[i] {

@@ -3,6 +3,7 @@ package plz
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -183,10 +184,32 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 	}
 	tr.Spec.Runner.Env = envVars
 	tr.Spec.Parallelism = int32(trData.InstanceCount)
-	tr.Spec.Arguments = fmt.Sprintf(`--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
-		w.plz.Name,
-		trData.TestRunID())
+
 	tr.Spec.TestRunID = trData.TestRunID()
+
+	// building argument list to k6
+	bips := `--blacklist-ip="` + strings.Join(trData.CLIArgs.BlacklistIPs, ",") + `"`
+	bhns := `--block-hostnames="` + strings.Join(trData.CLIArgs.BlockedHostnames, ",") + `"`
+	var tags string
+	for k, v := range trData.Tags {
+		tags += " --tag " + fmt.Sprintf(`%s=%s`, k, v)
+	}
+
+	var evs string
+	for k, v := range trData.Environment {
+		evs += " -e " + fmt.Sprintf(`%s=%s`, k, v)
+	}
+
+	tr.Spec.Arguments = fmt.Sprintf(`--out cloud %s %s %s --no-thresholds --user-agent=%s --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)" %s`,
+		bips, bhns,
+		tags, trData.UserAgent,
+		w.plz.Name,
+		trData.TestRunID(),
+		evs)
+
+	if trData.CLIArgs.IncludeSystemEnvVars {
+		tr.Spec.Arguments += " --include-system-env-vars"
+	}
 }
 
 // handle creates a new PLZ TestRun from the given test run id
@@ -212,6 +235,11 @@ func (w *PLZWorker) handle(testRunId string) {
 		w.logger.Error(err, fmt.Sprintf("Failed to retrieve test run data for `%s`", testRunId))
 		return
 	}
+	if err = trData.Build(); err != nil {
+		w.logger.Error(err, fmt.Sprintf("Failed to build up the args from test run data for `%s`", testRunId))
+		return
+	}
+
 	w.complete(tr, trData)
 
 	w.logger.Info(fmt.Sprintf("PLZ test run has been prepared with image `%s` and `%d` instances",
