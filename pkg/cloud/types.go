@@ -2,12 +2,27 @@ package cloud
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 
 	"go.k6.io/k6/cloudapi"
 	"go.k6.io/k6/lib/types"
 	"go.k6.io/k6/metrics"
 	corev1 "k8s.io/api/core/v1"
+)
+
+// GCk6 can set only a limited number of env vars to k6 process:
+// these are known and whitelisted with this "const" map.
+var reservedGCk6EnvVars = map[string]struct{}{}
+
+const (
+	// Reserved vars set for PLZ tests, as described here:
+	// https://grafana.com/docs/grafana-cloud/testing/k6/author-run/cloud-scripting-extras/cloud-execution-context-variables/
+	lzCloudExecVar    = "K6_CLOUDRUN_LOAD_ZONE"
+	distrCloudExecVar = "K6_CLOUDRUN_DISTRIBUTION"
+	trIDCloudExecVar  = "K6_CLOUDRUN_TEST_RUN_ID"
+	// it's exported as it must be set in external package, as part of TestRun CRD flow
+	IIDCloudExecVar = "K6_CLOUDRUN_INSTANCE_ID"
 )
 
 // InspectOutput is the parsed output from `k6 inspect --execution-requirements`.
@@ -66,7 +81,31 @@ type TestRunData struct {
 	RuntimeConfig cloudapi.Config    `json:"k6_runtime_config"`
 	// LZDistribution holds label -> distribution mapping relevant
 	// for the given script and PLZ
-	LZDistribution map[string]distribution `json:"load_zone_distribution,omitempty"`
+	LZDistribution `json:"load_zone_distribution,omitempty"`
+}
+
+func (trd *TestRunData) TestRunID() string {
+	return fmt.Sprintf("%d", trd.TestRunId)
+}
+
+// Build adds specific for GCk6 tags and env vars to data.
+// Returns error if it's impossible.
+func (trd *TestRunData) Build() error {
+	if len(trd.LZDistribution) != 1 {
+		fmt.Errorf("Only tests with one load zone are supported. Provided: %+v.", trd.LZDistribution)
+	}
+
+	// The potential overwrite here is deliberate: these keys are reserved by
+	// GCk6, described in docs and considered higher priority in PLZ tests
+	// for the sake of consistency between public & private cloud tests.
+
+	trd.CLIArgs.Tags["load_zone"] = trd.LZDistribution.LZLabel()
+
+	trd.Environment[lzCloudExecVar] = trd.LZDistribution.LZName()
+	trd.Environment[distrCloudExecVar] = trd.LZDistribution.LZLabel()
+	trd.Environment[trIDCloudExecVar] = trd.TestRunID()
+
+	return nil
 }
 
 type LZConfig struct {
@@ -92,20 +131,30 @@ type CLIArgs struct {
 	UserAgent            string            `json:"user_agent,omitempty"`
 }
 
+type LZDistribution map[string]distribution
+
 type distribution struct {
 	LoadZone string `json:"loadZone"`
 	Percent  int    `json:"percent"`
 }
 
-func (trd *TestRunData) TestRunID() string {
-	return fmt.Sprintf("%d", trd.TestRunId)
-}
-
 // EnvVars makes up the corev1 struct from Go map.
 func (lz *LZConfig) EnvVars() []corev1.EnvVar {
-	ev := make([]corev1.EnvVar, len(lz.GCk6EnvVars))
+	whitelisted := maps.Collect(
+		func(yield func(_, _ string) bool) {
+			for k, v := range lz.GCk6EnvVars {
+				if _, ok := reservedGCk6EnvVars[k]; ok {
+					if !yield(k, v) {
+						return
+					}
+				}
+			}
+		},
+	)
+
+	ev := make([]corev1.EnvVar, len(whitelisted))
 	i := 0
-	for k, v := range lz.GCk6EnvVars {
+	for k, v := range whitelisted {
 		ev[i] = corev1.EnvVar{
 			Name:  k,
 			Value: v,
@@ -118,6 +167,22 @@ func (lz *LZConfig) EnvVars() []corev1.EnvVar {
 	})
 
 	return ev
+}
+
+// LZLabel assumes there is only one LZ.
+func (lzd *LZDistribution) LZLabel() string {
+	for k, _ := range *lzd {
+		return k
+	}
+	return "unknown_lz_label"
+}
+
+// LZName assumes there is only one LZ.
+func (lzd *LZDistribution) LZName() string {
+	for _, v := range *lzd {
+		return v.LoadZone
+	}
+	return "unknown_lz_name"
 }
 
 type TestRunStatus cloudapi.RunStatus
