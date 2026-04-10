@@ -85,9 +85,9 @@ func TestTestRunData_SecretsEnvVars(t *testing.T) {
 				SecretsConfig: &SecretsConfig{Endpoint: someEndpoint, ResponsePath: someRespPath},
 			},
 			expected: []corev1.EnvVar{
-				{Name: "K6_SECRET_SOURCE", Value: "url"},
-				{Name: "K6_SECRET_SOURCE_URL_URL_TEMPLATE", Value: someEndpoint},
-				{Name: "K6_SECRET_SOURCE_URL_RESPONSE_PATH", Value: someRespPath},
+				{Name: secretSourceEnvVar, Value: "url"},
+				{Name: secretSourceURLTemplate, Value: someEndpoint},
+				{Name: secretSourceURLRespPath, Value: someRespPath},
 			},
 		},
 		{
@@ -97,10 +97,10 @@ func TestTestRunData_SecretsEnvVars(t *testing.T) {
 				TestRunToken:  someToken,
 			},
 			expected: []corev1.EnvVar{
-				{Name: "K6_SECRET_SOURCE", Value: "url"},
-				{Name: "K6_SECRET_SOURCE_URL_URL_TEMPLATE", Value: someEndpoint},
-				{Name: "K6_SECRET_SOURCE_URL_RESPONSE_PATH", Value: someRespPath},
-				{Name: "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION", Value: "Bearer " + someToken},
+				{Name: secretSourceEnvVar, Value: "url"},
+				{Name: secretSourceURLTemplate, Value: someEndpoint},
+				{Name: secretSourceURLRespPath, Value: someRespPath},
+				{Name: secretSourceURLAuthKey, Value: "Bearer " + someToken},
 			},
 		},
 	}
