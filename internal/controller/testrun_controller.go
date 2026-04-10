@@ -327,13 +327,9 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			}
 		}
 
-		// If this is a non-PLZ cloud test run, try to finalize it.
-		// PLZ test runs are finalized by k6's own cloud output when the scheduler
-		// stops; the operator's FinishTestRun call (POST /v1/tests/{id}) returns
-		// 404 for PLZ runs and must be skipped to avoid getting stuck here.
+		// If this is a cloud test run in any mode, try to finalize it.
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) &&
-			v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunFinalized) &&
-			v1alpha1.IsFalse(k6, v1alpha1.CloudPLZTestRun) {
+			v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunFinalized) {
 
 			// If TestRunRunning has just been updated, wait for a bit before
 			// acting, to avoid race condition between different reconcile loops.
