@@ -444,6 +444,7 @@ func Test_NewRunnerJob(t *testing.T) {
 					"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
 					"--tag", "instance_id=1", "--tag", "job_name=test-1",
 					"--no-setup", "--no-teardown", "--linger",
+					"-e", "K6_CLOUDRUN_INSTANCE_ID=1",
 				}
 				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
 					{Name: "K6_CLOUD_PUSH_REF_ID", Value: "plz-run-123"},
