@@ -72,7 +72,7 @@ func TestTestRunData_SecretsEnvVars(t *testing.T) {
 	tests := []struct {
 		name     string
 		trd      TestRunData
-		expected []corev1.EnvVar
+		expected []corev1.EnvVar // order of env vars is important
 	}{
 		{
 			name:     "nil secrets config returns nil",
