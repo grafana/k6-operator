@@ -77,7 +77,8 @@ type TestRunData struct {
 	LZConfig      `json:"k8s_load_zones_config"`
 	RunStatus     cloudapi.RunStatus `json:"run_status"`
 	RuntimeConfig cloudapi.Config    `json:"k6_runtime_config"`
-	TestRunToken  string             `json:"test_run_token,omitempty"`
+	// SecretsToken is a short-lived, test-run-scoped token for read-only access to secrets.
+	SecretsToken  string             `json:"test_run_token,omitempty"`
 	SecretsConfig *SecretsConfig     `json:"secrets_config,omitempty"`
 }
 
@@ -121,10 +122,10 @@ func (trd *TestRunData) SecretsEnvVars() []corev1.EnvVar {
 		{Name: secretSourceURLTemplate, Value: trd.SecretsConfig.Endpoint},
 		{Name: secretSourceURLRespPath, Value: trd.SecretsConfig.ResponsePath},
 	}
-	if trd.TestRunToken != "" {
+	if trd.SecretsToken != "" {
 		ev = append(ev, corev1.EnvVar{
 			Name:  secretSourceURLAuthKey,
-			Value: "Bearer " + trd.TestRunToken,
+			Value: "Bearer " + trd.SecretsToken,
 		})
 	}
 	return ev

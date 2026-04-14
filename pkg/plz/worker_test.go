@@ -440,7 +440,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 					InstanceCount: someInstances,
 					ArchiveURL:    someArchiveURL,
 				},
-				TestRunToken:  someTestRunToken,
+				SecretsToken:  someTestRunToken,
 				SecretsConfig: someSecretsConfig,
 			},
 			ingestUrl: mainIngest,

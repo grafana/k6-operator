@@ -83,7 +83,7 @@ func TestTestRunData_SecretsEnvVars(t *testing.T) {
 			name: "secrets config with token includes auth header",
 			trd: TestRunData{
 				SecretsConfig: &SecretsConfig{Endpoint: someEndpoint, ResponsePath: someRespPath},
-				TestRunToken:  someToken,
+				SecretsToken:  someToken,
 			},
 			expected: []corev1.EnvVar{
 				{Name: secretSourceEnvVar, Value: "url"},
