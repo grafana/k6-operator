@@ -57,6 +57,19 @@ type testRunList struct {
 	} `json:"object"`
 }
 
+// SecretsConfig holds the secrets configuration returned by k6 Cloud.
+type SecretsConfig struct {
+	Endpoint     string `json:"endpoint"`
+	ResponsePath string `json:"response_path"`
+}
+
+const (
+	secretSourceEnvVar      = "K6_SECRET_SOURCE"
+	secretSourceURLTemplate = "K6_SECRET_SOURCE_URL_URL_TEMPLATE"
+	secretSourceURLRespPath = "K6_SECRET_SOURCE_URL_RESPONSE_PATH"
+	secretSourceURLAuthKey  = "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION"
+)
+
 // TestRunData holds the output from /loadtests/v4/test_runs(%s)
 type TestRunData struct {
 	TestRunId     int `json:"id"`
@@ -64,6 +77,9 @@ type TestRunData struct {
 	LZConfig      `json:"k8s_load_zones_config"`
 	RunStatus     cloudapi.RunStatus `json:"run_status"`
 	RuntimeConfig cloudapi.Config    `json:"k6_runtime_config"`
+	// SecretsToken is a short-lived, test-run-scoped token for read-only access to secrets.
+	SecretsToken  string             `json:"test_run_token,omitempty"`
+	SecretsConfig *SecretsConfig     `json:"secrets_config,omitempty"`
 }
 
 type LZConfig struct {
@@ -92,6 +108,26 @@ func (lz *LZConfig) EnvVars() []corev1.EnvVar {
 		return ev[i].Name < ev[j].Name
 	})
 
+	return ev
+}
+
+// SecretsEnvVars returns the env vars required by the k6 URL secret source.
+// Returns nil when no secrets configuration is present.
+func (trd *TestRunData) SecretsEnvVars() []corev1.EnvVar {
+	if trd.SecretsConfig == nil {
+		return nil
+	}
+	ev := []corev1.EnvVar{
+		{Name: secretSourceEnvVar, Value: "url"},
+		{Name: secretSourceURLTemplate, Value: trd.SecretsConfig.Endpoint},
+		{Name: secretSourceURLRespPath, Value: trd.SecretsConfig.ResponsePath},
+	}
+	if trd.SecretsToken != "" {
+		ev = append(ev, corev1.EnvVar{
+			Name:  secretSourceURLAuthKey,
+			Value: "Bearer " + trd.SecretsToken,
+		})
+	}
 	return ev
 }
 

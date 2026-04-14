@@ -177,6 +177,8 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 
 	envVars = append(envVars, cloud.AggregationEnvVars(&trData.RuntimeConfig)...)
 
+	envVars = append(envVars, trData.SecretsEnvVars()...)
+
 	tr.Spec.Runner.Image = trData.RunnerImage
 	tr.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		initContainer,

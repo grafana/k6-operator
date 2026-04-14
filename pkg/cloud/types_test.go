@@ -3,6 +3,8 @@ package cloud
 import (
 	"encoding/json"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestInspectOutput_TestNameAndProjectID(t *testing.T) {
@@ -55,6 +57,55 @@ func TestInspectOutput_TestNameAndProjectID(t *testing.T) {
 
 			if got := io.TestName(); got != tt.expectedName {
 				t.Errorf("InspectOutput.TestName() = %v, want %v", got, tt.expectedName)
+			}
+		})
+	}
+}
+
+func TestTestRunData_SecretsEnvVars(t *testing.T) {
+	t.Parallel()
+
+	someEndpoint := "https://api.k6.io/provisioning/v1/test_runs/42/decrypt_secret?name={key}"
+	someRespPath := "plaintext"
+	someToken := "abc123"
+
+	tests := []struct {
+		name     string
+		trd      TestRunData
+		expected []corev1.EnvVar // order of env vars is important
+	}{
+		{
+			name:     "nil secrets config returns nil",
+			trd:      TestRunData{},
+			expected: nil,
+		},
+		{
+			name: "secrets config with token includes auth header",
+			trd: TestRunData{
+				SecretsConfig: &SecretsConfig{Endpoint: someEndpoint, ResponsePath: someRespPath},
+				SecretsToken:  someToken,
+			},
+			expected: []corev1.EnvVar{
+				{Name: secretSourceEnvVar, Value: "url"},
+				{Name: secretSourceURLTemplate, Value: someEndpoint},
+				{Name: secretSourceURLRespPath, Value: someRespPath},
+				{Name: secretSourceURLAuthKey, Value: "Bearer " + someToken},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := tt.trd.SecretsEnvVars()
+			if len(got) != len(tt.expected) {
+				t.Fatalf("SecretsEnvVars() len = %d, want %d; got %+v", len(got), len(tt.expected), got)
+			}
+			for i := range got {
+				if got[i] != tt.expected[i] {
+					t.Errorf("SecretsEnvVars()[%d] = %+v, want %+v", i, got[i], tt.expected[i])
+				}
 			}
 		})
 	}

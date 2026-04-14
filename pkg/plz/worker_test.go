@@ -164,6 +164,9 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		podTemplateContainerSecCtxTestRun = defaultTestRun //nolint:ineffassign
 		podTemplatePodSecCtxTestRun       = defaultTestRun //nolint:ineffassign
 		podTemplateAllTestRun             = defaultTestRun //nolint:ineffassign
+
+		// TestRuns expected for secrets cases
+		secretsWithTokenTestRun = defaultTestRun //nolint:ineffassign
 	)
 
 	// populate TestRuns for different test cases
@@ -226,6 +229,21 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	podTemplateAllTestRun.Spec.Starter.ContainerSecurityContext = someContainerSecCtx
 	podTemplateAllTestRun.Spec.Runner.SecurityContext = somePodSecCtx
 	podTemplateAllTestRun.Spec.Starter.SecurityContext = somePodSecCtx
+
+	someSecretsConfig := &cloud.SecretsConfig{
+		Endpoint:     "https://api.k6.io/provisioning/v1/test_runs/6543/decrypt_secret?name={key}",
+		ResponsePath: "plaintext",
+	}
+	someTestRunToken := "abc123token"
+
+	secretsWithTokenTestRun = cloudFieldsTestRun
+	secretsWithTokenTestRun.Spec.Runner.Env = append(
+		append([]corev1.EnvVar{}, cloudFieldsTestRun.Spec.Runner.Env...),
+		corev1.EnvVar{Name: "K6_SECRET_SOURCE", Value: "url"},
+		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_URL_TEMPLATE", Value: someSecretsConfig.Endpoint},
+		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_RESPONSE_PATH", Value: someSecretsConfig.ResponsePath},
+		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION", Value: "Bearer " + someTestRunToken},
+	)
 
 	testCases := []struct {
 		name      string
@@ -404,6 +422,29 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			cloudData: &cloud.TestRunData{},
 			ingestUrl: mainIngest,
 			expected:  &podTemplateAllTestRun,
+		},
+		{
+			name: "secrets config with token",
+			plz: &v1alpha1.PrivateLoadZone{
+				Spec: v1alpha1.PrivateLoadZoneSpec{
+					Token: someToken,
+					Resources: corev1.ResourceRequirements{
+						Limits: resourceLimits,
+					},
+				},
+			},
+			cloudData: &cloud.TestRunData{
+				TestRunId: someTestRunID,
+				LZConfig: cloud.LZConfig{
+					RunnerImage:   someRunnerImage,
+					InstanceCount: someInstances,
+					ArchiveURL:    someArchiveURL,
+				},
+				SecretsToken:  someTestRunToken,
+				SecretsConfig: someSecretsConfig,
+			},
+			ingestUrl: mainIngest,
+			expected:  &secretsWithTokenTestRun,
 		},
 	}
 
