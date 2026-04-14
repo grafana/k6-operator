@@ -110,12 +110,6 @@ func TestTestRunData_SecretsEnvVars(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got := tt.trd.SecretsEnvVars()
-			if tt.expected == nil {
-				if got != nil {
-					t.Errorf("SecretsEnvVars() = %+v, want nil", got)
-				}
-				return
-			}
 			if len(got) != len(tt.expected) {
 				t.Fatalf("SecretsEnvVars() len = %d, want %d; got %+v", len(got), len(tt.expected), got)
 			}
