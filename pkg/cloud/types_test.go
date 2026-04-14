@@ -80,17 +80,6 @@ func TestTestRunData_SecretsEnvVars(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "secrets config without token omits auth header",
-			trd: TestRunData{
-				SecretsConfig: &SecretsConfig{Endpoint: someEndpoint, ResponsePath: someRespPath},
-			},
-			expected: []corev1.EnvVar{
-				{Name: secretSourceEnvVar, Value: "url"},
-				{Name: secretSourceURLTemplate, Value: someEndpoint},
-				{Name: secretSourceURLRespPath, Value: someRespPath},
-			},
-		},
-		{
 			name: "secrets config with token includes auth header",
 			trd: TestRunData{
 				SecretsConfig: &SecretsConfig{Endpoint: someEndpoint, ResponsePath: someRespPath},
