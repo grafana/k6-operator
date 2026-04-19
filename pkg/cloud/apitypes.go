@@ -19,7 +19,6 @@ import (
 // option takes precedence, and it would only invite drift between the two.
 var reservedGCk6EnvVars = map[string]struct{}{
 	// Future candidates:
-	// "K6_CLOUD_TOKEN": struct{}{},
 	// K6_TRACES_OUTPUT, K6_BROWSER_ENABLED_MSG, K6_CLOUD_TRACES_ENABLED, K6_BROWSER_SCREENSHOTS_OUTPUT
 }
 
@@ -126,6 +125,14 @@ func (trd *TestRunData) Preprocess() error {
 		Name:  "K6_CLOUD_HOST",
 		Value: K6CloudHost(),
 	})
+	if trd.SecretsToken != "" {
+		// We're using ephemeral test run token from secrets data to authenticate k6 process.
+		// In the future, it'll be switched to a new, K6_CLOUD_TEST_RUN_TOKEN variable.
+		trd.RunnerEnvVars = append(trd.RunnerEnvVars, corev1.EnvVar{
+			Name:  "K6_CLOUD_TOKEN",
+			Value: trd.SecretsToken,
+		})
+	}
 
 	if trd.Environment == nil {
 		trd.Environment = make(map[string]string)
