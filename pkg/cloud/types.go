@@ -14,7 +14,9 @@ import (
 
 // GCk6 can set only a limited number of env vars to k6 process:
 // these are known and whitelisted with this "const" map.
-var reservedGCk6EnvVars = map[string]struct{}{}
+var reservedGCk6EnvVars = map[string]struct{}{
+	"K6_CLOUD_TOKEN": struct{}{},
+}
 
 const (
 	// Reserved vars set for PLZ tests, as described here:
