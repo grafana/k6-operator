@@ -55,6 +55,9 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 	}
 
 	// NOTE: only .env are passed to k6 CLI, not .envFrom
+	// This is esp. relevant for the cloud output test where
+	// duration of the test may depend on env var values. IOW,
+	// these env vars must always be passed in cloud output mode.
 	var envVarString string
 	for _, ev := range k6.GetSpec().Initializer.Env {
 		envVarString += fmt.Sprintf(` -e %s="%s"`, ev.Name, ev.Value)
