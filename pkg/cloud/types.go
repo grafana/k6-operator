@@ -10,6 +10,28 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// GCk6 can set only a limited number of env vars to k6 process:
+// these are known and whitelisted with this "const" map.
+var reservedGCk6EnvVars = map[string]struct{}{
+	"K6_CLOUD_TOKEN": struct{}{},
+}
+
+const (
+	// Reserved vars set for PLZ tests, as described here:
+	// https://grafana.com/docs/grafana-cloud/testing/k6/author-run/cloud-scripting-extras/cloud-execution-context-variables/
+	// These are not passed from GCk6, but set by k6-operator directly.
+	lzCloudExecVar    = "K6_CLOUDRUN_LOAD_ZONE"
+	distrCloudExecVar = "K6_CLOUDRUN_DISTRIBUTION"
+	trIDCloudExecVar  = "K6_CLOUDRUN_TEST_RUN_ID"
+	// IIDCloudExecVar is exported as it must be set in external package, as part of TestRun CRD flow
+	IIDCloudExecVar = "K6_CLOUDRUN_INSTANCE_ID"
+
+	secretSourceEnvVar      = "K6_SECRET_SOURCE"
+	secretSourceURLTemplate = "K6_SECRET_SOURCE_URL_URL_TEMPLATE"
+	secretSourceURLRespPath = "K6_SECRET_SOURCE_URL_RESPONSE_PATH"
+	secretSourceURLAuthKey  = "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION"
+)
+
 // InspectOutput is the parsed output from `k6 inspect --execution-requirements`.
 type InspectOutput struct {
 	External struct { // legacy way of defining the options.cloud

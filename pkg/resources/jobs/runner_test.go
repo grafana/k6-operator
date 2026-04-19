@@ -265,9 +265,11 @@ func Test_NewRunnerJob(t *testing.T) {
 					"k6", "run", "--quiet", "--out", "cloud", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
 					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
-				j.Spec.Template.Spec.Containers[0].Env = append(aggregationEnvVars,
-					corev1.EnvVar{Name: "K6_CLOUD_PUSH_REF_ID", Value: "testrunid"},
-					corev1.EnvVar{Name: "K6_CLOUD_TOKEN", Value: "token"},
+				j.Spec.Template.Spec.Containers[0].Env = append(
+					[]corev1.EnvVar{{Name: "K6_CLOUD_TOKEN", Value: "token"}},
+					append(aggregationEnvVars,
+						corev1.EnvVar{Name: "K6_CLOUD_PUSH_REF_ID", Value: "testrunid"},
+					)...,
 				)
 			},
 		},
@@ -454,7 +456,6 @@ func Test_NewRunnerJob(t *testing.T) {
 					"--no-setup", "--no-teardown", "--linger",
 				}
 				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
-					{Name: "K6_CLOUD_PUSH_REF_ID", Value: "plz-run-123"},
 					{
 						Name: "K6_CLOUD_TOKEN",
 						ValueFrom: &corev1.EnvVarSource{
@@ -464,6 +465,7 @@ func Test_NewRunnerJob(t *testing.T) {
 							},
 						},
 					},
+					{Name: "K6_CLOUD_PUSH_REF_ID", Value: "plz-run-123"},
 				}
 			},
 		},
