@@ -471,19 +471,29 @@ func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRu
 	return status.Aborted()
 }
 
-func (r *TestRunReconciler) createClient(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) (*cloudapi.Client, bool, error) {
-	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
-	err := tokenInfo.Load(ctx, log, r.Client)
+func (r *TestRunReconciler) createClient(ctx context.Context, tr *v1alpha1.TestRun, log logr.Logger) (*cloudapi.Client, bool, error) {
+	// if TestRun contains the designated env var, use that
+	// (new PLZ tests will have this set)
+	token := getEnvVar(tr.GetSpec().Runner.Env, "K6_CLOUD_TOKEN")
 
-	if err != nil {
-		log.Error(err, "A problem while getting token.")
-		return nil, false, err
+	if len(token) == 0 {
+		// otherwise, try to load the token from Secret
+		// (this logic is kept for backwards compatibility of PLZ tests and for Cloud Output mode)
+		sti := cloud.NewSecretTokenInfo(tr.GetSpec().Token, tr.NamespacedName().Namespace)
+		err := sti.Load(ctx, log, r.Client)
+
+		if err != nil {
+			log.Error(err, "A problem while getting token.")
+			return nil, false, err
+		}
+		if !sti.Ready {
+			return nil, false, nil
+		}
+
+		token = sti.Value()
 	}
-	if !tokenInfo.Ready {
-		return nil, false, nil
-	}
 
-	host := getEnvVar(k6.GetSpec().Runner.Env, "K6_CLOUD_HOST")
+	host := getEnvVar(tr.GetSpec().Runner.Env, "K6_CLOUD_HOST")
 
-	return cloud.NewClient(log, tokenInfo.Value(), host), true, nil
+	return cloud.NewClient(log, token, host), true, nil
 }
