@@ -12,8 +12,9 @@ import (
 )
 
 // k6-operator has to handle authentication tokens for Cloud tests.
-// This struct contains key utilities to encapsulate that logic.
-type TokenInfo struct {
+// This struct contains key utilities to encapsulate that logic when
+// the token is stored in Kubernetes Secret.
+type SecretTokenInfo struct {
 	value string
 
 	secretName      string
@@ -35,25 +36,25 @@ const (
 	tokenLabelValue = "token"
 )
 
-func NewTokenInfo(name, namespace string) *TokenInfo {
-	return &TokenInfo{
+func NewSecretTokenInfo(name, namespace string) *SecretTokenInfo {
+	return &SecretTokenInfo{
 		secretName:      name,
 		secretNamespace: namespace,
 	}
 }
 
-func (ti TokenInfo) SecretName() string {
+func (ti SecretTokenInfo) SecretName() string {
 	return ti.secretName
 }
 
-func (ti TokenInfo) Value() string {
+func (ti SecretTokenInfo) Value() string {
 	return ti.value
 }
 
-// Load attempts to load the Secret and populate TokenInfo.
+// Load attempts to load the Secret and populate SecretTokenInfo.
 // returnErr means a non-recoverable error and requires the caller to take action or
 // propagate it further.
-func (ti *TokenInfo) Load(ctx context.Context, log logr.Logger, c k8sClient.Client) (returnErr error) {
+func (ti *SecretTokenInfo) Load(ctx context.Context, log logr.Logger, c k8sClient.Client) (returnErr error) {
 	var (
 		secrets corev1.SecretList
 		secret  corev1.Secret
@@ -116,7 +117,7 @@ func (ti *TokenInfo) Load(ctx context.Context, log logr.Logger, c k8sClient.Clie
 
 // InjectValue: this is only for unit tests!
 // If you see it elsewhere, it's likely a bug or an attack.
-func (ti *TokenInfo) InjectValue(v string) *TokenInfo {
+func (ti *SecretTokenInfo) InjectValue(v string) *SecretTokenInfo {
 	ti.value = v
 	return ti
 }
