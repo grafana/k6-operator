@@ -117,7 +117,7 @@ func defaultExpectedJob(script *types.Script) *batchv1.Job {
 						Image:           "grafana/k6:latest",
 						ImagePullPolicy: "",
 						Name:            "k6",
-						Command:         []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused", "--tag", "instance_id=1", "--tag", "job_name=test-1"},
+						Command:         []string{"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused", "--tag", "instance_id=1", "--tag", "testrun_name=test"},
 						Env:             []corev1.EnvVar{},
 						Resources:       corev1.ResourceRequirements{},
 						VolumeMounts:    script.VolumeMount(),
@@ -196,7 +196,7 @@ func Test_NewRunnerJob(t *testing.T) {
 			setupExpectedJob: func(j *batchv1.Job) {
 				j.Spec.Template.Spec.Containers[0].Command = []string{
 					"k6", "run", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
-					"--tag", "instance_id=1", "--tag", "job_name=test-1",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
 			},
 		},
@@ -208,7 +208,7 @@ func Test_NewRunnerJob(t *testing.T) {
 			setupExpectedJob: func(j *batchv1.Job) {
 				j.Spec.Template.Spec.Containers[0].Command = []string{
 					"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565",
-					"--tag", "instance_id=1", "--tag", "job_name=test-1",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
 			},
 		},
@@ -220,7 +220,7 @@ func Test_NewRunnerJob(t *testing.T) {
 			setupExpectedJob: func(j *batchv1.Job) {
 				j.Spec.Template.Spec.Containers[0].Command = []string{
 					"k6", "run", "--quiet", "--cool-thing", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
-					"--tag", "instance_id=1", "--tag", "job_name=test-1",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
 			},
 		},
@@ -232,7 +232,7 @@ func Test_NewRunnerJob(t *testing.T) {
 			setupExpectedJob: func(j *batchv1.Job) {
 				j.Spec.Template.Spec.Containers[0].Command = []string{
 					"scuttle", "k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
-					"--tag", "instance_id=1", "--tag", "job_name=test-1",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
 				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
 					{Name: "ENVOY_ADMIN_API", Value: "http://127.0.0.1:15000"},
@@ -255,7 +255,7 @@ func Test_NewRunnerJob(t *testing.T) {
 				j.Spec.Template.Labels = defaultLabels()
 				j.Spec.Template.Spec.Containers[0].Command = []string{
 					"k6", "run", "--quiet", "--out", "cloud", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
-					"--tag", "instance_id=1", "--tag", "job_name=test-1",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
 				j.Spec.Template.Spec.Containers[0].Env = append(aggregationEnvVars,
 					corev1.EnvVar{Name: "K6_CLOUD_PUSH_REF_ID", Value: "testrunid"},
@@ -282,7 +282,7 @@ func Test_NewRunnerJob(t *testing.T) {
 				}
 				j.Spec.Template.Spec.Containers[0].Command = []string{
 					"sh", "-c",
-					"if [ ! -f /test/test.js ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\nk6 run --quiet /test/test.js --address=0.0.0.0:6565 --paused --tag instance_id=1 --tag job_name=test-1",
+					"if [ ! -f /test/test.js ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\nk6 run --quiet /test/test.js --address=0.0.0.0:6565 --paused --tag instance_id=1 --tag testrun_name=test",
 				}
 				j.Spec.Template.Spec.Containers[0].VolumeMounts = localScript.VolumeMount()
 				j.Spec.Template.Spec.Volumes = localScript.Volume()
@@ -409,7 +409,7 @@ func Test_NewRunnerJob(t *testing.T) {
 					"--execution-segment=0:1/3",
 					"--execution-segment-sequence=0,1/3,2/3,1",
 					"/test/test.js", "--address=0.0.0.0:6565", "--paused",
-					"--tag", "instance_id=1", "--tag", "job_name=test-1",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
 			},
 		},
@@ -442,7 +442,7 @@ func Test_NewRunnerJob(t *testing.T) {
 				j.Spec.Template.Spec.Containers[0].EnvFrom = envFromConfigMap("env")
 				j.Spec.Template.Spec.Containers[0].Command = []string{
 					"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
-					"--tag", "instance_id=1", "--tag", "job_name=test-1",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 					"--no-setup", "--no-teardown", "--linger",
 				}
 				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
