@@ -70,8 +70,8 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	// Add an instance tag: in case metrics are stored, they need to be distinguished by instance
 	command = append(command, "--tag", fmt.Sprintf("instance_id=%d", index))
 
-	// Add an job tag: in case metrics are stored, they need to be distinguished by job
-	command = append(command, "--tag", fmt.Sprintf("job_name=%s", name))
+	// Add a testrun name tag: in case metrics are stored, they need to be distinguished by test run name
+	command = append(command, "--tag", fmt.Sprintf("testrun_name=%s", k6.NamespacedName().Name))
 
 	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
 		command = append(command, "--no-setup", "--no-teardown", "--linger")
