@@ -80,8 +80,9 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	command = script.UpdateCommand(command)
 
 	var (
-		zero   int64 = 0
-		zero32 int32 = 0
+		zero          int64 = 0
+		zero32        int32 = 0
+		schedulerName       = "default-scheduler"
 	)
 
 	image := "grafana/k6:latest"
@@ -160,6 +161,10 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	volumeMounts := script.VolumeMount()
 	volumeMounts = append(volumeMounts, k6.GetSpec().Runner.VolumeMounts...)
 
+	if k6.GetSpec().Runner.SchedulerName != "" {
+		schedulerName = k6.GetSpec().Runner.SchedulerName
+	}
+
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -179,6 +184,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 					ServiceAccountName:           serviceAccountName,
 					Hostname:                     name,
 					RestartPolicy:                corev1.RestartPolicyNever,
+					SchedulerName:                schedulerName,
 					Affinity:                     k6.GetSpec().Runner.Affinity,
 					NodeSelector:                 k6.GetSpec().Runner.NodeSelector,
 					Tolerations:                  k6.GetSpec().Runner.Tolerations,

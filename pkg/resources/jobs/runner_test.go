@@ -112,6 +112,7 @@ func defaultExpectedJob(script *types.Script) *batchv1.Job {
 					Tolerations:                  nil,
 					TopologySpreadConstraints:    nil,
 					ServiceAccountName:           "default",
+					SchedulerName:                "default-scheduler",
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					Containers: []corev1.Container{{
 						Image:           "grafana/k6:latest",
@@ -186,6 +187,15 @@ func Test_NewRunnerJob(t *testing.T) {
 				j.Spec.Template.Spec.ServiceAccountName = "test"
 				j.Spec.Template.Spec.Containers[0].ImagePullPolicy = corev1.PullNever
 				j.Spec.Template.Spec.Containers[0].EnvFrom = envFromConfigMap("env")
+			},
+		},
+		{
+			name: "custom scheduler name",
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Runner.SchedulerName = "custom-scheduler"
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.SchedulerName = "custom-scheduler"
 			},
 		},
 		{

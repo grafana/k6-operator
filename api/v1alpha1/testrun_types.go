@@ -59,6 +59,7 @@ type Pod struct {
 	Volumes                      []corev1.Volume                   `json:"volumes,omitempty"`
 	VolumeMounts                 []corev1.VolumeMount              `json:"volumeMounts,omitempty"`
 	PriorityClassName            string                            `json:"priorityClassName,omitempty"`
+	SchedulerName                string                            `json:"schedulerName,omitempty"`
 }
 
 type InitContainer struct {

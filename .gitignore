@@ -33,3 +33,5 @@ testbin
 *.env
 
 .devspace/
+
+.go-version

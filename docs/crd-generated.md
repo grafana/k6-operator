@@ -17305,6 +17305,13 @@ alive or ready to receive traffic.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>schedulerName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecinitializersecuritycontext">securityContext</a></b></td>
         <td>object</td>
         <td>
@@ -26266,6 +26273,13 @@ alive or ready to receive traffic.<br/>
         <td>object</td>
         <td>
           ResourceRequirements describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>schedulerName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -35252,6 +35266,13 @@ alive or ready to receive traffic.<br/>
         <td>object</td>
         <td>
           ResourceRequirements describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>schedulerName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
