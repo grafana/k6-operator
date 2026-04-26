@@ -15,6 +15,10 @@ import (
 // NewStarterJob builds a template used for creating a starter job
 func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 
+	var (
+		schedulerName = "default-scheduler"
+	)
+
 	starterAnnotations := make(map[string]string)
 	if k6.GetSpec().Starter.Metadata.Annotations != nil {
 		starterAnnotations = k6.GetSpec().Starter.Metadata.Annotations
@@ -62,6 +66,10 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 		resourceRequirements = k6.GetSpec().Starter.Resources
 	}
 
+	if k6.GetSpec().Starter.SchedulerName != "" {
+		schedulerName = k6.GetSpec().Starter.SchedulerName
+	}
+
 	var zero32 int32
 
 	return &batchv1.Job{
@@ -86,6 +94,7 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 					Tolerations:                  k6.GetSpec().Starter.Tolerations,
 					TopologySpreadConstraints:    k6.GetSpec().Starter.TopologySpreadConstraints,
 					RestartPolicy:                corev1.RestartPolicyNever,
+					SchedulerName:                schedulerName,
 					SecurityContext:              &k6.GetSpec().Starter.SecurityContext,
 					ImagePullSecrets:             k6.GetSpec().Starter.ImagePullSecrets,
 					Containers: []corev1.Container{

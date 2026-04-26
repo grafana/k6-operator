@@ -24,6 +24,7 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 		serviceAccountName           = "default"
 		automountServiceAccountToken = true
 		ports                        = append([]corev1.ContainerPort{{ContainerPort: 6565}}, k6.GetSpec().Ports...)
+		schedulerName                = "default-scheduler"
 	)
 
 	if k6.GetSpec().Initializer == nil {
@@ -94,6 +95,10 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 	volumeMounts := script.VolumeMount()
 	volumeMounts = append(volumeMounts, k6.GetSpec().Initializer.VolumeMounts...)
 
+	if k6.GetSpec().Initializer.SchedulerName != "" {
+		schedulerName = k6.GetSpec().Initializer.SchedulerName
+	}
+
 	var zero32 int32
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -118,6 +123,7 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 					TopologySpreadConstraints:    k6.GetSpec().Initializer.TopologySpreadConstraints,
 					SecurityContext:              &k6.GetSpec().Initializer.SecurityContext,
 					RestartPolicy:                corev1.RestartPolicyNever,
+					SchedulerName:                schedulerName,
 					ImagePullSecrets:             k6.GetSpec().Initializer.ImagePullSecrets,
 					InitContainers:               getInitContainers(k6.GetSpec().Initializer, script),
 					Containers: []corev1.Container{
