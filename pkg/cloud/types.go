@@ -2,12 +2,36 @@ package cloud
 
 import (
 	"fmt"
+	"maps"
 	"sort"
+	"strings"
 
 	"go.k6.io/k6/cloudapi"
 	"go.k6.io/k6/lib/types"
 	"go.k6.io/k6/metrics"
 	corev1 "k8s.io/api/core/v1"
+)
+
+// GCk6 can set only a limited number of env vars to k6 process:
+// these are known and whitelisted with this "const" map.
+var reservedGCk6EnvVars = map[string]struct{}{
+	"K6_CLOUD_TOKEN": struct{}{},
+}
+
+const (
+	// Reserved vars set for PLZ tests, as described here:
+	// https://grafana.com/docs/grafana-cloud/testing/k6/author-run/cloud-scripting-extras/cloud-execution-context-variables/
+	// These are not passed from GCk6, but set by k6-operator directly.
+	lzCloudExecVar    = "K6_CLOUDRUN_LOAD_ZONE"
+	distrCloudExecVar = "K6_CLOUDRUN_DISTRIBUTION"
+	trIDCloudExecVar  = "K6_CLOUDRUN_TEST_RUN_ID"
+	// IIDCloudExecVar is exported as it must be set in external package, as part of TestRun CRD flow
+	IIDCloudExecVar = "K6_CLOUDRUN_INSTANCE_ID"
+
+	secretSourceEnvVar      = "K6_SECRET_SOURCE"
+	secretSourceURLTemplate = "K6_SECRET_SOURCE_URL_URL_TEMPLATE"
+	secretSourceURLRespPath = "K6_SECRET_SOURCE_URL_RESPONSE_PATH"
+	secretSourceURLAuthKey  = "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION"
 )
 
 // InspectOutput is the parsed output from `k6 inspect --execution-requirements`.
@@ -63,13 +87,6 @@ type SecretsConfig struct {
 	ResponsePath string `json:"response_path"`
 }
 
-const (
-	secretSourceEnvVar      = "K6_SECRET_SOURCE"
-	secretSourceURLTemplate = "K6_SECRET_SOURCE_URL_URL_TEMPLATE"
-	secretSourceURLRespPath = "K6_SECRET_SOURCE_URL_RESPONSE_PATH"
-	secretSourceURLAuthKey  = "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION"
-)
-
 // TestRunData holds the output from /loadtests/v4/test_runs(%s)
 type TestRunData struct {
 	TestRunId     int `json:"id"`
@@ -78,41 +95,137 @@ type TestRunData struct {
 	RunStatus     cloudapi.RunStatus `json:"run_status"`
 	RuntimeConfig cloudapi.Config    `json:"k6_runtime_config"`
 	// SecretsToken is a short-lived, test-run-scoped token for read-only access to secrets.
-	SecretsToken  string             `json:"test_run_token,omitempty"`
-	SecretsConfig *SecretsConfig     `json:"secrets_config,omitempty"`
-}
+	SecretsToken  string         `json:"test_run_token,omitempty"`
+	SecretsConfig *SecretsConfig `json:"secrets_config,omitempty"`
+	// LZDistribution holds label -> distribution mapping relevant
+	// for the given script and PLZ
+	LZDistribution `json:"load_zone_distribution,omitempty"`
 
-type LZConfig struct {
-	RunnerImage   string            `json:"load_runner_image,omitempty"`
-	InstanceCount int               `json:"instance_count,omitempty"`
-	ArchiveURL    string            `json:"k6_archive_temp_public_url,omitempty"`
-	Environment   map[string]string `json:"environment,omitempty"`
+	// Pre-processed k6 arguments, populated by Preprocess().
+	TagArgs      string `json:"-"`
+	EnvArgs      string `json:"-"`
+	UserAgentArg string `json:"-"`
 }
 
 func (trd *TestRunData) TestRunID() string {
 	return fmt.Sprintf("%d", trd.TestRunId)
 }
 
+// Preprocess adds specific for GCk6 tags and env vars to data,
+// and produces sorted CLI argument strings for tags and environment.
+// Returns error if distribution is empty.
+func (trd *TestRunData) Preprocess() error {
+	if len(trd.LZDistribution) != 1 {
+		return fmt.Errorf("only tests with one load zone are supported, provided: %+v", trd.LZDistribution)
+	}
+
+	if len(trd.UserAgent) > 0 {
+		trd.UserAgentArg = fmt.Sprintf(`--user-agent="%s"`, trd.UserAgent)
+	}
+
+	if trd.Tags == nil {
+		trd.Tags = make(map[string]string)
+	}
+
+	if trd.Environment == nil {
+		trd.Environment = make(map[string]string)
+	}
+
+	// The potential overwrite here is deliberate: these keys are reserved by
+	// GCk6, described in docs and considered higher priority in PLZ tests
+	// for the sake of consistency between public & private cloud tests.
+
+	trd.Tags["load_zone"] = trd.LZLabel()
+
+	trd.Environment[lzCloudExecVar] = trd.LZName()
+	trd.Environment[distrCloudExecVar] = trd.LZLabel()
+	trd.Environment[trIDCloudExecVar] = trd.TestRunID()
+
+	trd.TagArgs = sortedArgs("--tag", trd.Tags)
+	trd.EnvArgs = sortedArgs("-e", trd.Environment)
+
+	return nil
+}
+
+// sortedArgs builds a CLI argument string from a map, sorted by key.
+func sortedArgs(flag string, m map[string]string) string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, flag+" "+k+"="+m[k])
+	}
+	return strings.Join(parts, " ")
+}
+
+type LZConfig struct {
+	RunnerImage   string `json:"load_runner_image,omitempty"`
+	InstanceCount int    `json:"instance_count,omitempty"`
+	ArchiveURL    string `json:"k6_archive_temp_public_url,omitempty"`
+	CLIArgs       `json:"cli_flags,omitempty"`
+	// Environment holds values passed by user via:
+	// 1. `-e` CLI option of k6
+	// 2. cloud environment variables of GCk6 -> Settings
+	// They are passed to k6 runners via `-e`
+	Environment map[string]string `json:"environment,omitempty"`
+	// GCk6EnvVars holds key-value pairs generated by GCk6 and
+	// meant to configure k6 process with reserved env vars.
+	GCk6EnvVars map[string]string `json:"gck6_env_vars,omitempty"`
+}
+
+type CLIArgs struct {
+	BlacklistIPs         []string          `json:"blacklist_ips,omitempty"`
+	BlockedHostnames     []string          `json:"blocked_hostnames,omitempty"`
+	IncludeSystemEnvVars bool              `json:"include_system_env_vars,omitempty"`
+	Tags                 map[string]string `json:"tags,omitempty"`
+	UserAgent            string            `json:"user_agent,omitempty"`
+}
+
+type LZDistribution map[string]Distribution
+
+type Distribution struct {
+	LoadZone string `json:"loadZone"`
+	Percent  int    `json:"percent"`
+}
+
+// EnvVars makes up the corev1 struct from Go map.
 func (lz *LZConfig) EnvVars() []corev1.EnvVar {
-	ev := make([]corev1.EnvVar, len(lz.Environment))
+	whitelisted := maps.Collect(
+		func(yield func(_, _ string) bool) {
+			for k, v := range lz.GCk6EnvVars {
+				if _, ok := reservedGCk6EnvVars[k]; ok {
+					if !yield(k, v) {
+						return
+					}
+				}
+			}
+		},
+	)
+
+	ev := make([]corev1.EnvVar, len(whitelisted))
 	i := 0
-	for k, v := range lz.Environment {
+	for k, v := range whitelisted {
 		ev[i] = corev1.EnvVar{
 			Name:  k,
 			Value: v,
 		}
 		i++
 	}
+
 	// to have deterministic order in the array
 	sort.Slice(ev, func(i, j int) bool {
 		return ev[i].Name < ev[j].Name
 	})
-
 	return ev
 }
 
 // SecretsEnvVars returns the env vars required by the k6 URL secret source.
 // Returns nil when no secrets configuration is present.
+// TODO: make this private and move it to EnvVars() / Preprocess()
 func (trd *TestRunData) SecretsEnvVars() []corev1.EnvVar {
 	if trd.SecretsConfig == nil {
 		return nil
@@ -129,6 +242,22 @@ func (trd *TestRunData) SecretsEnvVars() []corev1.EnvVar {
 		})
 	}
 	return ev
+}
+
+// LZLabel assumes there is only one LZ.
+func (lzd *LZDistribution) LZLabel() string {
+	for k := range *lzd {
+		return k
+	}
+	return "unknown_lz_label"
+}
+
+// LZName assumes there is only one LZ.
+func (lzd *LZDistribution) LZName() string {
+	for _, v := range *lzd {
+		return v.LoadZone
+	}
+	return "unknown_lz_name"
 }
 
 type TestRunStatus cloudapi.RunStatus
