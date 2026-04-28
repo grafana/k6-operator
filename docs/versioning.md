@@ -1,6 +1,10 @@
 ## k6 versioning
 
-Since around v0.0.7 k6-operator has been releasing a default runner image together with each pre-release and release. It is built from the `grafana/k6:latest` so the version of k6 in the default runner's image highly depends on the time of the build itself. For now let's keep this info in a table for the historical record and for ease of reference.
+A user can set custom k6 image for runners as an optional field. The k6-operator has a hard-coded default value for k6 image.
+
+Initially k6-operator has been relying on `loadimpact/k6:latest` image by default. That changed with addition of Istio support, in v0.0.7, when k6-operator switched to building `ghcr.io/grafana/operator:latest-runner` images, with `scuttle`, and using them as a default image. This image is built from the `loadimpact/k6:latest` / `grafana/k6:latest` during k6-operator release. So the version of k6 in it highly depends on the time of the release itself. We keep this version mapping in a table below for the historical record and for ease of reference. The tag `latest-runner` points to the last row in the table.
+
+Since v0.0.23 ([issue](https://github.com/grafana/k6-operator/issues/452)), k6-operator uses `grafana/k6:latest` as a default image. But we continue to build runners with `scuttle` until Istio support is removed ([issue](https://github.com/grafana/k6-operator/issues/195)).
 
 | k6-operator version | runner tag | k6 version in runner image |
 |:-------------------:|:----------:|:--------------------------:|
@@ -46,7 +50,4 @@ Since around v0.0.7 k6-operator has been releasing a default runner image togeth
 | v1.3.0              | [runner-v1.3.0](ghcr.io/grafana/k6-operator:runner-v1.3.0)            | v1.6.1 |
 | v1.3.1              | [runner-v1.3.1](ghcr.io/grafana/k6-operator:runner-v1.3.1)            | v1.7.0 |
 | v1.3.2              | [runner-v1.3.2](ghcr.io/grafana/k6-operator:runner-v1.3.2)            | v1.7.0 |
-
-### What was used before?
-
-Previously k6-operator has been relying on `loadimpact/k6:latest` image by default. That changed with addition of Istio support and then CI additions. Since then k6-operator is using `ghcr.io/grafana/operator:latest-runner` as a default image.
+| v1.4.0              | [runner-v1.4.0](ghcr.io/grafana/k6-operator:runner-v1.4.0)            | v2.0.0-rc1 |
