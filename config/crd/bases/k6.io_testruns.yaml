@@ -6161,6 +6161,8 @@ spec:
             properties:
               aggregationVars:
                 type: string
+              secretsVars:
+                type: string
               conditions:
                 items:
                   properties:

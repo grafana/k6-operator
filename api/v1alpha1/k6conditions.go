@@ -145,6 +145,10 @@ func (k6status *TestRunStatus) SetIfNewer(proposedStatus TestRunStatus) (isNewer
 				k6status.AggregationVars = proposedStatus.AggregationVars
 			}
 
+			if len(proposedStatus.SecretsVars) > 0 && len(k6status.SecretsVars) == 0 {
+				k6status.SecretsVars = proposedStatus.SecretsVars
+			}
+
 			return
 		})
 
