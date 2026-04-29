@@ -180,6 +180,7 @@ type TestRunStatus struct {
 	Stage           Stage  `json:"stage,omitempty"`
 	TestRunID       string `json:"testRunId,omitempty"`
 	AggregationVars string `json:"aggregationVars,omitempty"`
+	SecretsVars     string `json:"secretsVars,omitempty"`
 
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }

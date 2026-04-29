@@ -144,6 +144,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 				return nil, err
 			}
 			env = append(env, aggregationVars...)
+			env = append(env, cloud.DecodeSecretsConfig(k6.GetStatus().SecretsVars)...)
 		}
 
 		env = append(env, corev1.EnvVar{

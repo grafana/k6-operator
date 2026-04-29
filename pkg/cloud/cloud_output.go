@@ -46,7 +46,13 @@ func NewClient(logger logr.Logger, token, host string) *cloudapi.Client {
 	return cloudapi.NewClient(logrusLogger, token, host, "1.2.3", time.Duration(time.Minute))
 }
 
-func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*cloudapi.CreateTestRunResponse, error) {
+// CreateTestRunResult holds the parsed result of creating a cloud test run.
+type CreateTestRunResult struct {
+	ReferenceID    string
+	ConfigOverride *cloudapi.Config
+}
+
+func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*CreateTestRunResult, error) {
 	cloudConfig := cloudapi.NewConfig()
 
 	if opts.ProjectID() > 0 {
@@ -82,24 +88,30 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 
 // We cannot use cloudapi.TestRun struct and cloudapi.Client.CreateTestRun call because they're not aware of
 // process_thresholds argument; so let's use custom struct and function instead
-func createTestRun(client *cloudapi.Client, host string, testRun *TestRun) (*cloudapi.CreateTestRunResponse, error) {
+func createTestRun(client *cloudapi.Client, host string, testRun *TestRun) (*CreateTestRunResult, error) {
 	url := host + "/v1/tests"
 	req, err := client.NewRequest("POST", url, testRun)
 	if err != nil {
 		return nil, err
 	}
 
-	ctrr := cloudapi.CreateTestRunResponse{}
-	err = client.Do(req, &ctrr)
+	var resp struct {
+		ReferenceID    string           `json:"reference_id"`
+		ConfigOverride *cloudapi.Config `json:"config"`
+	}
+	err = client.Do(req, &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	if ctrr.ReferenceID == "" {
+	if resp.ReferenceID == "" {
 		return nil, fmt.Errorf("failed to get a reference ID")
 	}
 
-	return &ctrr, nil
+	return &CreateTestRunResult{
+		ReferenceID:    resp.ReferenceID,
+		ConfigOverride: resp.ConfigOverride,
+	}, nil
 }
 
 func FinishTestRun(c *cloudapi.Client, refID string) error {
