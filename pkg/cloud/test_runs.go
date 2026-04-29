@@ -107,7 +107,7 @@ func getTestRun(client *cloudapi.Client, url string) (*TestRunData, error) {
 	return &trData, nil
 }
 
-// called by PLZworker and SetupCloudTest
+// called by PLZworker
 func GetTestRunData(client *cloudapi.Client, refID string) (*TestRunData, error) {
 	url := fmt.Sprintf("%s/loadtests/v4/test_runs(%s)?$select=id,run_status,k8s_load_zones_config,k6_runtime_config,test_run_token,secrets_config", ApiURL(client.BaseURL()), refID)
 	return getTestRun(client, url)
