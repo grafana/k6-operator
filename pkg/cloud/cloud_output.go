@@ -50,6 +50,8 @@ func NewClient(logger logr.Logger, token, host string) *cloudapi.Client {
 type CreateTestRunResult struct {
 	ReferenceID    string
 	ConfigOverride *cloudapi.Config
+	SecretsConfig  *SecretsConfig
+	SecretsToken   string
 }
 
 func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*CreateTestRunResult, error) {
@@ -98,6 +100,8 @@ func createTestRun(client *cloudapi.Client, host string, testRun *TestRun) (*Cre
 	var resp struct {
 		ReferenceID    string           `json:"reference_id"`
 		ConfigOverride *cloudapi.Config `json:"config"`
+		SecretsConfig  *SecretsConfig   `json:"secrets_config"`
+		SecretsToken   string           `json:"test_run_token"`
 	}
 	err = client.Do(req, &resp)
 	if err != nil {
@@ -111,6 +115,8 @@ func createTestRun(client *cloudapi.Client, host string, testRun *TestRun) (*Cre
 	return &CreateTestRunResult{
 		ReferenceID:    resp.ReferenceID,
 		ConfigOverride: resp.ConfigOverride,
+		SecretsConfig:  resp.SecretsConfig,
+		SecretsToken:   resp.SecretsToken,
 	}, nil
 }
 

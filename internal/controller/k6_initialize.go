@@ -180,12 +180,7 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 			v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRunCreated, metav1.ConditionTrue)
 
 			k6.GetStatus().AggregationVars = cloud.EncodeAggregationConfig(testRunData.ConfigOverride)
-
-			if trData, err := cloud.GetTestRunData(r.k6CloudClient, testRunData.ReferenceID); err != nil {
-				log.Error(err, "Failed to fetch test run data for secrets config")
-			} else {
-				k6.GetStatus().SecretsVars = cloud.EncodeSecretsConfig(trData.SecretsConfig, trData.SecretsToken)
-			}
+			k6.GetStatus().SecretsVars = cloud.EncodeSecretsConfig(testRunData.SecretsConfig, testRunData.SecretsToken)
 
 			_, err := r.UpdateStatus(ctx, k6, log)
 			if err != nil {
