@@ -459,6 +459,31 @@ func Test_NewRunnerJob(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:      "cloud section",
+			tokenInfo: cloud.NewTokenInfo("", "").InjectValue("token"),
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Cloud = &v1alpha1.CloudSpec{
+					Stream: true,
+				}
+				k6.Spec.Runner.Metadata.Labels = nil
+				k6.Status.TestRunID = "testrunid"
+				k6.Status.AggregationVars = "2|5s|3s|10s|10"
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Containers[0].Command = []string{
+					"k6", "cloud", "run", "--local-execution",
+					"--quiet", "/test/test.js", "--address=0.0.0.0:6565",
+					"--paused", "--tag", "instance_id=1", "--tag", "job_name=test-1",
+				}
+				j.Labels = defaultLabels()
+				j.Spec.Template.Labels = defaultLabels()
+				j.Spec.Template.Spec.Containers[0].Env = append(aggregationEnvVars,
+					corev1.EnvVar{Name: "K6_CLOUD_PUSH_REF_ID", Value: "testrunid"},
+					corev1.EnvVar{Name: "K6_CLOUD_TOKEN", Value: "token"},
+				)
+			},
+		},
 	}
 
 	for _, tt := range tests {
