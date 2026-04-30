@@ -44,6 +44,7 @@ func TestNewStopperJob(t *testing.T) {
 				Spec: corev1.PodSpec{
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					ServiceAccountName:           "default",
+					SchedulerName:                "default-scheduler",
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					Tolerations:                  nil,
@@ -126,6 +127,7 @@ func TestNewStopJobIstio(t *testing.T) {
 				Spec: corev1.PodSpec{
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					ServiceAccountName:           "default",
+					SchedulerName:                "default-scheduler",
 					Affinity:                     nil,
 					NodeSelector:                 nil,
 					Tolerations:                  nil,
@@ -188,4 +190,88 @@ func TestNewStopJobIstio(t *testing.T) {
 	if diff := deep.Equal(job, expectedOutcome); diff != nil {
 		t.Error(diff)
 	}
+}
+
+func TestNewStopperJobWithSchedulerName(t *testing.T) {
+	automountServiceAccountToken := true
+	zero := int32(0)
+
+	expectedOutcome := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-stopper",
+			Namespace: "test",
+			Labels: map[string]string{
+				"app":    "k6",
+				"k6_cr":  "test",
+				"label1": "awesome",
+			},
+			Annotations: map[string]string{
+				"awesomeAnnotation": "dope",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			BackoffLimit: &zero,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app":    "k6",
+						"k6_cr":  "test",
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Spec: corev1.PodSpec{
+					AutomountServiceAccountToken: &automountServiceAccountToken,
+					ServiceAccountName:           "default",
+					SchedulerName:                "custom-scheduler",
+					Affinity:                     nil,
+					NodeSelector:                 nil,
+					Tolerations:                  nil,
+					TopologySpreadConstraints:    nil,
+					RestartPolicy:                corev1.RestartPolicyNever,
+					SecurityContext:              &corev1.PodSecurityContext{},
+					Containers: []corev1.Container{
+						containers.NewStopContainer([]string{"testing"}, "image", corev1.PullNever, []string{"sh", "-c"},
+							[]corev1.EnvVar{}, corev1.SecurityContext{}, corev1.ResourceRequirements{}),
+					},
+				},
+			},
+		},
+	}
+
+	k6 := &v1alpha1.TestRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.TestRunSpec{
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Starter: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Image:           "image",
+				ImagePullPolicy: corev1.PullNever,
+				SchedulerName:   "custom-scheduler",
+			},
+		},
+	}
+
+	job := NewStopJob(k6, []string{"testing"})
+	if diff := deep.Equal(job, expectedOutcome); diff != nil {
+		t.Error(diff)
+	}
+
 }
