@@ -1,5 +1,6 @@
 import { Environment } from 'k6/x/environment';
-import { sleep, fail } from 'k6';
+import { sleep } from 'k6';
+import { expect } from '../assertions.js';
 
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
@@ -58,9 +59,7 @@ function wait_for_first(env) {
     interval: "1m",
   });
 
-  if (err != null) {
-    fail("wait for t-2-runners returns" + err);
-  }
+  expect(err, "wait for t-2-runners returns").toBeNull();
 
   let allPods = env.getN("pods", {
     "namespace": "k6-tests", //tr.namespace()
@@ -69,9 +68,7 @@ function wait_for_first(env) {
   });
 
   // there should be N runners pods + initializer + starter
-  if (allPods != 2 + 2) {
-    fail("wrong number of pods:" + allPods + " instead of " + 4);
-  }
+  expect(allPods, "pod count for t-2-runners").toBe(2 + 2);
 }
 
 function wait_for_second(env) {
@@ -86,9 +83,7 @@ function wait_for_second(env) {
     interval: "1m",
   });
 
-  if (err != null) {
-    fail("wait for t-3-runners returns" + err);
-  }
+  expect(err, "wait for t-3-runners returns").toBeNull();
 
   let allPods = env.getN("pods", {
     "namespace": "k6-tests", //tr.namespace()
@@ -97,7 +92,5 @@ function wait_for_second(env) {
   });
 
   // there should be N runners pods + initializer + starter
-  if (allPods != 3 + 2) {
-    fail("wrong number of pods:" + allPods + " instead of " + 5);
-  }
+  expect(allPods, "pod count for t-3-runners").toBe(3 + 2);
 }

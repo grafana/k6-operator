@@ -1,5 +1,6 @@
 import { Environment } from 'k6/x/environment';
-import { sleep, fail } from 'k6';
+import { sleep } from 'k6';
+import { expect } from '../assertions.js';
 
 export const options = {
   setupTimeout: '60s',
@@ -39,9 +40,7 @@ export default function () {
     interval: "1m",
   });
 
-  if (err != null) {
-    fail("wait for k6-sample in some-ns returns" + err);
-  }
+  expect(err, "wait for k6-sample in some-ns returns").toBeNull();
 
   err = env.wait({
     kind: "TestRun",
@@ -57,7 +56,7 @@ export default function () {
   // Uncomment this, once this issue is done:
   // https://github.com/grafana/xk6-environment/issues/17
   // if (err !== null) {
-  //   fail("wait for k6-sample in default returns" + err);
+  //   expect(err, "wait for k6-sample in default returns").toBeNull();
   // }
 }
 

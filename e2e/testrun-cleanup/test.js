@@ -1,5 +1,6 @@
 import { Environment } from 'k6/x/environment';
-import { sleep, fail } from 'k6';
+import { sleep } from 'k6';
+import { expect } from '../assertions.js';
 
 export const options = {
   setupTimeout: '60s',
@@ -34,9 +35,7 @@ export default function () {
   });
 
   // there should be at least initializer pod by now
-  if (allPods < 1) {
-    fail("wrong number of pods: " + allPods);
-  }
+  expect(allPods, "pod count after bootstrap").toBeGreaterThanOrEqual(1);
 
   err = env.wait({
     kind: "TestRun",
@@ -52,9 +51,7 @@ export default function () {
   // Either wait() will "catch" TestRun at finished stage or
   // TestRun will be deleted some time between wait checks. Both
   // of those are valid in this case.
-  if (err != null && err != "context deadline exceeded") {
-    fail("unexpected error from wait(): " + err);
-  }
+  expect(err == null || err == "context deadline exceeded", "wait should finish or time out after cleanup").toBeTruthy();
 
   // there should be no pods at this point
 
@@ -64,9 +61,7 @@ export default function () {
     "k6_cr": "k6-sample", //tr.name()
   });
 
-  if (allPods != 0) {
-    fail("pods were not deleted, there are " + allPods + " pods");
-  }
+  expect(allPods, "pod count after cleanup").toBe(0);
 }
 
 export function teardown() {

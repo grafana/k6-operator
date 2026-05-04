@@ -1,5 +1,6 @@
 import { Environment } from 'k6/x/environment';
-import { sleep, fail } from 'k6';
+import { sleep } from 'k6';
+import { expect } from '../assertions.js';
 
 export const options = {
   setupTimeout: '60s',
@@ -36,9 +37,7 @@ export default function () {
     interval: "1m",
   });
 
-  if (err != null) {
-    fail("wait returns" + err);
-  }
+  expect(err, "wait returns").toBeNull();
 }
 
 export function teardown() {

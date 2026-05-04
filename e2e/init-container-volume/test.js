@@ -1,5 +1,6 @@
 import { Environment } from 'k6/x/environment';
-import { sleep, fail } from 'k6';
+import { sleep } from 'k6';
+import { expect } from '../assertions.js';
 
 export const options = {
     setupTimeout: '60s',
@@ -41,9 +42,7 @@ export default function () {
         interval: "1m",
     });
 
-    if (err != null) {
-        fail("wait returns" + err);
-    }
+    expect(err, "wait returns").toBeNull();
 
     let allPods = env.getN("pods", {
         "namespace": "default", //tr.namespace()
@@ -52,9 +51,7 @@ export default function () {
     });
 
     // there should be N runners pods + initializer + starter
-    if (allPods != 2 + 2) {
-        fail("wrong number of pods:" + allPods + " instead of " + 4);
-    }
+    expect(allPods, "total pod count").toBe(2 + 2);
 }
 
 export function teardown() {
