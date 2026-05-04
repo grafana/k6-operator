@@ -1,5 +1,6 @@
 import { Environment } from 'k6/x/environment';
-import { sleep, fail } from 'k6';
+import { sleep } from 'k6';
+import { expect } from '../assertions.js';
 
 export const options = {
   setupTimeout: '60s',
@@ -34,9 +35,7 @@ export default function () {
     interval: "1m",
   });
 
-  if (err != null) {
-    fail("wait returns " + err);
-  }
+  expect(err, "wait returns").toBeNull();
 
   // Check total pod count
   // With initializer disabled: runner + starter = 2 pods (initializer should be skippd)
@@ -47,10 +46,7 @@ export default function () {
   });
 
   const expectedPods = 2;
-  if (allPods != expectedPods) {
-    fail("wrong number of pods: " + allPods + " instead of " + expectedPods +
-         " (initializer should not exist when disabled)");
-  }
+  expect(allPods, "initializer should not exist when disabled").toBe(expectedPods);
 
   console.log("SUCCESS: No initializer pod created, total pods: " + allPods);
 }
