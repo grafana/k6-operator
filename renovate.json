@@ -21,6 +21,23 @@
             ]
         },
         {
+            "description": "Do not bump Go toolchain minor/major versions",
+            "matchManagers": [
+                "gomod"
+            ],
+            "matchDatasources": [
+                "golang-version"
+            ],
+            "matchDepTypes": [
+                "toolchain"
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "major"
+            ],
+            "enabled": false
+        },
+        {
             "description": "No indirect dependencies",
             "matchManagers": [
                 "gomod"
