@@ -16,7 +16,7 @@ import (
 func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 
 	var (
-		schedulerName = "default-scheduler"
+		schedulerName = corev1.DefaultSchedulerName
 	)
 
 	starterAnnotations := make(map[string]string)
