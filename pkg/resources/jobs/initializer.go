@@ -24,7 +24,7 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 		serviceAccountName           = "default"
 		automountServiceAccountToken = true
 		ports                        = append([]corev1.ContainerPort{{ContainerPort: 6565}}, k6.GetSpec().Ports...)
-		schedulerName                = "default-scheduler"
+		schedulerName                = corev1.DefaultSchedulerName
 	)
 
 	if k6.GetSpec().Initializer == nil {

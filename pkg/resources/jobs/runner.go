@@ -82,7 +82,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	var (
 		zero          int64 = 0
 		zero32        int32 = 0
-		schedulerName       = "default-scheduler"
+		schedulerName       = corev1.DefaultSchedulerName
 	)
 
 	image := "grafana/k6:latest"
