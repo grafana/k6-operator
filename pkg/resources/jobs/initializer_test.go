@@ -12,7 +12,44 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_NewInitializerJob(t *testing.T) {
+func defaultTestRunForInitializer() *v1alpha1.TestRun {
+	return &v1alpha1.TestRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.TestRunSpec{
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Arguments: "--out cloud",
+			Initializer: &v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				EnvFrom: []corev1.EnvFromSource{
+					{
+						ConfigMapRef: &corev1.ConfigMapEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "env",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func defaultExpectedJobForInitializer() *batchv1.Job {
 	script := &types.Script{
 		Name:     "test",
 		Filename: "test.js",
@@ -22,7 +59,7 @@ func Test_NewInitializerJob(t *testing.T) {
 	automountServiceAccountToken := true
 	zero := int32(0)
 
-	expectedOutcome := &batchv1.Job{
+	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-initializer",
 			Namespace: "test",
@@ -88,49 +125,60 @@ func Test_NewInitializerJob(t *testing.T) {
 			},
 		},
 	}
-
-	k6 := &v1alpha1.TestRun{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
+}
+func Test_NewInitializerJob(t *testing.T) {
+	tests := []struct {
+		name             string
+		argLine          string
+		setupTestRun     func(*v1alpha1.TestRun)
+		setupExpectedJob func(*batchv1.Job)
+	}{
+		{
+			name:             "base",
+			argLine:          "--out cloud",
+			setupTestRun:     func(k6 *v1alpha1.TestRun) {},
+			setupExpectedJob: func(j *batchv1.Job) {},
 		},
-		Spec: v1alpha1.TestRunSpec{
-			Script: v1alpha1.K6Script{
-				ConfigMap: v1alpha1.K6Configmap{
-					Name: "test",
-					File: "test.js",
-				},
+		{
+			name:    "with custom scheduler name",
+			argLine: "--out cloud",
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Initializer.SchedulerName = "custom-scheduler"
 			},
-			Arguments: "--out cloud",
-			Initializer: &v1alpha1.Pod{
-				Metadata: v1alpha1.PodMetadata{
-					Labels: map[string]string{
-						"label1": "awesome",
-					},
-					Annotations: map[string]string{
-						"awesomeAnnotation": "dope",
-					},
-				},
-				EnvFrom: []corev1.EnvFromSource{
-					{
-						ConfigMapRef: &corev1.ConfigMapEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "env",
-							},
-						},
-					},
-				},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.SchedulerName = "custom-scheduler"
 			},
 		},
 	}
 
-	job, err := NewInitializerJob(k6, "--out cloud")
-	if err != nil {
-		t.Errorf("NewInitializerJob errored, got: %v", err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-	if diff := deep.Equal(job, expectedOutcome); diff != nil {
-		t.Error(diff)
+			k6 := defaultTestRunForInitializer()
+
+			if tt.setupTestRun != nil {
+				tt.setupTestRun(k6)
+			}
+
+			expectedJob := defaultExpectedJobForInitializer()
+
+			if tt.setupExpectedJob != nil {
+				tt.setupExpectedJob(expectedJob)
+			}
+
+			job, err := NewInitializerJob(k6, tt.argLine)
+
+			if err != nil {
+				t.Fatalf("NewInitializerJob errored: %v", err)
+			}
+
+			diff := deep.Equal(job, expectedJob)
+
+			if diff != nil {
+				t.Errorf("NewInitializerJob difference: %v", diff)
+			}
+
+		})
 	}
 }
 
@@ -253,128 +301,5 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func Test_NewInitializerJobWithSchedulerName(t *testing.T) {
-	script := &types.Script{
-		Name:     "test",
-		Filename: "test.js",
-		Type:     "ConfigMap",
-	}
-
-	automountServiceAccountToken := true
-	zero := int32(0)
-
-	expectedOutcome := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-initializer",
-			Namespace: "test",
-			Labels: map[string]string{
-				"app":    "k6",
-				"k6_cr":  "test",
-				"label1": "awesome",
-			},
-			Annotations: map[string]string{
-				"awesomeAnnotation": "dope",
-			},
-		},
-		Spec: batchv1.JobSpec{
-			BackoffLimit: &zero,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app":    "k6",
-						"k6_cr":  "test",
-						"label1": "awesome",
-					},
-					Annotations: map[string]string{
-						"awesomeAnnotation": "dope",
-					},
-				},
-				Spec: corev1.PodSpec{
-					AutomountServiceAccountToken: &automountServiceAccountToken,
-					ServiceAccountName:           "default",
-					SchedulerName:                "custom-scheduler",
-					Affinity:                     nil,
-					NodeSelector:                 nil,
-					Tolerations:                  nil,
-					TopologySpreadConstraints:    nil,
-					RestartPolicy:                corev1.RestartPolicyNever,
-					SecurityContext:              &corev1.PodSecurityContext{},
-					Containers: []corev1.Container{
-						{
-							Image:           "grafana/k6:latest",
-							ImagePullPolicy: "",
-							Name:            "k6",
-							Command: []string{
-								"sh", "-c",
-								"mkdir -p $(dirname /tmp/test.js.archived.tar) && k6 archive /test/test.js -O /tmp/test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements /tmp/test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level.*error'",
-							},
-							Env: []corev1.EnvVar{},
-							EnvFrom: []corev1.EnvFromSource{
-								{
-									ConfigMapRef: &corev1.ConfigMapEnvSource{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "env",
-										},
-									},
-								},
-							},
-							Resources:       corev1.ResourceRequirements{},
-							VolumeMounts:    script.VolumeMount(),
-							Ports:           []corev1.ContainerPort{{ContainerPort: 6565}},
-							SecurityContext: &corev1.SecurityContext{},
-						},
-					},
-					Volumes: script.Volume(),
-				},
-			},
-		},
-	}
-
-	k6 := &v1alpha1.TestRun{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
-		},
-		Spec: v1alpha1.TestRunSpec{
-			Script: v1alpha1.K6Script{
-				ConfigMap: v1alpha1.K6Configmap{
-					Name: "test",
-					File: "test.js",
-				},
-			},
-			Arguments: "--out cloud",
-			Initializer: &v1alpha1.Pod{
-				Metadata: v1alpha1.PodMetadata{
-					Labels: map[string]string{
-						"label1": "awesome",
-					},
-					Annotations: map[string]string{
-						"awesomeAnnotation": "dope",
-					},
-				},
-				EnvFrom: []corev1.EnvFromSource{
-					{
-						ConfigMapRef: &corev1.ConfigMapEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "env",
-							},
-						},
-					},
-				},
-				SchedulerName: "custom-scheduler",
-			},
-		},
-	}
-
-	job, err := NewInitializerJob(k6, "--out cloud")
-	if err != nil {
-		t.Errorf("NewInitializerJob errored, got: %v", err)
-	}
-
-	if diff := deep.Equal(job, expectedOutcome); diff != nil {
-		t.Error(diff)
 	}
 }

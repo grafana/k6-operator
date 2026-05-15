@@ -12,12 +12,41 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestNewStarterJob(t *testing.T) {
+func defaultTestRunForStarter() *v1alpha1.TestRun {
+	return &v1alpha1.TestRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+		Spec: v1alpha1.TestRunSpec{
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{
+					Name: "test",
+					File: "test.js",
+				},
+			},
+			Starter: v1alpha1.Pod{
+				Metadata: v1alpha1.PodMetadata{
+					Labels: map[string]string{
+						"label1": "awesome",
+					},
+					Annotations: map[string]string{
+						"awesomeAnnotation": "dope",
+					},
+				},
+				Image:           "image",
+				ImagePullPolicy: corev1.PullNever,
+			},
+		},
+	}
+}
+
+func defaultExpectedJobForStarter() *batchv1.Job {
 
 	automountServiceAccountToken := true
 	zero := int32(0)
 
-	expectedOutcome := &batchv1.Job{
+	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-starter",
 			Namespace: "test",
@@ -71,39 +100,86 @@ func TestNewStarterJob(t *testing.T) {
 			},
 		},
 	}
-
-	k6 := &v1alpha1.TestRun{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
+}
+func Test_NewStarterJob(t *testing.T) {
+	tests := []struct {
+		name             string
+		hostname         []string
+		setupTestRun     func(*v1alpha1.TestRun)
+		setupExpectedJob func(*batchv1.Job)
+	}{
+		{
+			name:             "base",
+			hostname:         []string{"testing"},
+			setupTestRun:     func(k6 *v1alpha1.TestRun) {},
+			setupExpectedJob: func(j *batchv1.Job) {},
 		},
-		Spec: v1alpha1.TestRunSpec{
-			Script: v1alpha1.K6Script{
-				ConfigMap: v1alpha1.K6Configmap{
-					Name: "test",
-					File: "test.js",
-				},
+		{
+			name:     "custom scheduler name",
+			hostname: []string{"testing"},
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Starter.SchedulerName = "custom-scheduler"
 			},
-			Starter: v1alpha1.Pod{
-				Metadata: v1alpha1.PodMetadata{
-					Labels: map[string]string{
-						"label1": "awesome",
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.SchedulerName = "custom-scheduler"
+			},
+		},
+		{
+			name:     "custom resources",
+			hostname: []string{"testing"},
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Starter.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("2Gi"),
 					},
-					Annotations: map[string]string{
-						"awesomeAnnotation": "dope",
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("1Gi"),
 					},
-				},
-				Image:           "image",
-				ImagePullPolicy: corev1.PullNever,
+				}
+
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("2Gi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("1Gi"),
+					},
+				}
 			},
 		},
 	}
 
-	job := NewStarterJob(k6, []string{"testing"})
-	if diff := deep.Equal(job, expectedOutcome); diff != nil {
-		t.Error(diff)
-	}
+	for _, tt := range tests {
 
+		t.Run(tt.name, func(t *testing.T) {
+
+			k6 := defaultTestRunForStarter()
+
+			if tt.setupTestRun != nil {
+				tt.setupTestRun(k6)
+			}
+
+			expectedJob := defaultExpectedJobForStarter()
+
+			if tt.setupExpectedJob != nil {
+				tt.setupExpectedJob(expectedJob)
+			}
+
+			job := NewStarterJob(k6, tt.hostname)
+
+			diff := deep.Equal(job, expectedJob)
+
+			if diff != nil {
+				t.Errorf("NewStarterJob difference: %v", diff)
+			}
+		})
+	}
 }
 
 func TestNewStarterJobIstio(t *testing.T) {
@@ -204,171 +280,6 @@ func TestNewStarterJobIstio(t *testing.T) {
 					},
 				},
 				Image: "image",
-			},
-		},
-	}
-
-	job := NewStarterJob(k6, []string{"testing"})
-	if diff := deep.Equal(job, expectedOutcome); diff != nil {
-		t.Error(diff)
-	}
-
-}
-
-func TestNewStarterJobCustomResources(t *testing.T) {
-	// Test case 1: Default resources should be applied when no custom resources are specified
-	k6Default := &v1alpha1.TestRun{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
-		},
-		Spec: v1alpha1.TestRunSpec{
-			Starter: v1alpha1.Pod{
-				Image: "image",
-			},
-			Script: v1alpha1.K6Script{
-				ConfigMap: v1alpha1.K6Configmap{Name: "test", File: "test.js"},
-			},
-		},
-	}
-
-	jobDefault := NewStarterJob(k6Default, []string{"testing"})
-	gotDefaultRes := jobDefault.Spec.Template.Spec.Containers[0].Resources
-
-	expectedDefaultRes := corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
-			corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
-			corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
-		},
-	}
-
-	if diff := deep.Equal(gotDefaultRes, expectedDefaultRes); diff != nil {
-		t.Errorf("default resources not applied: %v", diff)
-	}
-
-	// Test case 2: Custom resources should override defaults
-	reqs := corev1.ResourceList{
-		corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
-		corev1.ResourceMemory: *resource.NewQuantity(64*1024*1024, resource.BinarySI), // 64 Mi
-	}
-	lims := corev1.ResourceList{
-		corev1.ResourceCPU:    *resource.NewMilliQuantity(250, resource.DecimalSI),
-		corev1.ResourceMemory: *resource.NewQuantity(160*1024*1024, resource.BinarySI), // 160 Mi
-	}
-	customRes := corev1.ResourceRequirements{Requests: reqs, Limits: lims}
-
-	k6Custom := &v1alpha1.TestRun{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
-		},
-		Spec: v1alpha1.TestRunSpec{
-			Starter: v1alpha1.Pod{
-				Image:     "image",
-				Resources: customRes,
-			},
-			Script: v1alpha1.K6Script{
-				ConfigMap: v1alpha1.K6Configmap{Name: "test", File: "test.js"},
-			},
-		},
-	}
-
-	jobCustom := NewStarterJob(k6Custom, []string{"testing"})
-	gotCustomRes := jobCustom.Spec.Template.Spec.Containers[0].Resources
-
-	if diff := deep.Equal(gotCustomRes, customRes); diff != nil {
-		t.Errorf("custom resources not applied: %v", diff)
-	}
-}
-
-func TestNewStarterJobWithSchedulerName(t *testing.T) {
-
-	automountServiceAccountToken := true
-	zero := int32(0)
-
-	expectedOutcome := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-starter",
-			Namespace: "test",
-			Labels: map[string]string{
-				"app":    "k6",
-				"k6_cr":  "test",
-				"label1": "awesome",
-			},
-			Annotations: map[string]string{
-				"awesomeAnnotation": "dope",
-			},
-		},
-		Spec: batchv1.JobSpec{
-			BackoffLimit: &zero,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app":    "k6",
-						"k6_cr":  "test",
-						"label1": "awesome",
-					},
-					Annotations: map[string]string{
-						"awesomeAnnotation": "dope",
-					},
-				},
-				Spec: corev1.PodSpec{
-					AutomountServiceAccountToken: &automountServiceAccountToken,
-					ServiceAccountName:           "default",
-					SchedulerName:                "custom-scheduler",
-					Affinity:                     nil,
-					NodeSelector:                 nil,
-					Tolerations:                  nil,
-					TopologySpreadConstraints:    nil,
-					RestartPolicy:                corev1.RestartPolicyNever,
-					SecurityContext:              &corev1.PodSecurityContext{},
-					Containers: []corev1.Container{
-						containers.NewStartContainer([]string{"testing"}, "image", corev1.PullNever, []string{"sh", "-c"},
-							[]corev1.EnvVar{}, corev1.SecurityContext{}, corev1.ResourceRequirements{
-								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
-									corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
-								},
-								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
-									corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
-								},
-							},
-						),
-					},
-				},
-			},
-		},
-	}
-
-	k6 := &v1alpha1.TestRun{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
-		},
-		Spec: v1alpha1.TestRunSpec{
-			Script: v1alpha1.K6Script{
-				ConfigMap: v1alpha1.K6Configmap{
-					Name: "test",
-					File: "test.js",
-				},
-			},
-			Starter: v1alpha1.Pod{
-				Metadata: v1alpha1.PodMetadata{
-					Labels: map[string]string{
-						"label1": "awesome",
-					},
-					Annotations: map[string]string{
-						"awesomeAnnotation": "dope",
-					},
-				},
-				Image:           "image",
-				ImagePullPolicy: corev1.PullNever,
-				SchedulerName:   "custom-scheduler",
 			},
 		},
 	}
