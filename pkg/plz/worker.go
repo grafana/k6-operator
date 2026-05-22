@@ -161,7 +161,10 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 }
 
 // complete modifies tr with data from trData, which is specific for this test run.
-func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
+func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) error {
+	if trData.TestRunId > 0 && trData.SecretsToken == "" {
+		return fmt.Errorf("test_run_token is required for PLZ test run %s", trData.TestRunID())
+	}
 	tr.Name = testrun.PLZTestName(trData.TestRunID())
 
 	initContainer := containers.NewS3InitContainer(
@@ -174,6 +177,12 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 		Name:  "K6_CLOUD_HOST",
 		Value: cloud.K6CloudHost(),
 	})
+	if trData.SecretsToken != "" {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "K6_CLOUD_TOKEN",
+			Value: trData.SecretsToken,
+		})
+	}
 
 	envVars = append(envVars, cloud.AggregationEnvVars(&trData.RuntimeConfig)...)
 
@@ -189,6 +198,8 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 		w.plz.Name,
 		trData.TestRunID())
 	tr.Spec.TestRunID = trData.TestRunID()
+
+	return nil
 }
 
 // handle creates a new PLZ TestRun from the given test run id
@@ -214,7 +225,10 @@ func (w *PLZWorker) handle(testRunId string) {
 		w.logger.Error(err, fmt.Sprintf("Failed to retrieve test run data for `%s`", testRunId))
 		return
 	}
-	w.complete(tr, trData)
+	if err := w.complete(tr, trData); err != nil {
+		w.logger.Error(err, "Failed to prepare PLZ test run", "testRunId", testRunId)
+		return
+	}
 
 	w.logger.Info(fmt.Sprintf("PLZ test run has been prepared with image `%s` and `%d` instances",
 		tr.Spec.Runner.Image, tr.Spec.Parallelism), "testRunId", testRunId)

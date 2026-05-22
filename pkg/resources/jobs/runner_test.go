@@ -469,6 +469,33 @@ func Test_NewRunnerJob(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:      "PLZ test run with test run token env",
+			tokenInfo: cloud.NewTokenInfo("plz-token-secret", "test"),
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.TestRunID = "plz-run-123"
+				k6.Spec.Runner.Env = []corev1.EnvVar{
+					{Name: "K6_CLOUD_TOKEN", Value: "test-run-token"},
+				}
+				k6.Status.Conditions = []metav1.Condition{
+					{
+						Type:               v1alpha1.CloudPLZTestRun,
+						Status:             metav1.ConditionTrue,
+						LastTransitionTime: metav1.Now(),
+					},
+				}
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Containers[0].Command = append(
+					j.Spec.Template.Spec.Containers[0].Command,
+					"--no-setup", "--no-teardown", "--linger",
+				)
+				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
+					{Name: "K6_CLOUD_PUSH_REF_ID", Value: "plz-run-123"},
+					{Name: "K6_CLOUD_TOKEN", Value: "test-run-token"},
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {

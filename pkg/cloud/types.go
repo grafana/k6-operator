@@ -77,7 +77,7 @@ type TestRunData struct {
 	LZConfig      `json:"k8s_load_zones_config"`
 	RunStatus     cloudapi.RunStatus `json:"run_status"`
 	RuntimeConfig cloudapi.Config    `json:"k6_runtime_config"`
-	// SecretsToken is a short-lived, test-run-scoped token for read-only access to secrets.
+	// SecretsToken is a short-lived, test-run-scoped token for test runtime auth.
 	SecretsToken  string         `json:"test_run_token,omitempty"`
 	SecretsConfig *SecretsConfig `json:"secrets_config,omitempty"`
 }

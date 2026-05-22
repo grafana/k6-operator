@@ -125,11 +125,12 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			corev1.ResourceCPU:    resource.MustParse("200m"),
 			corev1.ResourceMemory: resource.MustParse("1G"),
 		}
-		someTestRunID   = 6543
-		someRunnerImage = "grafana/k6:0.52.0"
-		someInstances   = 10
-		someArchiveURL  = "https://foo.s3.amazonaws.com"
-		someEnvVars     = map[string]string{
+		someTestRunID    = 6543
+		someRunnerImage  = "grafana/k6:0.52.0"
+		someInstances    = 10
+		someArchiveURL   = "https://foo.s3.amazonaws.com"
+		someTestRunToken = "abc123token"
+		someEnvVars      = map[string]string{
 			"ENV": "VALUE",
 			"foo": "bar",
 		}
@@ -197,6 +198,16 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	}
 	cloudFieldsTestRun.Spec.Runner.Image = someRunnerImage
 	cloudFieldsTestRun.Spec.Parallelism = int32(someInstances)
+	cloudFieldsTestRun.Spec.Runner.Env = append([]corev1.EnvVar{
+		{
+			Name:  "K6_CLOUD_HOST",
+			Value: mainIngest,
+		},
+		{
+			Name:  "K6_CLOUD_TOKEN",
+			Value: someTestRunToken,
+		},
+	}, cloud.AggregationEnvVars(&cloudapi.Config{})...)
 
 	cloudEnvVarsTestRun = cloudFieldsTestRun // build up on top of cloud fields case
 	cloudEnvVarsTestRun.Spec.Runner.Env = append([]corev1.EnvVar{
@@ -208,7 +219,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			Name:  "foo",
 			Value: "bar",
 		},
-	}, defaultTestRun.Spec.Runner.Env...)
+	}, cloudFieldsTestRun.Spec.Runner.Env...)
 
 	podTemplateTolerationsTestRun = requiredFieldsTestRun
 	podTemplateTolerationsTestRun.Spec.Runner.Tolerations = someTolerations
@@ -234,7 +245,6 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		Endpoint:     "https://api.k6.io/provisioning/v1/test_runs/6543/decrypt_secret?name={key}",
 		ResponsePath: "plaintext",
 	}
-	someTestRunToken := "abc123token"
 
 	secretsWithTokenTestRun = cloudFieldsTestRun
 	secretsWithTokenTestRun.Spec.Runner.Env = append(
@@ -251,6 +261,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		cloudData *cloud.TestRunData
 		ingestUrl string
 		expected  *v1alpha1.TestRun
+		wantErr   bool
 	}{
 		{
 			name:      "empty input gets a zero-values TestRun",
@@ -303,7 +314,8 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				},
 			},
 			cloudData: &cloud.TestRunData{
-				TestRunId: someTestRunID,
+				TestRunId:    someTestRunID,
+				SecretsToken: someTestRunToken,
 				LZConfig: cloud.LZConfig{
 					RunnerImage:   someRunnerImage,
 					InstanceCount: someInstances,
@@ -324,7 +336,8 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				},
 			},
 			cloudData: &cloud.TestRunData{
-				TestRunId: someTestRunID,
+				TestRunId:    someTestRunID,
+				SecretsToken: someTestRunToken,
 				LZConfig: cloud.LZConfig{
 					RunnerImage:   someRunnerImage,
 					InstanceCount: someInstances,
@@ -334,6 +347,27 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			},
 			ingestUrl: mainIngest,
 			expected:  &cloudEnvVarsTestRun,
+		},
+		{
+			name: "cloud fields without test run token",
+			plz: &v1alpha1.PrivateLoadZone{
+				Spec: v1alpha1.PrivateLoadZoneSpec{
+					Token: someToken,
+					Resources: corev1.ResourceRequirements{
+						Limits: resourceLimits,
+					},
+				},
+			},
+			cloudData: &cloud.TestRunData{
+				TestRunId: someTestRunID,
+				LZConfig: cloud.LZConfig{
+					RunnerImage:   someRunnerImage,
+					InstanceCount: someInstances,
+					ArchiveURL:    someArchiveURL,
+				},
+			},
+			ingestUrl: mainIngest,
+			wantErr:   true,
 		},
 		{
 			name: "podTemplate with tolerations",
@@ -457,7 +491,16 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			worker := NewPLZWorker(testCase.plz, "token", c, logr.Logger{})
 
 			tr := worker.template.Create()
-			worker.complete(tr, testCase.cloudData)
+			err := worker.complete(tr, testCase.cloudData)
+			if testCase.wantErr {
+				if err == nil {
+					t.Fatal("worker.complete expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("worker.complete returned unexpected error: %v", err)
+			}
 
 			if diff := deep.Equal(tr, testCase.expected); diff != nil {
 				t.Errorf("worker.complete returned unexpected data, diff: %s", diff)

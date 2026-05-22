@@ -122,21 +122,22 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 
 	// this is a cloud test run: either cloud output or PLZ
 	if len(k6.TestRunID()) > 0 {
-		// cloud output case
-		tokenVar := corev1.EnvVar{
-			Name:  "K6_CLOUD_TOKEN",
-			Value: tokenInfo.Value(),
-		}
+		envVars := []corev1.EnvVar{{
+			Name:  "K6_CLOUD_PUSH_REF_ID",
+			Value: k6.TestRunID(),
+		}}
 
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
-			tokenVar = corev1.EnvVar{
-				Name: "K6_CLOUD_TOKEN",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: tokenInfo.SecretName()},
-						Key:                  "token",
+			if !hasEnvVar(k6.GetSpec().Runner.Env, "K6_CLOUD_TOKEN") {
+				envVars = append(envVars, corev1.EnvVar{
+					Name: "K6_CLOUD_TOKEN",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: tokenInfo.SecretName()},
+							Key:                  "token",
+						},
 					},
-				},
+				})
 			}
 		} else {
 			// cloud output case
@@ -145,12 +146,13 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 				return nil, err
 			}
 			env = append(env, aggregationVars...)
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "K6_CLOUD_TOKEN",
+				Value: tokenInfo.Value(),
+			})
 		}
 
-		env = append(env, corev1.EnvVar{
-			Name:  "K6_CLOUD_PUSH_REF_ID",
-			Value: k6.TestRunID(),
-		}, tokenVar)
+		env = append(env, envVars...)
 	}
 
 	env = append(env, k6.GetSpec().Runner.Env...)
@@ -219,6 +221,16 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	}
 
 	return job, nil
+}
+
+func hasEnvVar(envVars []corev1.EnvVar, name string) bool {
+	for _, envVar := range envVars {
+		if envVar.Name == name {
+			return true
+		}
+	}
+
+	return false
 }
 
 func NewRunnerService(k6 *v1alpha1.TestRun, index int) (*corev1.Service, error) {
