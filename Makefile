@@ -151,7 +151,7 @@ deploy-helm: manifests helm ## Deploy operator using local Helm chart.
 	$(HELM) upgrade --install --wait k6-operator ./charts/k6-operator -f ./charts/k6-operator/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
 
 helm-template: manifests helm ## Generate Helm template output from the local chart.
-	$(HELM) template k6-operator ./charts/k6-operator -f ./charts/k6-operator/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
+	$(HELM) template k6-operator ./charts/k6-operator -f ./charts/k6-operator/values.yaml --set manager.image.repository=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
 
 helm-docs: ## Generate Helm chart documentation.
 	go install github.com/norwoodj/helm-docs/cmd/helm-docs@v1.14.2
