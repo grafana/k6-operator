@@ -1,4 +1,4 @@
 FROM grafana/k6:latest
 
-COPY --from=kvij/scuttle:latest scuttle /bin/scuttle
+COPY --from=kvij/scuttle@sha256:1b3fb35aa13dd80b30ecceee9f913156eace6cf7656129a99a2dfad5010f68a4 scuttle /bin/scuttle
 ENTRYPOINT ["scuttle", "k6"]

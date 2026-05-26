@@ -1,4 +1,3 @@
-
 name: Helm release
 permissions: {}
 
@@ -8,11 +7,11 @@ on:
     branches:
       - main
     paths:
-      - 'charts/k6-operator/Chart.yaml'
+      - "charts/k6-operator/Chart.yaml"
 
 jobs:
   generate-chart-schema:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
@@ -32,9 +31,9 @@ jobs:
         continue-on-error: true
         run: |
           if git diff --exit-code; then
-            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "changes=false" >> "$GITHUB_OUTPUT"
           else
-            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "changes=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: "Commit changes and make PR"
@@ -62,7 +61,7 @@ jobs:
       contents: write
     needs:
       - generate-chart-schema
-    uses: grafana/helm-charts/.github/workflows/update-helm-repo.yaml@main
+    uses: grafana/helm-charts/.github/workflows/update-helm-repo.yaml@77e5ea2de369fa1ff3441b08765c164be209eaa2
     with:
       charts_dir: charts
       cr_configfile: charts/cr.yaml
