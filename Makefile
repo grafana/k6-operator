@@ -5,8 +5,6 @@ SHELL = /usr/bin/env bash -o pipefail
 
 # Current Operator version
 VERSION ?= 1.4.0
-# Image to use for building Go
-GO_BUILDER_IMG ?= "golang:1.26"
 # Image URL to use all building/pushing image targets
 IMG_NAME ?= ghcr.io/grafana/k6-operator
 IMG_TAG ?= latest
@@ -90,7 +88,7 @@ generate: controller-gen ## Generate code (controllers, deepcopy, etc.).
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 docker-build: test ## Build the docker image.
-	docker build . -t ${IMG_NAME}:${IMG_TAG} -f ${DOCKERFILE} --build-arg GO_BUILDER_IMG=${GO_BUILDER_IMG}
+	docker build . -t ${IMG_NAME}:${IMG_TAG} -f ${DOCKERFILE}
 
 docker-push: ## Push the docker image.
 	docker push ${IMG_NAME}:${IMG_TAG}
