@@ -15,7 +15,7 @@ on:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -40,7 +40,7 @@ jobs:
               - 'charts/**'
 
   docker:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
     steps:
@@ -66,14 +66,14 @@ jobs:
           file: Dockerfile.controller
           push: true
           build-args: |
-            GO_BUILDER_IMG=golang:1.26
+            GO_BUILDER_IMG=golang:1.26.3-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d
           tags: |
             ghcr.io/grafana/k6-operator:${{ github.sha }}
 
   kind-kustomize:
     needs: ["changes", "docker"]
     if: needs.changes.outputs.go-or-manifests == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: "Checkout"
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -91,7 +91,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc
         with:
-          node_image: "kindest/node:v1.35.1"
+          node_image: "kindest/node:v1.35.1@sha256:05d7bcdefbda08b4e038f644c4df690cdac3fba8b06f8289f30e10026720a1ab"
 
       - name: Test
         run: |
@@ -110,7 +110,7 @@ jobs:
   kind-helm:
     needs: ["changes", "docker"]
     if: needs.changes.outputs.charts == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -127,7 +127,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc
         with:
-          node_image: "kindest/node:v1.35.1"
+          node_image: "kindest/node:v1.35.1@sha256:05d7bcdefbda08b4e038f644c4df690cdac3fba8b06f8289f30e10026720a1ab"
 
       - name: Testing
         run: |

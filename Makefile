@@ -5,11 +5,10 @@ SHELL = /usr/bin/env bash -o pipefail
 
 # Current Operator version
 VERSION ?= 1.4.0
-# Image to use for building Go
-GO_BUILDER_IMG ?= "golang:1.26"
 # Image URL to use all building/pushing image targets
 IMG_NAME ?= ghcr.io/grafana/k6-operator
 IMG_TAG ?= latest
+YQ_IMAGE ?= mikefarah/yq:4.53.2@sha256:0cb4a78491b6e62ee8a9bf4fbeacbd15b5013d19bc420591b05383a696315e60
 # Default dockerfile to build
 DOCKERFILE ?= "Dockerfile.controller"
 
@@ -56,7 +55,7 @@ e2e-update-latest: ## Update e2e/latest folder with the bundle.yaml.
 	rm e2e/latest/*
 	cp bundle.yaml ./e2e/latest/bundle-to-test.yaml
 	cd e2e/latest && \
-	docker run --user "$$(id -u):$$(id -g)" --rm -v "${PWD}/e2e/latest":/workdir mikefarah/yq --no-doc  -s  '.kind + "-" + .metadata.name' bundle-to-test.yaml && \
+	docker run --user "$$(id -u):$$(id -g)" --rm -v "${PWD}/e2e/latest":/workdir $(YQ_IMAGE) --no-doc  -s  '.kind + "-" + .metadata.name' bundle-to-test.yaml && \
 	for f in $$(find . -type f  -name '*.k6.io'); do mv $$f $${f}.yaml; done && \
 	rm bundle-to-test.yaml && \
 	kustomize create --autodetect --recursive .
@@ -90,7 +89,7 @@ generate: controller-gen ## Generate code (controllers, deepcopy, etc.).
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 docker-build: test ## Build the docker image.
-	docker build . -t ${IMG_NAME}:${IMG_TAG} -f ${DOCKERFILE} --build-arg GO_BUILDER_IMG=${GO_BUILDER_IMG}
+	docker build . -t ${IMG_NAME}:${IMG_TAG} -f ${DOCKERFILE}
 
 docker-push: ## Push the docker image.
 	docker push ${IMG_NAME}:${IMG_TAG}
@@ -152,7 +151,7 @@ deploy-helm: manifests helm ## Deploy operator using local Helm chart.
 	$(HELM) upgrade --install --wait k6-operator ./charts/k6-operator -f ./charts/k6-operator/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
 
 helm-template: manifests helm ## Generate Helm template output from the local chart.
-	$(HELM) template k6-operator ./charts/k6-operator -f ./charts/k6-operator/values.yaml --set manager.image.name=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
+	$(HELM) template k6-operator ./charts/k6-operator -f ./charts/k6-operator/values.yaml --set manager.image.repository=$(IMG_NAME) --set manager.image.tag=$(IMG_TAG)
 
 helm-docs: ## Generate Helm chart documentation.
 	go install github.com/norwoodj/helm-docs/cmd/helm-docs@v1.14.2
@@ -171,9 +170,9 @@ ifeq (, $(shell which helm))
 	set -e ;\
 	HELM_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$HELM_GEN_TMP_DIR ;\
-	curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+	curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/$(HELM_VERSION)/scripts/get-helm-3 ;\
 	chmod 700 get_helm.sh ;\
-	./get_helm.sh ;\
+	DESIRED_VERSION=$(HELM_VERSION) ./get_helm.sh ;\
 	rm -rf $$HELM_GEN_TMP_DIR ;\
 	}
 HELM=$(shell which helm)
@@ -188,7 +187,7 @@ patch-helm-crd: kustomize ## Copy CRDs from config/crd/bases to Helm chart templ
 	sed -i '/^metadata:$$/a\  labels:\n    app.kubernetes.io/component: controller\n    {{- include "k6-operator.labels" . | nindent 4 }}\n    {{- include "k6-operator.customLabels" . | nindent 4 }}' charts/k6-operator/templates/crds/testrun.yaml
 	sed -i '0,/^  annotations:$$/s//  annotations:\n    {{- include "k6-operator.customAnnotations" . | nindent 4 }}/' charts/k6-operator/templates/crds/testrun.yaml
 	echo '{{- end -}}' >> charts/k6-operator/templates/crds/testrun.yaml
-	$(KUSTOMIZE) build config/crd | docker run -i --rm mikefarah/yq 'select(.metadata.name == "privateloadzones.k6.io")' > charts/k6-operator/templates/crds/plz.yaml
+	$(KUSTOMIZE) build config/crd | docker run -i --rm $(YQ_IMAGE) 'select(.metadata.name == "privateloadzones.k6.io")' > charts/k6-operator/templates/crds/plz.yaml
 	sed -i '1i\{{- if .Values.installCRDs -}}' charts/k6-operator/templates/crds/plz.yaml
 	sed -i '/^metadata:$$/a\  labels:\n    app.kubernetes.io/component: controller\n    {{- include "k6-operator.labels" . | nindent 4 }}\n    {{- include "k6-operator.customLabels" . | nindent 4 }}' charts/k6-operator/templates/crds/plz.yaml
 	sed -i '0,/^  annotations:$$/s//  annotations:\n    {{- include "k6-operator.customAnnotations" . | nindent 4 }}/' charts/k6-operator/templates/crds/plz.yaml
@@ -213,6 +212,7 @@ GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.5.0
 CONTROLLER_TOOLS_VERSION ?= v0.19.0
+HELM_VERSION ?= v3.7.2
 # ENVTEST_VERSION ?= latest # ref. https://github.com/kubernetes-sigs/controller-runtime/tree/main/tools/setup-envtest
 ENVTEST_VERSION ?= release-0.19
 GOLANGCI_LINT_VERSION ?= v2.12.1
