@@ -67,5 +67,4 @@ jobs:
       cr_configfile: charts/cr.yaml
       ct_configfile: charts/ct.yaml
       helm_tag_prefix: helm
-    secrets:
-      vault_repo_secret_name: github-app
+      github_app: k6-operator-helm-release-app
