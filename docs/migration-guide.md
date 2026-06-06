@@ -10,11 +10,11 @@ This means all runners execute the **same script** but each covers a different s
 
 ## Single instance setup
 
-A typical single-instance run:
+A typical single-instance run drives all virtual users from one pod:
 
 ```js
 export const options = {
-  vus: 50,
+  vus: 200,
   duration: '1m',
 };
 ```
@@ -34,19 +34,19 @@ spec:
       file: test.js
 ```
 
-This starts 50 VUs from a single pod running for 1 minute.
+This starts 200 VUs from a single pod running for 1 minute.
 
 ## Migrating to multiple instances
 
-To spread the same load across multiple runners, increase `parallelism` and scale up VUs proportionally. The formula is simple:
+The usual reason to move to multiple runners is to spread an existing load across more pods, for example when a single pod no longer has enough CPU or memory to drive all the VUs. With k6-operator you keep the same values in your script options and only increase `parallelism`. The operator divides the total load across the runners for you using execution segments, so you do not multiply anything yourself.
 
-> **total VUs = original VUs per instance * number of instances**
+> **The values in your script options are always the total load. `parallelism` only controls how many runner pods share that total.**
 
-So if you were running 1 instance with 50 VUs and you want to scale to 4 instances:
+So to move the 200 VU test above onto 4 runners, leave the script unchanged and set `parallelism: 4`:
 
 ```js
 export const options = {
-  vus: 200,   // 50 * 4
+  vus: 200,   // unchanged: this is the total across all runners
   duration: '1m',
 };
 ```
@@ -64,11 +64,15 @@ spec:
       file: test.js
 ```
 
-Each runner handles 50 VUs, for a total of 200 VUs across the cluster. This replicates the original load profile on each node.
+Each runner pod now handles about 50 VUs (200 / 4), for the same total of 200 VUs across the cluster. The load profile is unchanged, it is just distributed across pods.
+
+### Increasing total load at the same time
+
+If you also want to drive more load than before, raise the values in your script options. For example, setting `vus: 400` with `parallelism: 4` runs about 100 VUs per runner for 400 VUs total. Changing the total load and changing `parallelism` are independent decisions: `parallelism` distributes whatever total you configure.
 
 ## Working with other executors
 
-The same principle applies to other [k6 executors](https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/).
+The same rule applies to other [k6 executors](https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/): the values you set are the total, and k6-operator splits them across runners.
 
 ### constant-arrival-rate
 
@@ -77,7 +81,7 @@ export const options = {
   scenarios: {
     contacts: {
       executor: 'constant-arrival-rate',
-      rate: 400,          // 100 * 4 runners
+      rate: 400,          // total request rate across all runners
       timeUnit: '1s',
       duration: '1m',
       preAllocatedVUs: 80,
@@ -87,20 +91,20 @@ export const options = {
 };
 ```
 
-With `parallelism: 4`, each runner fires 100 requests per second, for 400 req/s total.
+With `parallelism: 4`, each runner fires about 100 requests per second, for 400 req/s total.
 
 ### ramping-vus
 
 ```js
 export const options = {
   stages: [
-    { target: 400, duration: '30s' },  // ramps up to 400 total (100 per runner)
+    { target: 400, duration: '30s' },  // total target across all runners
     { target: 0,   duration: '30s' },
   ],
 };
 ```
 
-k6 splits the VU ramp proportionally between runners using execution segments, so the total ramp shape is preserved.
+k6 splits the VU ramp proportionally between runners using execution segments, so each runner ramps toward about 100 VUs while the total ramp shape is preserved.
 
 ## What stays the same
 
@@ -124,10 +128,12 @@ export default function () {
 
 ## Summary
 
-| Original setup | Multi-instance equivalent |
-|---|---|
-| `parallelism: 1`, `vus: Y` | `parallelism: X`, `vus: X * Y` |
-| `parallelism: 1`, `rate: R` | `parallelism: X`, `rate: X * R` |
-| `parallelism: 1`, stages ramp to `T` | `parallelism: X`, stages ramp to `X * T` |
+To distribute an existing test across more runners, keep your script options the same and increase `parallelism`:
 
-The key rule: multiply the VU or rate count in your script by the number of runners you plan to use. k6-operator takes care of the rest by splitting execution segments evenly across runners.
+| Goal | Original setup | Multi-instance setup |
+|---|---|---|
+| Same total load, distributed | `parallelism: 1`, `vus: Y` | `parallelism: X`, `vus: Y` (unchanged) |
+| Same total request rate, distributed | `parallelism: 1`, `rate: R` | `parallelism: X`, `rate: R` (unchanged) |
+| Same total ramp, distributed | `parallelism: 1`, stages ramp to `T` | `parallelism: X`, stages ramp to `T` (unchanged) |
+
+The key rule: the VU or rate values in your script are always the total. To distribute an existing test across more runner pods, keep those values the same and increase `parallelism`. Only change the values when you actually want to change the total load. k6-operator takes care of the split by assigning each runner an execution segment.
