@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"go.k6.io/k6/cloudapi"
+	"go.k6.io/k6/v2/cloudapi"
 )
 
 const (

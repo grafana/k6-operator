@@ -15,7 +15,7 @@ import (
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/containers"
 	"github.com/grafana/k6-operator/pkg/testrun"
-	"go.k6.io/k6/cloudapi"
+	"go.k6.io/k6/v2/cloudapi"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/pkg/cloud/conn"
 	"github.com/sirupsen/logrus"
-	"go.k6.io/k6/cloudapi"
+	"go.k6.io/k6/v2/cloudapi"
 )
 
 type TestRunPoller struct {

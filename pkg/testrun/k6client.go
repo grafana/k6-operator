@@ -9,7 +9,7 @@ import (
 	"net/url"
 
 	"github.com/grafana/k6-operator/pkg/types"
-	k6Client "go.k6.io/k6/api/v1/client"
+	k6Client "go.k6.io/k6/v2/api/v1/client"
 )
 
 // This will probably be removed once distributed mode in k6 is implemented.
