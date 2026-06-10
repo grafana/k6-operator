@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.k6.io/k6/cloudapi"
+	"go.k6.io/k6/v2/cloudapi"
 	corev1 "k8s.io/api/core/v1"
 )
 

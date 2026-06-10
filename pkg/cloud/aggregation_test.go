@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"go.k6.io/k6/cloudapi"
-	"go.k6.io/k6/lib/types"
+	"go.k6.io/k6/v2/cloudapi"
+	"go.k6.io/k6/v2/lib/types"
 	"gopkg.in/guregu/null.v3"
 	corev1 "k8s.io/api/core/v1"
 )

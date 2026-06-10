@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.k6.io/k6/cloudapi"
+	"go.k6.io/k6/v2/cloudapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
