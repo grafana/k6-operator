@@ -21,15 +21,16 @@ import (
 	"time"
 
 	"go.k6.io/k6/v2/cloudapi"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	k6types "github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
-	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -48,8 +49,9 @@ const (
 // TestRunReconciler reconciles a K6 object
 type TestRunReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 
 	// Note: here we assume that all users of the operator are allowed to use
 	// the same token / cloud client.
@@ -65,6 +67,7 @@ type TestRunReconciler struct {
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func (r *TestRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.Namespace, "name", req.Name, "reconcileID", controller.ReconcileIDFromContext(ctx))
@@ -127,7 +130,12 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 	case "":
 		log.Info("Initialize test")
 
-		if err := k6.GetSpec().Validate(); err != nil {
+		warnings, err := k6.GetSpec().Validate()
+		for _, w := range warnings {
+			log.Info(w)
+			r.Recorder.Event(k6, corev1.EventTypeWarning, "DeprecatedField", w)
+		}
+		if err != nil {
 			log.Error(err, "Invalid TestRun")
 			log.Info("Changing stage of TestRun status to error")
 			k6.GetStatus().Stage = "error"
@@ -378,10 +386,10 @@ func (r *TestRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.TestRun{}).
 		Owns(&batchv1.Job{}).
-		Watches(&v1.Pod{},
+		Watches(&corev1.Pod{},
 			handler.EnqueueRequestsFromMapFunc(
 				func(ctx context.Context, object client.Object) []reconcile.Request {
-					pod := object.(*v1.Pod)
+					pod := object.(*corev1.Pod)
 					k6CrName, ok := pod.GetLabels()[k6CrLabelName]
 					if !ok {
 						return nil
@@ -394,7 +402,7 @@ func (r *TestRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				}),
 			builder.WithPredicates(predicate.NewPredicateFuncs(
 				func(object client.Object) bool {
-					pod := object.(*v1.Pod)
+					pod := object.(*corev1.Pod)
 					_, ok := pod.GetLabels()[k6CrLabelName]
 					return ok
 				}))).

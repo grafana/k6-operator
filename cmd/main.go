@@ -111,9 +111,10 @@ func main() {
 	_ = mgr.AddReadyzCheck("ready", healthz.Ping)
 
 	if err = (&controllers.TestRunReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("TestRun"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("TestRun"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("testrun-controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "TestRun")
 		os.Exit(1)
