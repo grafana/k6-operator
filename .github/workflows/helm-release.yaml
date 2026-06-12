@@ -11,7 +11,7 @@ on:
 
 jobs:
   generate-chart-schema:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-x64
     permissions:
       contents: write
       pull-requests: write

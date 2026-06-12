@@ -15,7 +15,7 @@ on:
 jobs:
   build:
     name: "Build images"
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-x64
     permissions:
       packages: write
     steps:
@@ -79,7 +79,7 @@ jobs:
   bundle:
     name: "Generate bundle"
     if: startsWith(github.ref_name, 'v')
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-x64
     permissions:
       contents: write
       pull-requests: write
