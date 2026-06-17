@@ -55,8 +55,6 @@ jobs:
           context: .
           push: true
           file: Dockerfile.controller
-          build-args: |
-            GO_BUILDER_IMG=golang:1.26.3-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/grafana/k6-operator:latest,ghcr.io/grafana/k6-operator:controller-${{env.IMAGETAG}}
       - name: "Build:dockerimage"
