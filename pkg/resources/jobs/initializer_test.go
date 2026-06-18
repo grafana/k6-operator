@@ -102,7 +102,12 @@ func defaultExpectedJobForInitializer() *batchv1.Job {
 							Name:            "k6",
 							Command: []string{
 								"sh", "-c",
-								"mkdir -p $(dirname /tmp/test.js.archived.tar) && k6 archive /test/test.js -O /tmp/test.js.archived.tar --out cloud 2> /tmp/k6logs && k6 inspect --execution-requirements /tmp/test.js.archived.tar 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level.*error'",
+								newInitializerCommand(
+									"/test/test.js",
+									"/tmp/test.js.archived.tar",
+									"",
+									"--out cloud",
+								),
 							},
 							Env: []corev1.EnvVar{},
 							EnvFrom: []corev1.EnvFromSource{
@@ -126,6 +131,7 @@ func defaultExpectedJobForInitializer() *batchv1.Job {
 		},
 	}
 }
+
 func Test_NewInitializerJob(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -177,7 +183,6 @@ func Test_NewInitializerJob(t *testing.T) {
 			if diff != nil {
 				t.Errorf("NewInitializerJob difference: %v", diff)
 			}
-
 		})
 	}
 }

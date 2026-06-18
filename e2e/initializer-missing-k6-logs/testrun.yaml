@@ -1,0 +1,13 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: k6-missing-k6
+spec:
+  parallelism: 1
+  script:
+    configMap:
+      name: "test"
+      file: "test.js"
+  initializer:
+    image: busybox:1.36

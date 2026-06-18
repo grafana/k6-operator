@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: initializer-log-checker
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: initializer-log-checker
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: initializer-log-checker
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: initializer-log-checker
+subjects:
+- kind: ServiceAccount
+  name: initializer-log-checker
