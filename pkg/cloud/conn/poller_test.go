@@ -87,3 +87,22 @@ func Test_PollerStop_OnDeadlock(t *testing.T) {
 			"Both the poller and the handler goroutines leak and the reconciler stalls.")
 	}
 }
+
+func Test_PollerContext_CancelledOnStop(t *testing.T) {
+	poller := NewPoller(time.Millisecond * 10)
+	poller.Start()
+
+	ctx := poller.Context()
+	if ctx.Err() != nil {
+		t.Fatal("Context should be active while the poller is running")
+	}
+
+	poller.Stop()
+
+	select {
+	case <-ctx.Done():
+		// All OK: Stop() cancelled the context.
+	case <-time.After(time.Second * 2):
+		t.Fatal("Poller context was not cancelled after Stop()")
+	}
+}

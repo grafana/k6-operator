@@ -11,6 +11,7 @@ type Poller struct {
 
 	mu      sync.Mutex
 	running bool
+	ctx     context.Context
 	cancel  context.CancelFunc
 
 	OnInterval func()
@@ -34,6 +35,19 @@ func (poller *Poller) IsPolling() bool {
 	return poller.running
 }
 
+// Context returns the context owned by the poller. When poller stops,
+// it cancels the context. Use it to abort / cancel processes downstream.
+func (poller *Poller) Context() context.Context {
+	poller.mu.Lock()
+	defer poller.mu.Unlock()
+
+	if poller.ctx == nil {
+		return context.Background()
+	}
+
+	return poller.ctx
+}
+
 func (poller *Poller) Start() {
 	poller.mu.Lock()
 	defer poller.mu.Unlock()
@@ -42,8 +56,10 @@ func (poller *Poller) Start() {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	poller.cancel = cancel
+	// At the moment of writing, context.Background() is intentional here.
+	// The only upstream context we can use here instead is the manager's one,
+	// but wiring it up will complicate impl. with little benefit.
+	poller.ctx, poller.cancel = context.WithCancel(context.Background())
 	poller.running = true
 
 	ticker := time.NewTicker(poller.interval)
@@ -51,7 +67,7 @@ func (poller *Poller) Start() {
 	go func() {
 		for {
 			select {
-			case <-ctx.Done():
+			case <-poller.ctx.Done():
 				ticker.Stop()
 				poller.OnDone()
 				return
@@ -63,9 +79,9 @@ func (poller *Poller) Start() {
 	}()
 }
 
-// Stop signals the poller to stop. It is non-blocking and idempotent: cancelling
+// Stop signals the poller to stop. Non-blocking and idempotent: cancelling
 // the context returns immediately even if OnInterval is currently executing (or
-// stuck), so callers such as the reconciler are never wedged by a slow handler.
+// stuck), so callers (reconciler) don't get stuck stuck by a handler.
 func (poller *Poller) Stop() {
 	poller.mu.Lock()
 	defer poller.mu.Unlock()

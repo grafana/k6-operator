@@ -71,13 +71,14 @@ func (w *PLZWorker) Deregister(ctx context.Context) {
 func (w *PLZWorker) StartFactory() {
 	if w.poller != nil && !w.poller.IsPolling() {
 		w.poller.Start()
+		ctx := w.poller.Context()
 		go func() {
 			w.logger.Info("Started factory for PLZ test runs.")
 
+			// poller closes the channel and cancels context on Stop()
 			for testRunId := range w.poller.GetTestRuns() {
-				w.handle(testRunId)
+				w.handle(ctx, testRunId)
 			}
-			// TODO: a potential leak
 		}()
 		w.logger.Info("Started polling k6 Cloud for new test runs.")
 	}
@@ -191,9 +192,9 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 	tr.Spec.TestRunID = trData.TestRunID()
 }
 
-// handle creates a new PLZ TestRun from the given test run id
-// TODO: pass proper context!
-func (w *PLZWorker) handle(testRunId string) {
+// handle creates a new PLZ TestRun from the given test run id. The context is
+// cancelled when the poller stops, so in-flight k8s calls abort on shutdown.
+func (w *PLZWorker) handle(ctx context.Context, testRunId string) {
 	tr := w.template.Create()
 
 	// First check if such a test already exists
@@ -202,7 +203,7 @@ func (w *PLZWorker) handle(testRunId string) {
 		Namespace: tr.Namespace,
 	}
 
-	if err := w.k8sClient.Get(context.Background(), namespacedName, tr); err == nil || !errors.IsNotFound(err) {
+	if err := w.k8sClient.Get(ctx, namespacedName, tr); err == nil || !errors.IsNotFound(err) {
 		w.logger.Info(fmt.Sprintf("Test run `%s` has already been started.", testRunId))
 		return
 	}
@@ -223,7 +224,7 @@ func (w *PLZWorker) handle(testRunId string) {
 		w.logger.Error(err, "Failed to set controller reference for the PLZ test run", "testRunId", testRunId)
 	}
 
-	if err := w.k8sClient.Create(context.Background(), tr); err != nil {
+	if err := w.k8sClient.Create(ctx, tr); err != nil {
 		w.logger.Error(err, "Failed to create PLZ test run", "testRunId", testRunId)
 	}
 
