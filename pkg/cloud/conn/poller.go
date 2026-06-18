@@ -1,13 +1,17 @@
 package conn
 
 import (
+	"context"
+	"sync"
 	"time"
 )
 
 type Poller struct {
 	interval time.Duration
-	running  bool
-	done     chan bool
+
+	mu      sync.Mutex
+	running bool
+	cancel  context.CancelFunc
 
 	OnInterval func()
 	OnDone     func()
@@ -16,8 +20,6 @@ type Poller struct {
 func NewPoller(interval time.Duration) *Poller {
 	return &Poller{
 		interval: interval,
-		running:  false,
-		done:     make(chan bool),
 
 		// by default, poller does nothing
 		OnInterval: func() {},
@@ -25,17 +27,31 @@ func NewPoller(interval time.Duration) *Poller {
 	}
 }
 
-func (poller Poller) IsPolling() bool {
+func (poller *Poller) IsPolling() bool {
+	poller.mu.Lock()
+	defer poller.mu.Unlock()
+
 	return poller.running
 }
 
 func (poller *Poller) Start() {
+	poller.mu.Lock()
+	defer poller.mu.Unlock()
+
+	if poller.running {
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	poller.cancel = cancel
+	poller.running = true
+
 	ticker := time.NewTicker(poller.interval)
 
 	go func() {
 		for {
 			select {
-			case <-poller.done:
+			case <-ctx.Done():
 				ticker.Stop()
 				poller.OnDone()
 				return
@@ -45,14 +61,19 @@ func (poller *Poller) Start() {
 			}
 		}
 	}()
-
-	poller.running = true
 }
 
+// Stop signals the poller to stop. It is non-blocking and idempotent: cancelling
+// the context returns immediately even if OnInterval is currently executing (or
+// stuck), so callers such as the reconciler are never wedged by a slow handler.
 func (poller *Poller) Stop() {
-	if poller.IsPolling() {
-		poller.done <- true
+	poller.mu.Lock()
+	defer poller.mu.Unlock()
 
-		poller.running = false
+	if !poller.running {
+		return
 	}
+
+	poller.cancel()
+	poller.running = false
 }
