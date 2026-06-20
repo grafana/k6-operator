@@ -1,22 +1,25 @@
 ---
-name: "Release k6-operator"
+name: "Publish k6-operator images"
 permissions: {}
 
 on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Image tag name."
+        description: "Image tag name for a manual image build."
         required: true
-  release:
-    types:
-      - published
+      promote_latest:
+        description: "Also update latest, latest-runner, and latest-starter."
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
     name: "Build images"
     runs-on: ubuntu-x64
     permissions:
+      contents: read
       packages: write
     steps:
       - name: "Build:checkout"
@@ -26,16 +29,11 @@ jobs:
       - name: "Set image tag name"
         env:
           GH_IMAGE_TAG: ${{ github.event.inputs.image_tag }}
-          GH_TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "IMAGETAG=${GH_IMAGE_TAG}" >> "$GITHUB_ENV"
-          else
-            echo "IMAGETAG=${GH_TAG_NAME}" >> "$GITHUB_ENV"
-          fi
+          echo "IMAGETAG=${GH_IMAGE_TAG}" >> "$GITHUB_ENV"
       - name: "Check image tag name"
         run: |
-          echo "IMAGETAG=${{env.IMAGETAG}}"
+          echo "IMAGETAG=${IMAGETAG}"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@f4e8deed0c3c26542279f4042c0e1d059cbf012d
       - name: "Build:buildx"
@@ -50,72 +48,36 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: "Build:dockerimage"
+        id: build-controller
         uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
         with:
           context: .
           push: true
           file: Dockerfile.controller
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/grafana/k6-operator:latest,ghcr.io/grafana/k6-operator:controller-${{env.IMAGETAG}}
+          tags: ghcr.io/grafana/k6-operator:controller-${{env.IMAGETAG}}
       - name: "Build:dockerimage"
+        id: build-runner
         uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
         with:
           context: .
           push: true
           file: Dockerfile.runner
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/grafana/k6-operator:latest-runner,ghcr.io/grafana/k6-operator:runner-${{env.IMAGETAG}}
+          tags: ghcr.io/grafana/k6-operator:runner-${{env.IMAGETAG}}
       - name: "Build:dockerimage"
+        id: build-starter
         uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
         with:
           context: .
           push: true
           file: Dockerfile.starter
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/grafana/k6-operator:latest-starter,ghcr.io/grafana/k6-operator:starter-${{env.IMAGETAG}}
-
-  bundle:
-    name: "Generate bundle"
-    if: startsWith(github.ref_name, 'v')
-    runs-on: ubuntu-x64
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: "Checkout code"
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: true # this job is opening a PR in the next steps
-      - name: "Set image tag name"
-        env:
-          GH_IMAGE_TAG: ${{ github.event.inputs.image_tag }}
-          GH_TAG_NAME: ${{ github.event.release.tag_name }}
+          tags: ghcr.io/grafana/k6-operator:starter-${{env.IMAGETAG}}
+      - name: "Promote latest tags"
+        if: ${{ inputs.promote_latest }}
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "IMAGETAG=${GH_IMAGE_TAG}" >> "$GITHUB_ENV"
-          else
-            echo "IMAGETAG=${GH_TAG_NAME}" >> "$GITHUB_ENV"
-          fi
-      - name: "Setup kustomize"
-        # this is v2.1.0
-        uses: imranismail/setup-kustomize@ab2f6c276a92396da9967066f67ef300563038cf
-      - name: "Bundle"
-        run: |
-          cd config/default && kustomize edit set image ghcr.io/grafana/k6-operator=*:controller-${{env.IMAGETAG}} && kustomize build . > ../../bundle.yaml
-      - name: "Branch"
-        id: branch
-        run: |
-          git checkout -b release-${{env.IMAGETAG}}/bundle-update
-          git add bundle.yaml
-          git diff --cached | tee diff.file
-          echo "BUNDLE_DIFF=$(wc -c < diff.file)" >> "$GITHUB_OUTPUT"
-      - name: "Make PR"
-        if: steps.branch.outputs.BUNDLE_DIFF > 0
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m 'auto: bundle update for ${{env.IMAGETAG}}'
-          git push -u origin release-${{env.IMAGETAG}}/bundle-update
-          gh pr create --title "Bundle update for release ${{env.IMAGETAG}}" -B main -H release-${{env.IMAGETAG}}/bundle-update --body "Auto-generated by Github Workflow"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ./hack/release/promote-latest-tags.sh \
+            "ghcr.io/grafana/k6-operator:controller-${IMAGETAG}@${{ steps.build-controller.outputs.digest }}" \
+            "ghcr.io/grafana/k6-operator:runner-${IMAGETAG}@${{ steps.build-runner.outputs.digest }}" \
+            "ghcr.io/grafana/k6-operator:starter-${IMAGETAG}@${{ steps.build-starter.outputs.digest }}"

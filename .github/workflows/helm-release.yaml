@@ -10,11 +10,63 @@ on:
       - "charts/k6-operator/Chart.yaml"
 
 jobs:
-  generate-chart-schema:
+  decide:
     runs-on: ubuntu-x64
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+    outputs:
+      should_publish: ${{ steps.classify.outputs.should_publish }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # There can be two types of Helm releases:
+      # 1. part of regular k6-operator release
+      # 2. ad-hoc release, done separately
+      # The 1st type is triggered twice: on merge of PR (this must be skipped
+      # because images don't exist yet) and on `workflow_dispatch` from finalize-release
+      # (this one should be published).
+      # The 2nd type must also be published.
+      # The decide / classify step handles this conditional logic.
+      - name: Classify release
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.event.after }}
+        run: |
+          if [[ "$EVENT_NAME" != "push" ]]; then
+            echo "Event ${EVENT_NAME}; publishing."
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git rev-parse --quiet --verify "${PUSH_BEFORE}^{commit}" > /dev/null; then
+            echo "::error::Base commit ${PUSH_BEFORE} unavailable; refusing to classify automatically." >&2
+            exit 1
+          fi
+          # An operator release bumps appVersion (the operator image the chart
+          # deploys); an ad-hoc chart release bumps only `version:`. So a changed
+          # appVersion line marks the operator-release push, whose images don't
+          # exist yet -- finalize-release will dispatch the Helm release later.
+          if git diff "$PUSH_BEFORE" "$PUSH_AFTER" -- charts/k6-operator/Chart.yaml \
+               | grep -qE '^[+-]appVersion:'; then
+            echo "Operator release push; finalize-release will dispatch the Helm release once images exist. Skipping."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Chart-only push; publishing."
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  generate-chart-schema:
+    needs: decide
+    if: needs.decide.outputs.should_publish == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # to push a branch if needed
+      pull-requests: write # to open a PR if needed
 
     steps:
       - name: Checkout repository
@@ -56,10 +108,11 @@ jobs:
 
   call-update-helm-repo:
     permissions:
-      packages: write
-      id-token: write
-      contents: write
+      packages: write # to publish release package
+      id-token: write # auth
+      contents: write # to publish tag and release
     needs:
+      - decide
       - generate-chart-schema
     uses: grafana/helm-charts/.github/workflows/update-helm-repo.yaml@77e5ea2de369fa1ff3441b08765c164be209eaa2
     with:
