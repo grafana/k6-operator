@@ -81,7 +81,6 @@ func defaultTestRun() *v1alpha1.TestRun {
 }
 
 func defaultExpectedJob(script *types.Script) *batchv1.Job {
-	var zero int64 = 0
 	automountServiceAccountToken := true
 
 	jobLabels := defaultLabels()
@@ -143,8 +142,7 @@ func defaultExpectedJob(script *types.Script) *batchv1.Job {
 						},
 						SecurityContext: &corev1.SecurityContext{},
 					}},
-					TerminationGracePeriodSeconds: &zero,
-					Volumes:                       script.Volume(),
+					Volumes: script.Volume(),
 				},
 			},
 		},
