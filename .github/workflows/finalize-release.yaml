@@ -158,6 +158,13 @@ jobs:
       # the release-prep PR also fired Helm release, but that run skips itself
       # (it sees the appVersion bump) precisely so this dispatch can publish
       # the chart now that the images it references are available.
+      #
+      # Helm publishes from main's HEAD: the reusable update-helm-repo workflow
+      # is branch-bound and cannot be pinned to the merge commit.
+      # The workflow call below assumes main has not advanced with a chart change
+      # between the PR merge and the dispatch.
+      # In practice, the time window for drift is < 1h, and the risk of it is basically zero.
+      # What if it does happen? Fix main and publish the chart manually.
       - name: Trigger Helm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
