@@ -49,6 +49,15 @@ spec:
                 enum:
                 - post
                 type: string
+              cloud:
+                properties:
+                  stream:
+                    type: boolean
+                  testRunId:
+                    type: string
+                  token:
+                    type: string
+                type: object
               initializer:
                 properties:
                   affinity:

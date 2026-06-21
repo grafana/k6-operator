@@ -19,7 +19,7 @@ import (
 // CreateJobs creates jobs that will spawn k6 pods for distributed test
 func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (ctrl.Result, error) {
 	// needed for cloud tests
-	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
+	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().GetToken(), k6.NamespacedName().Namespace)
 
 	if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunCreated) {
 		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
@@ -43,7 +43,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *T
 			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 				WithDetail(fmt.Sprintf("Failed to create runner jobs: %v", err)).
 				WithAbort()
-			cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
+			cloud.SendTestRunEvents(r.k6CloudClient, k6.GetTestRunID(), log, events)
 		}
 
 		return res, err
