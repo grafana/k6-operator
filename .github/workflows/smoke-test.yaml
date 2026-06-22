@@ -15,7 +15,7 @@ on:
 
 jobs:
   changes:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-x64
     permissions:
       contents: read
     outputs:
@@ -40,7 +40,7 @@ jobs:
               - 'charts/**'
 
   docker:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-x64
     permissions:
       packages: write
     steps:
@@ -65,15 +65,13 @@ jobs:
           context: .
           file: Dockerfile.controller
           push: true
-          build-args: |
-            GO_BUILDER_IMG=golang:1.26.3-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d
           tags: |
             ghcr.io/grafana/k6-operator:${{ github.sha }}
 
   kind-kustomize:
     needs: ["changes", "docker"]
     if: needs.changes.outputs.go-or-manifests == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-x64
     steps:
       - name: "Checkout"
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -110,7 +108,7 @@ jobs:
   kind-helm:
     needs: ["changes", "docker"]
     if: needs.changes.outputs.charts == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-x64
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
