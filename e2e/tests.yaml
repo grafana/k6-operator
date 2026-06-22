@@ -104,6 +104,12 @@ tests:
       - "internal/controller/k6_initialize.go"
       - "pkg/resources/jobs/initializer.go"
 
+  - name: initializer-missing-k6-logs
+    source_patterns:
+      - "internal/controller/k6_initialize.go"
+      - "internal/controller/common.go"
+      - "pkg/resources/jobs/initializer.go"
+
   # - name: volume-claim
   # - name: kyverno
   # - name: custom-domain

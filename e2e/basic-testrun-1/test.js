@@ -11,7 +11,7 @@ const PARENT = "./"
 const env = new Environment({
   name: "basic-testrun-1",
   implementation: "vcluster",
-  initFolder: PARENT + "manifests", // initial folder with everything that wil be loaded at init
+  initFolder: PARENT + "manifests", // initial folder with everything that will be loaded at init
 })
 
 export function setup() {

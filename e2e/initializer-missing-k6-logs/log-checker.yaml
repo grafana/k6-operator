@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: initializer-log-checker
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: initializer-log-checker
+      restartPolicy: Never
+      containers:
+      - name: kubectl
+        image: alpine/k8s:1.31.0
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+
+          selector='app=k6,k6_cr=k6-missing-k6,job-name=k6-missing-k6-initializer'
+          pod="$(kubectl get pod -l "${selector}" -o jsonpath='{.items[0].metadata.name}')"
+          phase="$(kubectl get pod "${pod}" -o jsonpath='{.status.phase}')"
+
+          if [ "${phase}" != "Failed" ]; then
+            echo "initializer pod should fail; phase=${phase}"
+            exit 1
+          fi
+
+          logs="$(kubectl logs "${pod}" -c k6)"
+          printf '%s\n' "${logs}"
+          printf '%s\n' "${logs}" | grep -F 'k6 executable not found in PATH; initializer image must contain k6'

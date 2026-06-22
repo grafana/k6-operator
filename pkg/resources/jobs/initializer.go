@@ -10,6 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const initializerMissingK6Message = `level=error msg="k6 executable not found in PATH; initializer image must contain k6"`
+
 // NewInitializerJob builds a template used to initializefor creating a starter job
 func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, error) {
 	script, err := k6.GetSpec().ParseScript()
@@ -67,25 +69,7 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 		archiveName = fmt.Sprintf("/tmp/%s.archived.tar", script.Filename)
 	)
 	istioCommand, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, []string{"sh", "-c"})
-	command := append(istioCommand, fmt.Sprintf(
-		// There can be several scenarios from k6 command here:
-		// a) script is correct and `k6 inspect` outputs JSON
-		// b) script is partially incorrect and `k6` outputs a warning log message and
-		// then a JSON
-		// c) script is incorrect and `k6` outputs an error log message
-		// Warnings at this point are not necessary (warning messages will re-appear in
-		// runner's logs and the user can see them there) so we need a pure JSON here
-		// without any additional messages in cases a) and b). In case c), output should
-		// contain error message and the Job is to exit with non-zero code.
-		//
-		// Due to some pecularities of k6 logging, to achieve the above behaviour,
-		// we need to use a workaround to store all log messages in temp file while
-		// printing JSON as usual. Then parse temp file only for errors, ignoring
-		// any other log messages.
-		// Related: https://github.com/grafana/k6-docs/issues/877
-		"mkdir -p $(dirname %s) && k6 archive %s%s -O %s %s 2> /tmp/k6logs && k6 inspect --execution-requirements %s 2> /tmp/k6logs ; ! cat /tmp/k6logs | grep 'level.*error'",
-		archiveName, scriptName, envVarString, archiveName, argLine,
-		archiveName))
+	command := append(istioCommand, newInitializerCommand(scriptName, archiveName, envVarString, argLine))
 
 	env := append(newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled), k6.GetSpec().Initializer.Env...)
 
@@ -148,4 +132,57 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 	}
 
 	return job, nil
+}
+
+func newInitializerCommand(scriptName, archiveName, envVarString, argLine string) string {
+	// There can be several scenarios from k6 command here:
+	// a) script is correct and `k6 inspect` outputs JSON;
+	// b) script is partially incorrect and `k6` outputs a warning log message and
+	// then a JSON;
+	// c) script is incorrect and `k6` outputs an error log message;
+	// d) k6 binary is missing;
+	// e) k6 binary exists but is corrupted or otherwise unexecutable.
+	//
+	// Warnings at this point are not necessary (warning messages will re-appear in
+	// runner's logs and the user can see them there) so we need a pure JSON here,
+	// without any additional messages in cases a) and b). In cases c) - e), output
+	// should contain an error message and the Job is to exit with non-zero code.
+	//
+	// Due to some peculiarities of k6 logging, to achieve the above behaviour,
+	// we need to use a workaround to store all log messages in temp file while
+	// printing JSON as usual. Then parse temp file only for errors, ignoring
+	// any other log messages.
+	// Related: https://github.com/grafana/k6-docs/issues/877
+
+	return fmt.Sprintf(
+		`if ! command -v k6 >/dev/null 2>&1; then
+  echo '%[1]s' >&2
+  exit 127
+fi
+
+logs=/tmp/k6logs
+
+if ! mkdir -p "$(dirname %[3]s)"; then
+  exit 1
+fi
+
+if ! k6 archive %[2]s%[4]s -O %[3]s %[5]s 2> "${logs}"; then
+  cat "${logs}"
+  exit 1
+fi
+
+if ! k6 inspect --execution-requirements %[3]s 2> "${logs}"; then
+  cat "${logs}"
+  exit 1
+fi
+
+if grep 'level.*error' "${logs}"; then
+  exit 1
+fi`,
+		initializerMissingK6Message,
+		scriptName,
+		archiveName,
+		envVarString,
+		argLine,
+	)
 }
