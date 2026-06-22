@@ -22,6 +22,7 @@ func isJobRunning(log logr.Logger, service *v1.Service) bool {
 	if err != nil {
 		return false
 	}
+	defer resp.Body.Close() //nolint:errcheck
 
 	// Response has been received so assume the job is running.
 
@@ -29,8 +30,6 @@ func isJobRunning(log logr.Logger, service *v1.Service) bool {
 		log.Error(err, fmt.Sprintf("status from from runner job %v is %d", service.Name, resp.StatusCode))
 		return true
 	}
-
-	defer resp.Body.Close() //nolint:errcheck
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {

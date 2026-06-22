@@ -60,8 +60,13 @@ func NewTestRunPoller(host, token, plzName string, logger logr.Logger) *TestRunP
 		} else {
 			logger.Info(fmt.Sprintf("Retrieved test runs: %+v", list))
 
+			ctx := testRunPoller.Context()
 			for _, testRunId := range list {
-				testRunsCh <- testRunId
+				select {
+				case testRunsCh <- testRunId:
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}

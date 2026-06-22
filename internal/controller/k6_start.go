@@ -23,6 +23,7 @@ func isServiceReady(log logr.Logger, service *v1.Service) bool {
 		log.Error(err, fmt.Sprintf("failed to get status from %v", service.Name))
 		return false
 	}
+	defer resp.Body.Close() //nolint:errcheck
 
 	return resp.StatusCode < 400
 }

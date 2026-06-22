@@ -1,13 +1,18 @@
 package conn
 
 import (
+	"context"
+	"sync"
 	"time"
 )
 
 type Poller struct {
 	interval time.Duration
-	running  bool
-	done     chan bool
+
+	mu      sync.Mutex
+	running bool
+	ctx     context.Context
+	cancel  context.CancelFunc
 
 	OnInterval func()
 	OnDone     func()
@@ -16,8 +21,6 @@ type Poller struct {
 func NewPoller(interval time.Duration) *Poller {
 	return &Poller{
 		interval: interval,
-		running:  false,
-		done:     make(chan bool),
 
 		// by default, poller does nothing
 		OnInterval: func() {},
@@ -25,17 +28,46 @@ func NewPoller(interval time.Duration) *Poller {
 	}
 }
 
-func (poller Poller) IsPolling() bool {
+func (poller *Poller) IsPolling() bool {
+	poller.mu.Lock()
+	defer poller.mu.Unlock()
+
 	return poller.running
 }
 
+// Context returns the context owned by the poller. When poller stops,
+// it cancels the context. Use it to abort / cancel processes downstream.
+func (poller *Poller) Context() context.Context {
+	poller.mu.Lock()
+	defer poller.mu.Unlock()
+
+	if poller.ctx == nil {
+		return context.Background()
+	}
+
+	return poller.ctx
+}
+
 func (poller *Poller) Start() {
+	poller.mu.Lock()
+	defer poller.mu.Unlock()
+
+	if poller.running {
+		return
+	}
+
+	// At the moment of writing, context.Background() is intentional here.
+	// The only upstream context we can use here instead is the manager's one,
+	// but wiring it up will complicate impl. with little benefit.
+	poller.ctx, poller.cancel = context.WithCancel(context.Background())
+	poller.running = true
+
 	ticker := time.NewTicker(poller.interval)
 
 	go func() {
 		for {
 			select {
-			case <-poller.done:
+			case <-poller.ctx.Done():
 				ticker.Stop()
 				poller.OnDone()
 				return
@@ -45,14 +77,19 @@ func (poller *Poller) Start() {
 			}
 		}
 	}()
-
-	poller.running = true
 }
 
+// Stop signals the poller to stop. Non-blocking and idempotent: cancelling
+// the context returns immediately even if OnInterval is currently executing (or
+// stuck), so callers (reconciler) don't get stuck stuck by a handler.
 func (poller *Poller) Stop() {
-	if poller.IsPolling() {
-		poller.done <- true
+	poller.mu.Lock()
+	defer poller.mu.Unlock()
 
-		poller.running = false
+	if !poller.running {
+		return
 	}
+
+	poller.cancel()
+	poller.running = false
 }
