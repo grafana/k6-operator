@@ -80,7 +80,6 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	command = script.UpdateCommand(command)
 
 	var (
-		zero          int64 = 0
 		zero32        int32 = 0
 		schedulerName       = corev1.DefaultSchedulerName
 	)
@@ -206,9 +205,8 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 						ReadinessProbe:  generateProbe(k6.GetSpec().Runner.ReadinessProbe),
 						SecurityContext: &k6.GetSpec().Runner.ContainerSecurityContext,
 					}},
-					TerminationGracePeriodSeconds: &zero,
-					Volumes:                       volumes,
-					PriorityClassName:             k6.GetSpec().Runner.PriorityClassName,
+					Volumes:           volumes,
+					PriorityClassName: k6.GetSpec().Runner.PriorityClassName,
 				},
 			},
 		},
