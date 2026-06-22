@@ -127,6 +127,9 @@ type TestRunSpec struct {
 	Paused string `json:"paused,omitempty"`
 
 	// Configuration for Envoy proxy.
+	// Deprecated: we'll be removing support for Envoy.
+	// See https://github.com/grafana/k6-operator/issues/195#issuecomment-3062174234 for details.
+	// +optional
 	Scuttle K6Scuttle `json:"scuttle,omitempty"`
 
 	Cleanup Cleanup `json:"cleanup,omitempty"`
@@ -213,10 +216,15 @@ func init() {
 	SchemeBuilder.Register(&TestRun{}, &TestRunList{})
 }
 
-func (k6 *TestRunSpec) Validate() error {
+func (k6 *TestRunSpec) Validate() (warnings []string, err error) {
+	// Check for deprecated fields.
+	if len(k6.Scuttle.Enabled) > 0 {
+		warnings = append(warnings, "`.spec.scuttle` is deprecated and will be removed in the future. See https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/usage/istio/ on how to set up Istio.")
+	}
+
 	// Currently, we validate "manually" only arguments field.
-	_, err := types.ParseCLI(k6.Arguments)
-	return err
+	_, err = types.ParseCLI(k6.Arguments)
+	return
 }
 
 // Parse extracts Script data bits from K6 spec and performs basic validation
