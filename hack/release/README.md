@@ -2,7 +2,7 @@
 
 - `check-prepare-preconditions.sh`: Validates release workflow inputs and fails early if the release tag or preparation branch already exists.
 - `finalize-release-preflight.sh`: Resolves and validates a merged release preparation PR before finalization creates release side effects.
-- `open-release-pr.sh`: Commits generated release artifacts to a release preparation branch and opens the labeled pull request.
+- `prepare-release-pr.sh`: Verifies the required PR label exists and renders the release-prep PR body; the labeled PR and its signed bot commit are created by the create-pull-request action in the workflow.
 - `prepare-release.sh`: Updates release version files, versioning documentation, and generated release metadata.
 - `promote-latest-tags.sh`: Promotes versioned controller, runner, and starter image digests to their `latest*` tags.
 - `release-lib.sh`: Provides shared release constants, validation helpers, output helpers, and canonical generated-line helpers.

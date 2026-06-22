@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   prepare:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-x64
     permissions:
       contents: write # to push the branch
       issues: write # to label the PR
@@ -55,7 +55,20 @@ jobs:
       - name: Validate release files
         run: ./hack/release/validate-release.sh
 
-      - name: Open release-prep PR
+      - name: Prepare release-prep PR
+        id: pr-meta
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./hack/release/open-release-pr.sh
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # to call GH API
+        run: ./hack/release/prepare-release-pr.sh
+
+      - name: Open release-prep PR
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sign-commits: true
+          branch: ${{ env.RELEASE_BRANCH }}
+          base: main
+          commit-message: "release: prepare ${{ inputs.operator_version }}"
+          title: "release: prepare ${{ inputs.operator_version }}"
+          body-path: ${{ steps.pr-meta.outputs.body_file }}
+          labels: operator-release

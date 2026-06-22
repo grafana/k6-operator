@@ -27,7 +27,7 @@ jobs:
     if: >-
       github.event.pull_request.merged == true &&
       contains(github.event.pull_request.labels.*.name, 'operator-release')
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-x64
     permissions:
       actions: write # to dispatch the Helm release workflow as the last step
       contents: write # to push git tags and Github release
