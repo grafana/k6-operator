@@ -51,3 +51,4 @@ Since v0.0.23 ([issue](https://github.com/grafana/k6-operator/issues/452)), k6-o
 | v1.3.1              | [runner-v1.3.1](ghcr.io/grafana/k6-operator:runner-v1.3.1)            | v1.7.0 |
 | v1.3.2              | [runner-v1.3.2](ghcr.io/grafana/k6-operator:runner-v1.3.2)            | v1.7.0 |
 | v1.4.0              | [runner-v1.4.0](ghcr.io/grafana/k6-operator:runner-v1.4.0)            | v2.0.0-rc1 |
+| v1.5.0 | [runner-v1.5.0](ghcr.io/grafana/k6-operator:runner-v1.5.0) | v2.0.0 |

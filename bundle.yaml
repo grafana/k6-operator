@@ -1294,6 +1294,8 @@ spec:
                           x-kubernetes-int-or-string: true
                         type: object
                     type: object
+                  schedulerName:
+                    type: string
                   securityContext:
                     properties:
                       appArmorProfile:
@@ -3332,6 +3334,8 @@ spec:
                           x-kubernetes-int-or-string: true
                         type: object
                     type: object
+                  schedulerName:
+                    type: string
                   securityContext:
                     properties:
                       appArmorProfile:
@@ -5391,6 +5395,8 @@ spec:
                           x-kubernetes-int-or-string: true
                         type: object
                     type: object
+                  schedulerName:
+                    type: string
                   securityContext:
                     properties:
                       appArmorProfile:
@@ -6487,6 +6493,13 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
   - pods
   - pods/log
   - secrets
@@ -6683,7 +6696,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
-        image: ghcr.io/grafana/k6-operator:controller-v1.4.0
+        image: ghcr.io/grafana/k6-operator:controller-v1.5.0
         livenessProbe:
           httpGet:
             path: /healthz
