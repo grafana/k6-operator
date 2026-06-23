@@ -82,5 +82,5 @@ We do not commit to any stability guarantees of Golang interfaces at this point 
 
 ### Release process
 
-Release procedure is fully described in the [internal docs](https://github.com/grafana/k6-operator/blob/main/docs/release-workflow.md).
+Release procedure is fully described in the [internal docs](https://github.com/grafana/k6-operator/blob/main/docs/release-process.md).
 

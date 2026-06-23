@@ -1,0 +1,74 @@
+---
+name: Prepare release
+permissions: {}
+run-name: Prepare release ${{ inputs.operator_version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      operator_version:
+        description: "Operator version to release, for example v1.5.0."
+        required: true
+        type: string
+      chart_version:
+        description: "Helm chart version to release, for example 4.5.0."
+        required: true
+        type: string
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-x64
+    permissions:
+      contents: write # to push the branch
+      issues: write # to label the PR
+      pull-requests: write # to open the PR
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: true # this job opens a release-prep PR
+          fetch-depth: 0
+
+      - name: Set release variables
+        env:
+          OPERATOR_VERSION: ${{ inputs.operator_version }}
+          CHART_VERSION: ${{ inputs.chart_version }}
+        run: ./hack/release/check-prepare-preconditions.sh
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Prepare release files
+        run: |
+          make release-prepare \
+            OPERATOR_VERSION="${OPERATOR_VERSION}" \
+            CHART_VERSION="${CHART_VERSION}"
+
+      - name: Validate release files
+        run: ./hack/release/validate-release.sh
+
+      - name: Prepare release-prep PR
+        id: pr-meta
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # to call GH API
+        run: ./hack/release/prepare-release-pr.sh
+
+      - name: Open release-prep PR
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sign-commits: true
+          branch: ${{ env.RELEASE_BRANCH }}
+          base: main
+          commit-message: "release: prepare ${{ inputs.operator_version }}"
+          title: "release: prepare ${{ inputs.operator_version }}"
+          body-path: ${{ steps.pr-meta.outputs.body_file }}
+          labels: operator-release

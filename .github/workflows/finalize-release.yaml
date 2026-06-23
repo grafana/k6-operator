@@ -1,0 +1,171 @@
+---
+name: Finalize release
+permissions: {}
+run-name: Finalize release
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+concurrency:
+  group: finalize-release
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: ghcr.io/grafana/k6-operator
+
+jobs:
+  finalize:
+    # Quick filter to avoid spinning up a runner on every closed PR.
+    # All proper checks are in finalize-release-preflight.sh `authorize-pr`.
+    # Note: operator-release' literal must match RELEASE_PR_LABEL in
+    # hack/release/release-lib.sh; it's duplicated here, because a workflow's `if:`
+    # cannot read shell variables.
+    if: >-
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'operator-release')
+    runs-on: ubuntu-x64
+    permissions:
+      actions: write # to dispatch the Helm release workflow as the last step
+      contents: write # to push git tags and Github release
+      packages: write # to write to GHCR
+
+    steps:
+      # The PR is already merged to main, so checking out the merge commit is
+      # equivalent to running from main. We'll need the commit SHA later.
+      - name: Checkout merge commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Authorize release PR
+        env:
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_MERGED: ${{ github.event.pull_request.merged }}
+          EVENT_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          EVENT_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          EVENT_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          EVENT_MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          EVENT_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: ./hack/release/finalize-release-preflight.sh authorize-pr
+
+      - name: Validate release contents
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: ./hack/release/finalize-release-preflight.sh validate-contents
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@f4e8deed0c3c26542279f4042c0e1d059cbf012d
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@21162887f0d6e25b4e8eafb0cf44cf9bf7f6acd3
+        with:
+          cache-binary: false
+          version: v0.31.1
+
+      - name: Login to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Images are built from the merge commit, so the released code and the
+      # released images are the same tree by construction.
+      - name: Build and push controller image
+        id: build-controller
+        uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
+        with:
+          context: .
+          push: true
+          file: Dockerfile.controller
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.IMAGE_NAME }}:controller-${{ env.OPERATOR_VERSION }}
+
+      - name: Build and push runner image
+        id: build-runner
+        uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
+        with:
+          context: .
+          push: true
+          file: Dockerfile.runner
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.IMAGE_NAME }}:runner-${{ env.OPERATOR_VERSION }}
+
+      - name: Build and push starter image
+        id: build-starter
+        uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
+        with:
+          context: .
+          push: true
+          file: Dockerfile.starter
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.IMAGE_NAME }}:starter-${{ env.OPERATOR_VERSION }}
+
+      - name: Create release tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          # validate-contents already guaranteed any existing tag points at the
+          # merge commit, so we only need to create it when absent.
+          if ! gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${OPERATOR_VERSION}" > /dev/null 2>&1; then
+            gh api \
+              --method POST \
+              "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref="refs/tags/${OPERATOR_VERSION}" \
+              -f sha="$MERGE_COMMIT_SHA"
+          fi
+
+      - name: Promote latest image tags
+        run: |
+          ./hack/release/promote-latest-tags.sh \
+            "${IMAGE_NAME}:controller-${OPERATOR_VERSION}@${{ steps.build-controller.outputs.digest }}" \
+            "${IMAGE_NAME}:runner-${OPERATOR_VERSION}@${{ steps.build-runner.outputs.digest }}" \
+            "${IMAGE_NAME}:starter-${OPERATOR_VERSION}@${{ steps.build-starter.outputs.digest }}"
+
+      - name: Render release notes
+        run: ./hack/release/render-release-template.sh
+
+      - name: Create draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          if gh release view "$OPERATOR_VERSION" > /dev/null 2>&1; then
+            # Recovery re-run: a draft from a prior attempt already exists
+            # (validate-contents has confirmed it is not published). Update it.
+            gh release edit "$OPERATOR_VERSION" \
+              --draft \
+              --target "$MERGE_COMMIT_SHA" \
+              --title "$OPERATOR_VERSION" \
+              --notes-file release-notes.md
+          else
+            gh release create "$OPERATOR_VERSION" \
+              --draft \
+              --target "$MERGE_COMMIT_SHA" \
+              --title "$OPERATOR_VERSION" \
+              --notes-file release-notes.md
+          fi
+
+      # The operator images and the release tag now exist. The push that merged
+      # the release-prep PR also fired Helm release, but that run skips itself
+      # (it sees the appVersion bump) precisely so this dispatch can publish
+      # the chart now that the images it references are available.
+      #
+      # Helm publishes from main's HEAD: the reusable update-helm-repo workflow
+      # is branch-bound and cannot be pinned to the merge commit.
+      # The workflow call below assumes main has not advanced with a chart change
+      # between the PR merge and the dispatch.
+      # In practice, the time window for drift is < 1h, and the risk of it is basically zero.
+      # What if it does happen? Fix main and publish the chart manually.
+      - name: Trigger Helm release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run helm-release.yaml --ref main

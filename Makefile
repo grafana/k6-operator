@@ -50,7 +50,7 @@ e2e-cleanup: ## Clean up end-to-end test resources.
 	kubectl delete configmap crocodile-stress-test
 	kubectl delete -f e2e/test.yaml
 
-e2e-update-latest: ## Update e2e/latest folder with the bundle.yaml.
+e2e-update-latest: kustomize ## Update e2e/latest folder with the bundle.yaml.
 	echo -e "Regenerate ./e2e/latest from the bundle.yaml"
 	rm e2e/latest/*
 	cp bundle.yaml ./e2e/latest/bundle-to-test.yaml
@@ -58,7 +58,7 @@ e2e-update-latest: ## Update e2e/latest folder with the bundle.yaml.
 	docker run --user "$$(id -u):$$(id -g)" --rm -v "${PWD}/e2e/latest":/workdir $(YQ_IMAGE) --no-doc  -s  '.kind + "-" + .metadata.name' bundle-to-test.yaml && \
 	for f in $$(find . -type f  -name '*.k6.io'); do mv $$f $${f}.yaml; done && \
 	rm bundle-to-test.yaml && \
-	kustomize create --autodetect --recursive .
+	$(KUSTOMIZE) create --autodetect --recursive .
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
@@ -94,13 +94,6 @@ docker-build: test ## Build the docker image.
 docker-push: ## Push the docker image.
 	docker push ${IMG_NAME}:${IMG_TAG}
 
-# TODO: check and re-use in bundle.yaml creation
-# .PHONY: build-installer
-# build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
-# 	mkdir -p dist
-# 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-# 	$(KUSTOMIZE) build config/default > dist/install.yaml
-
 ifndef ignore-not-found
   ignore-not-found = false
 endif
@@ -131,7 +124,32 @@ bundle: manifests ## Generate bundle manifests and metadata, then validate gener
 bundle-build: ## Build the bundle image.
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
-generate-crd-docs: ## Generate CRD documentation.
+.PHONY: release-prepare
+release-prepare: kustomize ## Prepare generated files for a release. Requires OPERATOR_VERSION=vX.Y.Z and CHART_VERSION=X.Y.Z.
+	OPERATOR_VERSION="$(OPERATOR_VERSION)" \
+	CHART_VERSION="$(CHART_VERSION)" \
+	PREVIOUS_OPERATOR_VERSION="$(PREVIOUS_OPERATOR_VERSION)" \
+	RUNNER_K6_VERSION="$(RUNNER_K6_VERSION)" \
+	./hack/release/prepare-release.sh
+	$(MAKE) generate-crd-docs
+	$(MAKE) bundle-yaml OPERATOR_VERSION=$(OPERATOR_VERSION)
+	$(MAKE) patch-helm-crd
+	$(MAKE) helm-docs
+	$(MAKE) helm-schema
+	$(MAKE) e2e-update-latest
+
+# In the kustomize image override below, the "*" newName tells kustomize to keep
+# the existing newName (ghcr.io/grafana/k6-operator) and set only the tag.
+.PHONY: bundle-yaml
+bundle-yaml: kustomize ## Generate bundle.yaml with the controller image set to controller-$(OPERATOR_VERSION). Requires OPERATOR_VERSION=vX.Y.Z.
+	tmp_dir="$$(mktemp -d)" ;\
+	trap 'rm -rf "$$tmp_dir"' EXIT ;\
+	cp -R config "$$tmp_dir/config" ;\
+	cd "$$tmp_dir/config/default" ;\
+	$(KUSTOMIZE) edit set image ghcr.io/grafana/k6-operator=*:controller-$(OPERATOR_VERSION) ;\
+	$(KUSTOMIZE) build . > "$(CURDIR)/bundle.yaml"
+
+generate-crd-docs: controller-gen ## Generate CRD documentation.
 	# Generate yamls with full desciption values
 	$(CONTROLLER_GEN) "crd" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 	go install fybrik.io/crdoc@v0.6.4
