@@ -17013,7 +17013,9 @@ Port 6565 is always configured for k6 processes.<br/>
         <td><b><a href="#testrunspecscuttle">scuttle</a></b></td>
         <td>object</td>
         <td>
-          Configuration for Envoy proxy.<br/>
+          Configuration for Envoy proxy.
+Deprecated: we'll be removing support for Envoy.
+See https://github.com/grafana/k6-operator/issues/195#issuecomment-3062174234 for details.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -35048,6 +35050,8 @@ Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
 
 
 Configuration for Envoy proxy.
+Deprecated: we'll be removing support for Envoy.
+See https://github.com/grafana/k6-operator/issues/195#issuecomment-3062174234 for details.
 
 <table>
     <thead>
