@@ -56,7 +56,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	command = append(
 		command,
 		script.FullName(),
-		"--address=0.0.0.0:6565")
+		"-a=0.0.0.0:6565")
 
 	paused := true
 	if k6.GetSpec().Paused != "" {
