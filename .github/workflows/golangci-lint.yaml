@@ -16,8 +16,7 @@ jobs:
         with:
           go-version: "1.26.4"
           cache: false
-      - name: lint
-        uses: golangci/golangci-lint-action@36fe29c8f9dc696b104db0f7d49d1a87d2bbcd5b
-        with:
-          version: v2.12.1
-          args: --timeout=5m
+      - name: Build custom golangci-lint
+        run: make golangci-lint
+      - name: Run lint
+        run: make lint

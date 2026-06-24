@@ -61,7 +61,12 @@ type PrivateLoadZoneSpec struct {
 
 // PrivateLoadZoneStatus defines the observed state of PrivateLoadZone
 type PrivateLoadZoneStatus struct {
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	// +listType=map
+	// +listMapKey=type
+	// +patchStrategy=merge
+	// +patchMergeKey=type
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+kubebuilder:object:root=true
