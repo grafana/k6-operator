@@ -254,12 +254,12 @@ $(ENVTEST): $(LOCALBIN)
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT) ## Build golangci-lint with kube-api-linter plugin.
-$(GOLANGCI_LINT): $(LOCALBIN)
-	@if [ ! -f "$(GOLANGCI_LINT)" ]; then \
-		echo "Building golangci-lint with custom plugins..." ;\
-		GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) ;\
-		$(LOCALBIN)/golangci-lint custom ;\
-	fi
+# Rebuild whenever .custom-gcl.yml changes (e.g. plugin or version bumps) so a
+# stale binary is never reused with an outdated plugin set.
+$(GOLANGCI_LINT): $(LOCALBIN) .custom-gcl.yml
+	@echo "Building golangci-lint with custom plugins..."
+	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	$(LOCALBIN)/golangci-lint custom
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
