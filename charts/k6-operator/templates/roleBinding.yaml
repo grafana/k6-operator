@@ -5,7 +5,7 @@ kind: ClusterRoleBinding
 kind: RoleBinding
 {{- end }}
 metadata:
-  name: {{ include "k6-operator.fullname" . }}-manager-rolebinding
+  name: {{ include "k6-operator.fullnameWithSuffix" (dict "context" $ "suffix" "-manager-rolebinding") }}
   {{- if .Values.rbac.namespaced }}
   namespace: {{- include "k6-operator.namespace" . }}
   {{- end }}
@@ -22,7 +22,7 @@ roleRef:
   {{- else }}
   kind: Role
   {{- end }}
-  name: {{ include "k6-operator.fullname" . }}-manager-role
+  name: {{ include "k6-operator.fullnameWithSuffix" (dict "context" $ "suffix" "-manager-role") }}
 subjects:
   - kind: ServiceAccount
     name: {{ include "k6-operator.serviceAccountName" . }}
@@ -35,7 +35,7 @@ kind: ClusterRoleBinding
 kind: RoleBinding
 {{- end }}
 metadata:
-  name: {{ include "k6-operator.fullname" . }}-metrics-auth-rolebinding
+  name: {{ include "k6-operator.fullnameWithSuffix" (dict "context" $ "suffix" "-metrics-auth-rolebinding") }}
   {{- if .Values.rbac.namespaced }}
   namespace: {{- include "k6-operator.namespace" . }}
   {{- end }}
@@ -50,7 +50,7 @@ roleRef:
   {{- else }}
   kind: Role
   {{- end }}
-  name: {{ include "k6-operator.fullname" . }}-metrics-auth-role
+  name: {{ include "k6-operator.fullnameWithSuffix" (dict "context" $ "suffix" "-metrics-auth-role") }}
 subjects:
   - kind: ServiceAccount
     name: {{ include "k6-operator.serviceAccountName" . }}
