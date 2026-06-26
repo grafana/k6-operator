@@ -25,6 +25,21 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Create a resource name by appending a suffix to the fullname, keeping the whole
+name within the Kubernetes 63-char name limit (DNS naming spec).
+The fullname is already truncated to 63 chars, but appending a suffix can push
+the resulting name over the limit. The fullname part (not the suffix) is
+truncated so the suffix is always preserved; this keeps names that share a
+fullname but differ only by suffix (e.g. the various Roles/RoleBindings) unique.
+Usage: {{ include "k6-operator.fullnameWithSuffix" (dict "context" $ "suffix" "-controller-manager") }}
+*/}}
+{{- define "k6-operator.fullnameWithSuffix" -}}
+{{- $suffix := .suffix -}}
+{{- $base := include "k6-operator.fullname" .context | trunc (int (sub 63 (len $suffix))) | trimSuffix "-" -}}
+{{- printf "%s%s" $base $suffix }}
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "k6-operator.chart" -}}
