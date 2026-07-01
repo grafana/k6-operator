@@ -26,7 +26,7 @@ jobs:
         # this is v4.3.0
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112
         with:
-          version: v3.7.2
+          version: v3.21.2
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
