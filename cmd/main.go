@@ -128,6 +128,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = k6v1alpha1.SetupTestRunWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "TestRun")
+		os.Exit(1)
+	}
+
 	plz.SetScheme(scheme)
 
 	// +kubebuilder:scaffold:builder
