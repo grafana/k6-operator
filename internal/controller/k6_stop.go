@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
 	v1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -48,11 +49,12 @@ func StopJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Tes
 		log.Error(err, "Failed to set controller reference for the stop job")
 	}
 
-	// TODO: add a check for existence of stop job
-
 	if err = r.Create(ctx, stopJob); err != nil {
-		log.Error(err, "Failed to launch k6 test stop job.")
-		return res, nil
+		if !k8sErrors.IsAlreadyExists(err) {
+			log.Error(err, "Failed to launch k6 test stop job.")
+			return res, err
+		}
+		log.Info("Stop job already exists, continuing")
 	}
 
 	log.Info("Created stop job")
