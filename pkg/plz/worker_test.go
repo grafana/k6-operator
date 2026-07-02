@@ -109,7 +109,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				},
 				Parallelism: int32(0),
 				Separate:    false,
-				Arguments:   "--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization=\"Token $(K6_CLOUD_TOKEN)\"",
+				Arguments:   `--out cloud --blacklist-ip="" --block-hostnames="" --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
 				Cleanup:     v1alpha1.Cleanup("post"),
 
 				TestRunID: "0",
@@ -132,6 +132,9 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		someEnvVars     = map[string]string{
 			"ENV": "VALUE",
 			"foo": "bar",
+		}
+		someLZDistribution = cloud.LZDistribution{
+			"some-label": cloud.Distribution{LoadZone: "some-zone", Percent: 100},
 		}
 		// podTemplate test values
 		someAllowPrivEscalation       = false
@@ -199,16 +202,11 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	cloudFieldsTestRun.Spec.Parallelism = int32(someInstances)
 
 	cloudEnvVarsTestRun = cloudFieldsTestRun // build up on top of cloud fields case
-	cloudEnvVarsTestRun.Spec.Runner.Env = append([]corev1.EnvVar{
-		{
-			Name:  "ENV",
-			Value: "VALUE",
-		},
-		{
-			Name:  "foo",
-			Value: "bar",
-		},
-	}, defaultTestRun.Spec.Runner.Env...)
+	cloudEnvVarsTestRun.Spec.Arguments = strings.Replace(cloudEnvVarsTestRun.Spec.Arguments,
+		`--block-hostnames="" --no-thresholds`,
+		`--block-hostnames="" --tag load_zone=some-label --no-thresholds`,
+		1)
+	cloudEnvVarsTestRun.Spec.Arguments += " -e ENV=VALUE -e K6_CLOUDRUN_DISTRIBUTION=some-label -e K6_CLOUDRUN_LOAD_ZONE=some-zone -e K6_CLOUDRUN_TEST_RUN_ID=6543 -e foo=bar"
 
 	podTemplateTolerationsTestRun = requiredFieldsTestRun
 	podTemplateTolerationsTestRun.Spec.Runner.Tolerations = someTolerations
@@ -330,7 +328,11 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 					InstanceCount: someInstances,
 					ArchiveURL:    someArchiveURL,
 					Environment:   someEnvVars,
+					CLIArgs: cloud.CLIArgs{
+						Tags: map[string]string{},
+					},
 				},
+				LZDistribution: someLZDistribution,
 			},
 			ingestUrl: mainIngest,
 			expected:  &cloudEnvVarsTestRun,
@@ -457,6 +459,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			worker := NewPLZWorker(testCase.plz, "token", c, logr.Logger{})
 
 			tr := worker.template.Create()
+			_ = testCase.cloudData.Preprocess()
 			worker.complete(tr, testCase.cloudData)
 
 			if diff := deep.Equal(tr, testCase.expected); diff != nil {
