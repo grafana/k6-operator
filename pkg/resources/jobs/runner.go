@@ -77,6 +77,11 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 		command = append(command, "--no-setup", "--no-teardown", "--linger")
 	}
 
+	// For PLZ tests, we add a reserved env var containing instance ID.
+	if len(k6.TestRunID()) > 0 && v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+		command = append(command, "-e", fmt.Sprintf(`%s=%d`, cloud.IIDCloudExecVar, index))
+	}
+
 	command = script.UpdateCommand(command)
 
 	var (
@@ -119,37 +124,26 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 
 	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
 
-	// TODO: refactor this
-
 	// this is a cloud test run: either cloud output or PLZ
 	if len(k6.TestRunID()) > 0 {
+		// cloud output case
+		tokenVar := corev1.EnvVar{
+			Name:  "K6_CLOUD_TOKEN",
+			Value: tokenInfo.Value(),
+		}
+
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
-			// If K6_CLOUD_TOKEN is absent from Runner.Env (not provided by GCk6),
-			// fall back to loading it from the Kubernetes Secret.
-			hasCloudToken := false
-			for _, e := range k6.GetSpec().Runner.Env {
-				if e.Name == "K6_CLOUD_TOKEN" {
-					hasCloudToken = true
-					break
-				}
-			}
-			if !hasCloudToken {
-				env = append(env, corev1.EnvVar{
-					Name: "K6_CLOUD_TOKEN",
-					ValueFrom: &corev1.EnvVarSource{
-						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{Name: tokenInfo.SecretName()},
-							Key:                  "token",
-						},
+			tokenVar = corev1.EnvVar{
+				Name: "K6_CLOUD_TOKEN",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: tokenInfo.SecretName()},
+						Key:                  "token",
 					},
-				})
+				},
 			}
 		} else {
 			// cloud output case
-			env = append(env, corev1.EnvVar{
-				Name:  "K6_CLOUD_TOKEN",
-				Value: tokenInfo.Value(),
-			})
 			aggregationVars, err := cloud.DecodeAggregationConfig(k6.GetStatus().AggregationVars)
 			if err != nil {
 				return nil, err
@@ -160,7 +154,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 		env = append(env, corev1.EnvVar{
 			Name:  "K6_CLOUD_PUSH_REF_ID",
 			Value: k6.TestRunID(),
-		})
+		}, tokenVar)
 	}
 
 	env = append(env, k6.GetSpec().Runner.Env...)
