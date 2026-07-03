@@ -52,10 +52,6 @@ type TestRunReconciler struct {
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
-
-	// Note: here we assume that all users of the operator are allowed to use
-	// the same token / cloud client.
-	k6CloudClient *cloudapi.Client
 }
 
 // Reconcile takes a K6 object and takes the appropriate action in the cluster
@@ -99,10 +95,14 @@ func isCloudTestRun(k6 *v1alpha1.TestRun) bool {
 }
 
 func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log logr.Logger, k6 *v1alpha1.TestRun) (ctrl.Result, error) {
-	var err error
+	var (
+		err         error
+		cloudClient *cloudapi.Client
+	)
 	if isCloudTestRun(k6) {
 		// bootstrap the client
-		found, err := r.createClient(ctx, k6, log)
+		var found bool
+		cloudClient, found, err = r.createClient(ctx, k6, log)
 		if err != nil {
 			log.Error(err, "A problem while getting token.")
 			return ctrl.Result{}, err
@@ -120,7 +120,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 
 	if isCloudTestRun(k6) && v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) {
 		// check in with the BE for status
-		if r.ShouldAbort(ctx, k6, log) {
+		if r.ShouldAbort(ctx, k6, cloudClient, log) {
 			log.Info("Received an abort signal from the k6 Cloud: stopping the test.")
 			return StopJobs(ctx, log, k6, r)
 		}
@@ -176,7 +176,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		return ctrl.Result{}, nil
 
 	case "initialization":
-		res, ready, err := RunValidations(ctx, log, k6, r)
+		res, ready, err := RunValidations(ctx, log, k6, r, cloudClient)
 		if err != nil || !ready {
 			if t, ok := v1alpha1.LastUpdate(k6, v1alpha1.TestRunRunning); !ok {
 				// this should never happen
@@ -191,7 +191,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 						events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 							WithDetail(msg).
 							WithAbort()
-						cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
+						cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
 					}
 				}
 			}
@@ -216,7 +216,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
 
 			if v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunCreated) {
-				return SetupCloudTest(ctx, log, k6, r)
+				return SetupCloudTest(ctx, log, k6, r, cloudClient)
 
 			} else {
 				// if test run was created, then only changing status is left
@@ -233,10 +233,10 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		return ctrl.Result{}, nil
 
 	case "initialized":
-		return CreateJobs(ctx, log, k6, r)
+		return CreateJobs(ctx, log, k6, r, cloudClient)
 
 	case "created":
-		return StartJobs(ctx, log, k6, r)
+		return StartJobs(ctx, log, k6, r, cloudClient)
 
 	case "started":
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunFinalized) {
@@ -277,13 +277,13 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 					return ctrl.Result{RequeueAfter: time.Second * 15}, nil
 				}
 			}
-		} else if !FinishJobs(ctx, log, k6, r) {
+		} else if !FinishJobs(ctx, log, k6, r, cloudClient) {
 			// wait for the test to finish
 
 			// TODO: confirm if this check is needed given the check in the beginning of reconcile
 			if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) {
 				// check in with the BE for status
-				if r.ShouldAbort(ctx, k6, log) {
+				if r.ShouldAbort(ctx, k6, cloudClient, log) {
 					log.Info("Received an abort signal from the k6 Cloud: stopping the test.")
 					return StopJobs(ctx, log, k6, r)
 				}
@@ -346,7 +346,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 				return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 			}
 
-			if err = cloud.FinishTestRun(r.k6CloudClient, k6.GetStatus().TestRunID); err != nil {
+			if err = cloud.FinishTestRun(cloudClient, k6.GetStatus().TestRunID); err != nil {
 				log.Error(err, "Failed to finalize the test run with cloud output")
 				return ctrl.Result{}, nil
 			} else {
@@ -455,14 +455,14 @@ func (r *TestRunReconciler) UpdateStatus(ctx context.Context, k6 *v1alpha1.TestR
 
 // ShouldAbort retrieves the status of test run from the Cloud and whether it should
 // cause a forced stop. It is meant to be used only by PLZ test runs.
-func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) bool {
+func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRun, cloudClient *cloudapi.Client, log logr.Logger) bool {
 	// sanity check
 	if len(k6.TestRunID()) == 0 {
 		// log.Error(errors.New("empty test run ID"), "Trying to get state of test run with empty test run ID")
 		return false
 	}
 
-	status, err := cloud.GetTestRunState(r.k6CloudClient, k6.TestRunID(), log)
+	status, err := cloud.GetTestRunState(cloudClient, k6.TestRunID(), log)
 	if err != nil {
 		return false
 	}
@@ -470,23 +470,19 @@ func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRu
 	return status.Aborted()
 }
 
-func (r *TestRunReconciler) createClient(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) (bool, error) {
-	if r.k6CloudClient == nil {
-		tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
-		err := tokenInfo.Load(ctx, log, r.Client)
+func (r *TestRunReconciler) createClient(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) (*cloudapi.Client, bool, error) {
+	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
+	err := tokenInfo.Load(ctx, log, r.Client)
 
-		if err != nil {
-			log.Error(err, "A problem while getting token.")
-			return false, err
-		}
-		if !tokenInfo.Ready {
-			return false, nil
-		}
-
-		host := getEnvVar(k6.GetSpec().Runner.Env, "K6_CLOUD_HOST")
-
-		r.k6CloudClient = cloud.NewClient(log, tokenInfo.Value(), host)
+	if err != nil {
+		log.Error(err, "A problem while getting token.")
+		return nil, false, err
+	}
+	if !tokenInfo.Ready {
+		return nil, false, nil
 	}
 
-	return true, nil
+	host := getEnvVar(k6.GetSpec().Runner.Env, "K6_CLOUD_HOST")
+
+	return cloud.NewClient(log, tokenInfo.Value(), host), true, nil
 }
