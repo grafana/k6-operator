@@ -182,6 +182,8 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 
 	envVars = append(envVars, trData.SecretsEnvVars()...)
 
+	envVars = append(envVars, trData.RunnerEnvVars...)
+
 	tr.Spec.Runner.Image = trData.RunnerImage
 	tr.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		initContainer,
@@ -190,27 +192,17 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 	tr.Spec.Parallelism = int32(trData.InstanceCount)
 	tr.Spec.TestRunID = trData.TestRunID()
 
-	// building argument list to k6
-	bips := `--blacklist-ip="` + strings.Join(trData.BlacklistIPs, ",") + `"`
-	bhns := `--block-hostnames="` + strings.Join(trData.BlockedHostnames, ",") + `"`
-
+	// Building the argument list to k6.
 	args := []string{
 		"--out cloud",
-		bips,
-		bhns,
 		trData.TagArgs,
 		"--no-thresholds",
-		trData.UserAgentArg,
 		fmt.Sprintf(`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`, w.plz.Name, trData.TestRunID()),
 		trData.EnvArgs,
 	}
 	if trData.IncludeSystemEnvVars {
 		args = append(args, "--include-system-env-vars")
 	}
-	/* else {
-		// we care about these arguments only in the case of no system env vars exposed
-		args = append(args, "--verbose", "--no-summary")
-	}*/
 
 	args = slices.DeleteFunc(args, func(s string) bool { return s == "" })
 	tr.Spec.Arguments = strings.Join(args, " ")
@@ -240,7 +232,8 @@ func (w *PLZWorker) handle(ctx context.Context, testRunId string) {
 		return
 	}
 	if err = trData.Preprocess(); err != nil {
-		w.logger.Error(err, fmt.Sprintf("Failed to sort out test run data for `%s`", testRunId))
+		w.logger.Error(err, fmt.Sprintf("Failed to preprocess test run data for `%s`", testRunId))
+		// TODO: it'd be nice to fail fast with explicit error here, instead of this ~ waiting for Timeout.
 		return
 	}
 	w.complete(tr, trData)

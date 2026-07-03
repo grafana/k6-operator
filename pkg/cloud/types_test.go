@@ -177,6 +177,75 @@ func TestLZConfig_EnvVars(t *testing.T) {
 	}
 }
 
+func TestTestRunData_Preprocess(t *testing.T) {
+	t.Parallel()
+
+	t.Run("empty or N > 1 load zone error out", func(t *testing.T) {
+		t.Parallel()
+		trd := TestRunData{}
+		if err := trd.Preprocess(); err == nil {
+			t.Error("expected error for empty distribution")
+		}
+		trd.LZDistribution = LZDistribution{
+			"a": Distribution{LoadZone: "zone-a", Percent: 50},
+			"b": Distribution{LoadZone: "zone-b", Percent: 50},
+		}
+		if err := trd.Preprocess(); err == nil {
+			t.Error("expected error for multiple load zones")
+		}
+	})
+
+	t.Run("fill in non-json values in TestRunData", func(t *testing.T) {
+		t.Parallel()
+		trd := TestRunData{
+			TestRunId:      42,
+			LZDistribution: LZDistribution{"label": Distribution{LoadZone: "zone", Percent: 100}},
+			LZConfig: LZConfig{
+				Environment: map[string]string{"GREETING": "hello world"},
+				CLIArgs: CLIArgs{
+					UserAgent:        "Grafana Cloud k6",
+					BlacklistIPs:     []string{"8.8.8.8/32", "1.1.1.1/32"},
+					BlockedHostnames: []string{"example.com"},
+				},
+			},
+		}
+		if err := trd.Preprocess(); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if expected := "--tag load_zone=label"; trd.TagArgs != expected {
+			t.Errorf("TagArgs = %q, want %q", trd.TagArgs, expected)
+		}
+
+		// first are org env vars from API, then the reserved env vars
+		expectedEnvArgs := "-e GREETING=$(K6_CLOUD_OPERATOR_ENV_0)" +
+			" -e K6_CLOUDRUN_DISTRIBUTION=$(K6_CLOUD_OPERATOR_ENV_1)" +
+			" -e K6_CLOUDRUN_LOAD_ZONE=$(K6_CLOUD_OPERATOR_ENV_2)" +
+			" -e K6_CLOUDRUN_TEST_RUN_ID=$(K6_CLOUD_OPERATOR_ENV_3)"
+		if trd.EnvArgs != expectedEnvArgs {
+			t.Errorf("EnvArgs = %q, want %q", trd.EnvArgs, expectedEnvArgs)
+		}
+
+		expectedEnvVars := []corev1.EnvVar{
+			{Name: "K6_USER_AGENT", Value: "Grafana Cloud k6"},
+			{Name: "K6_BLACKLIST_IPS", Value: "8.8.8.8/32,1.1.1.1/32"},
+			{Name: "K6_BLOCK_HOSTNAMES", Value: "example.com"},
+			{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "hello world"},
+			{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "label"},
+			{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "zone"},
+			{Name: "K6_CLOUD_OPERATOR_ENV_3", Value: "42"},
+		}
+		if len(trd.RunnerEnvVars) != len(expectedEnvVars) {
+			t.Fatalf("RunnerEnvVars len = %d, want %d: %+v", len(trd.RunnerEnvVars), len(expectedEnvVars), trd.RunnerEnvVars)
+		}
+		for i := range expectedEnvVars {
+			if trd.RunnerEnvVars[i] != expectedEnvVars[i] {
+				t.Errorf("RunnerEnvVars[%d] = %v, want %v", i, trd.RunnerEnvVars[i], expectedEnvVars[i])
+			}
+		}
+	})
+}
+
 func TestInspectOutput_SetTestName(t *testing.T) {
 	t.Parallel()
 

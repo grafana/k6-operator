@@ -109,7 +109,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				},
 				Parallelism: int32(0),
 				Separate:    false,
-				Arguments:   `--out cloud --blacklist-ip="" --block-hostnames="" --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
+				Arguments:   `--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
 				Cleanup:     v1alpha1.Cleanup("post"),
 
 				TestRunID: "0",
@@ -203,10 +203,23 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 
 	cloudEnvVarsTestRun = cloudFieldsTestRun // build up on top of cloud fields case
 	cloudEnvVarsTestRun.Spec.Arguments = strings.Replace(cloudEnvVarsTestRun.Spec.Arguments,
-		`--block-hostnames="" --no-thresholds`,
-		`--block-hostnames="" --tag load_zone=some-label --no-thresholds`,
+		`--out cloud --no-thresholds`,
+		`--out cloud --tag load_zone=some-label --no-thresholds`,
 		1)
-	cloudEnvVarsTestRun.Spec.Arguments += " -e ENV=VALUE -e K6_CLOUDRUN_DISTRIBUTION=some-label -e K6_CLOUDRUN_LOAD_ZONE=some-zone -e K6_CLOUDRUN_TEST_RUN_ID=6543 -e foo=bar"
+	cloudEnvVarsTestRun.Spec.Arguments += " -e ENV=$(K6_CLOUD_OPERATOR_ENV_0)" +
+		" -e K6_CLOUDRUN_DISTRIBUTION=$(K6_CLOUD_OPERATOR_ENV_1)" +
+		" -e K6_CLOUDRUN_LOAD_ZONE=$(K6_CLOUD_OPERATOR_ENV_2)" +
+		" -e K6_CLOUDRUN_TEST_RUN_ID=$(K6_CLOUD_OPERATOR_ENV_3)" +
+		" -e foo=$(K6_CLOUD_OPERATOR_ENV_4)"
+	cloudEnvVarsTestRun.Spec.Runner.Env = append(
+		append([]corev1.EnvVar{}, cloudFieldsTestRun.Spec.Runner.Env...),
+		corev1.EnvVar{Name: "K6_USER_AGENT", Value: "Grafana Cloud k6"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "VALUE"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "some-label"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "some-zone"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_3", Value: "6543"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_4", Value: "bar"},
+	)
 
 	podTemplateTolerationsTestRun = requiredFieldsTestRun
 	podTemplateTolerationsTestRun.Spec.Runner.Tolerations = someTolerations
@@ -329,7 +342,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 					ArchiveURL:    someArchiveURL,
 					Environment:   someEnvVars,
 					CLIArgs: cloud.CLIArgs{
-						Tags: map[string]string{},
+						UserAgent: "Grafana Cloud k6",
 					},
 				},
 				LZDistribution: someLZDistribution,
@@ -459,7 +472,13 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			worker := NewPLZWorker(testCase.plz, "token", c, logr.Logger{})
 
 			tr := worker.template.Create()
-			_ = testCase.cloudData.Preprocess()
+
+			// Preprocess must succeed only when a single-LZ distribution is provided.
+			err := testCase.cloudData.Preprocess()
+			if expectingError := (len(testCase.cloudData.LZDistribution) != 1); expectingError && (err == nil) {
+				t.Errorf("Preprocess() error = %v, expecting error: %v", err, expectingError)
+			}
+
 			worker.complete(tr, testCase.cloudData)
 
 			if diff := deep.Equal(tr, testCase.expected); diff != nil {

@@ -93,6 +93,48 @@ func Test_ParseCLI(t *testing.T) {
 			CLI{},
 			true,
 		},
+		{
+			"SkipBlockHostnamesEquals",
+			`--vus 10 --block-hostnames="google.com" --duration 5s`,
+			CLI{
+				ArchiveArgs: "--vus 10 --duration 5s",
+			},
+			false,
+		},
+		{
+			"SkipBlacklistIpEquals",
+			`--vus 10 --blacklist-ip="8.8.8.8/32" --duration 5s`,
+			CLI{
+				ArchiveArgs: "--vus 10 --duration 5s",
+			},
+			false,
+		},
+		{
+			"SkipUserAgentEquals",
+			`--vus 10 --user-agent="foo" --duration 5s`,
+			CLI{
+				ArchiveArgs: "--vus 10 --duration 5s",
+			},
+			false,
+		},
+		{
+			"RewriteKubeEnvRefsForShell",
+			`--out cloud -e FOO=$(K6_OP_ENV_FOO) --no-thresholds -e BAR=plain`,
+			CLI{
+				ArchiveArgs: `-e FOO="${K6_OP_ENV_FOO}" --no-thresholds -e BAR=plain`,
+				HasCloudOut: true,
+			},
+			false,
+		},
+		{
+			"IncludeSystemEnvVars",
+			`--out cloud --include-system-env-vars`,
+			CLI{
+				ArchiveArgs: "--include-system-env-vars",
+				HasCloudOut: true,
+			},
+			false,
+		},
 	}
 
 	for _, test := range tests {
