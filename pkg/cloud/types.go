@@ -138,7 +138,7 @@ func (trd *TestRunData) Preprocess() error {
 		})
 	}
 
-	trd.TagArgs = "--tag load_zone=" + trd.LZLabel()
+	trd.TagArgs = "--tag load_zone=" + trd.LZName()
 
 	if trd.Environment == nil {
 		trd.Environment = make(map[string]string)

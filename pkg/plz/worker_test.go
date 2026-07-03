@@ -204,7 +204,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	cloudEnvVarsTestRun = cloudFieldsTestRun // build up on top of cloud fields case
 	cloudEnvVarsTestRun.Spec.Arguments = strings.Replace(cloudEnvVarsTestRun.Spec.Arguments,
 		`--out cloud --no-thresholds`,
-		`--out cloud --tag load_zone=some-label --no-thresholds`,
+		`--out cloud --tag load_zone=some-zone --no-thresholds`,
 		1)
 	cloudEnvVarsTestRun.Spec.Arguments += " -e ENV=$(K6_CLOUD_OPERATOR_ENV_0)" +
 		" -e K6_CLOUDRUN_DISTRIBUTION=$(K6_CLOUD_OPERATOR_ENV_1)" +

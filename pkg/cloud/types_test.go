@@ -213,7 +213,7 @@ func TestTestRunData_Preprocess(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if expected := "--tag load_zone=label"; trd.TagArgs != expected {
+		if expected := "--tag load_zone=zone"; trd.TagArgs != expected {
 			t.Errorf("TagArgs = %q, want %q", trd.TagArgs, expected)
 		}
 
