@@ -173,22 +173,11 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 		tr.Spec.Runner.VolumeMounts[0],
 	)
 
-	envVars := append(trData.EnvVars(), corev1.EnvVar{
-		Name:  "K6_CLOUD_HOST",
-		Value: cloud.K6CloudHost(),
-	})
-
-	envVars = append(envVars, cloud.AggregationEnvVars(&trData.RuntimeConfig)...)
-
-	envVars = append(envVars, trData.SecretsEnvVars()...)
-
-	envVars = append(envVars, trData.RunnerEnvVars...)
-
 	tr.Spec.Runner.Image = trData.RunnerImage
 	tr.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		initContainer,
 	}
-	tr.Spec.Runner.Env = envVars
+	tr.Spec.Runner.Env = trData.RunnerEnvVars
 	tr.Spec.Parallelism = int32(trData.InstanceCount)
 	tr.Spec.TestRunID = trData.TestRunID()
 
@@ -200,9 +189,7 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 		fmt.Sprintf(`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`, w.plz.Name, trData.TestRunID()),
 		trData.EnvArgs,
 	}
-	if trData.IncludeSystemEnvVars {
-		args = append(args, "--include-system-env-vars")
-	}
+	args = append(args, fmt.Sprintf("--include-system-env-vars=%t", trData.IncludeSystemEnvVars))
 
 	args = slices.DeleteFunc(args, func(s string) bool { return s == "" })
 	tr.Spec.Arguments = strings.Join(args, " ")

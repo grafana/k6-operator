@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"go.k6.io/k6/v2/cloudapi"
-	"go.k6.io/k6/v2/lib/types"
-	"go.k6.io/k6/v2/metrics"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -29,51 +27,13 @@ const (
 	// IIDCloudExecVar is exported as it must be set in external package, as part of TestRun CRD flow
 	IIDCloudExecVar = "K6_CLOUDRUN_INSTANCE_ID"
 
+	// These are not in GCk6 reserved only because current API sends them in
+	// separate fields. It'd be nice to refactor the API to reduce complexity.
 	secretSourceEnvVar      = "K6_SECRET_SOURCE"
 	secretSourceURLTemplate = "K6_SECRET_SOURCE_URL_URL_TEMPLATE"
 	secretSourceURLRespPath = "K6_SECRET_SOURCE_URL_RESPONSE_PATH"
 	secretSourceURLAuthKey  = "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION"
 )
-
-// InspectOutput is the parsed output from `k6 inspect --execution-requirements`.
-type InspectOutput struct {
-	External struct { // legacy way of defining the options.cloud
-		Loadimpact struct {
-			Name      string `json:"name"`
-			ProjectID int64  `json:"projectID"`
-		} `json:"loadimpact"`
-	} `json:"ext"`
-	Cloud struct { // actual way of defining the options.cloud
-		Name      string `json:"name"`
-		ProjectID int64  `json:"projectID"`
-	} `json:"cloud"`
-	TotalDuration types.NullDuration             `json:"totalDuration"`
-	MaxVUs        uint64                         `json:"maxVUs"`
-	Thresholds    map[string]*metrics.Thresholds `json:"thresholds,omitempty"`
-}
-
-// ProjectID returns the project ID from the inspect output.
-func (io *InspectOutput) ProjectID() int64 {
-	if io.Cloud.ProjectID > 0 {
-		return io.Cloud.ProjectID
-	}
-
-	return io.External.Loadimpact.ProjectID
-}
-
-// TestName returns the test name from the inspect output.
-func (io *InspectOutput) TestName() string {
-	if len(io.Cloud.Name) > 0 {
-		return io.Cloud.Name
-	}
-
-	return io.External.Loadimpact.Name
-}
-
-// SetTestName sets the name in the inspect output.
-func (io *InspectOutput) SetTestName(name string) {
-	io.Cloud.Name = name
-}
 
 // testRunList holds the output from /v4/plz-test-runs call
 type testRunList struct {
@@ -122,6 +82,10 @@ func (trd *TestRunData) Preprocess() error {
 		return fmt.Errorf("only tests with one load zone are supported, provided: %+v", trd.LZDistribution)
 	}
 
+	trd.TagArgs = "--tag load_zone=" + trd.LZName()
+
+	// Handle k6 CLI options that need to be passed as env vars to the runners.
+
 	if len(trd.UserAgent) > 0 {
 		trd.RunnerEnvVars = append(trd.RunnerEnvVars, corev1.EnvVar{
 			Name: "K6_USER_AGENT", Value: trd.UserAgent,
@@ -138,19 +102,33 @@ func (trd *TestRunData) Preprocess() error {
 		})
 	}
 
-	trd.TagArgs = "--tag load_zone=" + trd.LZName()
+	// Handle env vars that configure k6 CLI as received from the Cloud.
+	// Note: GCk6 reserved env vars are handled separately ATM.
+
+	trd.RunnerEnvVars = append(trd.RunnerEnvVars, AggregationEnvVars(&trd.RuntimeConfig)...)
+	trd.RunnerEnvVars = append(trd.RunnerEnvVars, trd.secretsEnvVars()...)
+
+	trd.RunnerEnvVars = append(trd.RunnerEnvVars, trd.reservedEnvVars()...)
+	trd.RunnerEnvVars = append(trd.RunnerEnvVars, corev1.EnvVar{
+		Name:  "K6_CLOUD_HOST",
+		Value: K6CloudHost(),
+	})
 
 	if trd.Environment == nil {
 		trd.Environment = make(map[string]string)
 	}
 
+	// Handle env vars that describe cloud tests and should be reachable from k6.
+
 	// The potential overwrite here is deliberate: these keys are reserved by
 	// GCk6, described in docs and considered higher priority in PLZ tests
 	// for the sake of consistency between public & private cloud tests.
-
 	trd.Environment[lzCloudExecVar] = trd.LZName()
 	trd.Environment[distrCloudExecVar] = trd.LZLabel()
 	trd.Environment[trIDCloudExecVar] = trd.TestRunID()
+	delete(trd.Environment, IIDCloudExecVar) // populated later
+
+	// Handle env vars set by user in GCk6 UI.
 
 	keys := make([]string, 0, len(trd.Environment))
 	for k := range trd.Environment {
@@ -158,9 +136,10 @@ func (trd *TestRunData) Preprocess() error {
 	}
 	sort.Strings(keys)
 
-	// Env vars are set as env vars with the name `K6_CLOUD_OPERATOR_ENV_0..N`
+	// These env vars are set as env vars with the name `K6_CLOUD_OPERATOR_ENV_0..N`
 	// in the pods and then passed to k6 command with `-e KEY=$(K6_CLOUD_OPERATOR_ENV_0..N)`.
-	// Why: this keeps values with spaces, quotes etc. intact.
+	// Why: this keeps values with spaces, quotes etc. intact, as we don't have a guarantee
+	// that the values are sanitized here.
 	// Also, see https://github.com/grafana/k6/issues/2730 for additional context.
 	envArgs := make([]string, 0, len(keys))
 	for i, k := range keys {
@@ -193,11 +172,12 @@ type LZConfig struct {
 }
 
 type CLIArgs struct {
-	BlacklistIPs         []string          `json:"blacklist_ips,omitempty"`
-	BlockedHostnames     []string          `json:"blocked_hostnames,omitempty"`
-	IncludeSystemEnvVars bool              `json:"include_system_env_vars,omitempty"`
-	Tags                 map[string]string `json:"tags,omitempty"`
-	UserAgent            string            `json:"user_agent,omitempty"`
+	BlacklistIPs         []string `json:"blacklist_ips,omitempty"`
+	BlockedHostnames     []string `json:"blocked_hostnames,omitempty"`
+	IncludeSystemEnvVars bool     `json:"include_system_env_vars,omitempty"`
+	UserAgent            string   `json:"user_agent,omitempty"`
+	// not used ATM
+	// Tags                 map[string]string `json:"tags,omitempty"`
 }
 
 type LZDistribution map[string]Distribution
@@ -207,8 +187,8 @@ type Distribution struct {
 	Percent  int    `json:"percent"`
 }
 
-// EnvVars makes up the corev1 struct with the reserved GCk6 env vars.
-func (lz *LZConfig) EnvVars() []corev1.EnvVar {
+// reservedEnvVars makes up the corev1 struct with the reserved GCk6 env vars.
+func (lz *LZConfig) reservedEnvVars() []corev1.EnvVar {
 	ev := make([]corev1.EnvVar, 0, len(lz.GCk6EnvVars))
 	for k, v := range lz.GCk6EnvVars {
 		if _, ok := reservedGCk6EnvVars[k]; ok {
@@ -226,10 +206,9 @@ func (lz *LZConfig) EnvVars() []corev1.EnvVar {
 	return ev
 }
 
-// SecretsEnvVars returns the env vars required by the k6 URL secret source.
+// secretsEnvVars returns the env vars required by the k6 URL secret source.
 // Returns nil when no secrets configuration is present.
-// TODO: make this private and move it to EnvVars() / Preprocess()
-func (trd *TestRunData) SecretsEnvVars() []corev1.EnvVar {
+func (trd *TestRunData) secretsEnvVars() []corev1.EnvVar {
 	if trd.SecretsConfig == nil {
 		return nil
 	}

@@ -1,68 +1,12 @@
 package cloud
 
 import (
-	"encoding/json"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestInspectOutput_TestNameAndProjectID(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name              string
-		fields            []byte
-		expectedProjectID int64
-		expectedName      string
-	}{
-		{
-			name:              "empty",
-			fields:            []byte(`{}`),
-			expectedProjectID: 0,
-		},
-		{
-			name:              "only legacy way of defining the options",
-			fields:            []byte(`{"ext":{"loadimpact":{"name":"test","projectID":123}}}`),
-			expectedProjectID: 123,
-			expectedName:      "test",
-		},
-		{
-			name:              "only new way of defining the options",
-			fields:            []byte(`{"cloud":{"name":"lorem","projectID":321}}`),
-			expectedProjectID: 321,
-			expectedName:      "lorem",
-		},
-		{
-			name:              "both way, priority to new way",
-			fields:            []byte(`{"cloud":{"name":"ipsum","projectID":987},"ext":{"loadimpact":{"name":"test","projectID":123}}}`),
-			expectedProjectID: 987,
-			expectedName:      "ipsum",
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			var io *InspectOutput
-			if err := json.Unmarshal(tt.fields, &io); err != nil {
-				t.Errorf("error unmarshalling json: %v", err)
-			}
-
-			if got := io.ProjectID(); got != tt.expectedProjectID {
-				t.Errorf("InspectOutput.ProjectID() = %v, want %v", got, tt.expectedProjectID)
-			}
-
-			if got := io.TestName(); got != tt.expectedName {
-				t.Errorf("InspectOutput.TestName() = %v, want %v", got, tt.expectedName)
-			}
-		})
-	}
-}
-
-func TestTestRunData_SecretsEnvVars(t *testing.T) {
+func TestTestRunData_secretsEnvVars(t *testing.T) {
 	t.Parallel()
 
 	someEndpoint := "https://api.k6.io/provisioning/v1/test_runs/42/decrypt_secret?name={key}"
@@ -98,20 +42,20 @@ func TestTestRunData_SecretsEnvVars(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got := tt.trd.SecretsEnvVars()
+			got := tt.trd.secretsEnvVars()
 			if len(got) != len(tt.expected) {
-				t.Fatalf("SecretsEnvVars() len = %d, want %d; got %+v", len(got), len(tt.expected), got)
+				t.Fatalf("secretsEnvVars() len = %d, want %d; got %+v", len(got), len(tt.expected), got)
 			}
 			for i := range got {
 				if got[i] != tt.expected[i] {
-					t.Errorf("SecretsEnvVars()[%d] = %+v, want %+v", i, got[i], tt.expected[i])
+					t.Errorf("secretsEnvVars()[%d] = %+v, want %+v", i, got[i], tt.expected[i])
 				}
 			}
 		})
 	}
 }
 
-func TestLZConfig_EnvVars(t *testing.T) {
+func TestLZConfig_reservedEnvVars(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -164,13 +108,13 @@ func TestLZConfig_EnvVars(t *testing.T) {
 			reservedGCk6EnvVars = tt.reserved
 			defer func() { reservedGCk6EnvVars = orig }()
 
-			got := tt.lz.EnvVars()
+			got := tt.lz.reservedEnvVars()
 			if len(got) != len(tt.expected) {
 				t.Fatalf("len = %d, want %d", len(got), len(tt.expected))
 			}
 			for i := range got {
 				if got[i] != tt.expected[i] {
-					t.Errorf("EnvVars()[%d] = %v, want %v", i, got[i], tt.expected[i])
+					t.Errorf("reservedEnvVars()[%d] = %v, want %v", i, got[i], tt.expected[i])
 				}
 			}
 		})
@@ -195,13 +139,15 @@ func TestTestRunData_Preprocess(t *testing.T) {
 		}
 	})
 
-	t.Run("fill in non-json values in TestRunData", func(t *testing.T) {
+	t.Run("fill in args and env vars for k6 process", func(t *testing.T) {
 		t.Parallel()
 		trd := TestRunData{
 			TestRunId:      42,
 			LZDistribution: LZDistribution{"label": Distribution{LoadZone: "zone", Percent: 100}},
 			LZConfig: LZConfig{
-				Environment: map[string]string{"GREETING": "hello world"},
+				Environment: map[string]string{
+					"GREETING": "hello world",
+				},
 				CLIArgs: CLIArgs{
 					UserAgent:        "Grafana Cloud k6",
 					BlacklistIPs:     []string{"8.8.8.8/32", "1.1.1.1/32"},
@@ -230,11 +176,18 @@ func TestTestRunData_Preprocess(t *testing.T) {
 			{Name: "K6_USER_AGENT", Value: "Grafana Cloud k6"},
 			{Name: "K6_BLACKLIST_IPS", Value: "8.8.8.8/32,1.1.1.1/32"},
 			{Name: "K6_BLOCK_HOSTNAMES", Value: "example.com"},
+			{Name: "K6_CLOUD_API_VERSION", Value: "2"},
+			{Name: "K6_CLOUD_AGGREGATION_PERIOD", Value: "0s"},
+			{Name: "K6_CLOUD_AGGREGATION_WAIT_PERIOD", Value: "0s"},
+			{Name: "K6_CLOUD_METRIC_PUSH_INTERVAL", Value: "0s"},
+			{Name: "K6_CLOUD_METRIC_PUSH_CONCURRENCY", Value: "0"},
+			{Name: "K6_CLOUD_HOST", Value: "https://ingest.k6.io"},
 			{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "hello world"},
 			{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "label"},
 			{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "zone"},
 			{Name: "K6_CLOUD_OPERATOR_ENV_3", Value: "42"},
 		}
+
 		if len(trd.RunnerEnvVars) != len(expectedEnvVars) {
 			t.Fatalf("RunnerEnvVars len = %d, want %d: %+v", len(trd.RunnerEnvVars), len(expectedEnvVars), trd.RunnerEnvVars)
 		}
@@ -244,18 +197,4 @@ func TestTestRunData_Preprocess(t *testing.T) {
 			}
 		}
 	})
-}
-
-func TestInspectOutput_SetTestName(t *testing.T) {
-	t.Parallel()
-
-	io := &InspectOutput{}
-	if got := io.TestName(); got != "" {
-		t.Errorf("InspectOutput.TestName() = %v, want empty name", got)
-	}
-
-	io.SetTestName("test-lore-ipsum")
-	if got := io.TestName(); got != "test-lore-ipsum" {
-		t.Errorf("InspectOutput.TestName() = %v, want test-lore-ipsum", got)
-	}
 }
