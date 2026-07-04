@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "k6-operator.fullnameWithSuffix" (dict "context" $ "suffix" "-controller-manager") }}
+  name: {{ include "k6-operator.fullname" (dict "context" $ "suffix" "-controller-manager") }}
   namespace: {{- include "k6-operator.namespace" . }}
   labels:
     control-plane: "controller-manager"

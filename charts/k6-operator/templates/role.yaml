@@ -5,7 +5,7 @@ kind: ClusterRole
 kind: Role
 {{- end }}
 metadata:
-  name: {{ include "k6-operator.fullnameWithSuffix" (dict "context" $ "suffix" "-manager-role") }}
+  name: {{ include "k6-operator.fullname" (dict "context" $ "suffix" "-manager-role") }}
   {{- if .Values.rbac.namespaced }}
   namespace: {{- include "k6-operator.namespace" . }}
   {{- end }}
@@ -163,7 +163,7 @@ kind: ClusterRole
 kind: Role
 {{- end }}
 metadata:
-  name: {{ include "k6-operator.fullnameWithSuffix" (dict "context" $ "suffix" "-metrics-auth-role") }}
+  name: {{ include "k6-operator.fullname" (dict "context" $ "suffix" "-metrics-auth-role") }}
   {{- if .Values.rbac.namespaced }}
   namespace: {{- include "k6-operator.namespace" . }}
   {{- end }}
@@ -190,7 +190,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "k6-operator.fullnameWithSuffix" (dict "context" $ "suffix" "-metrics-reader") }}
+  name: {{ include "k6-operator.fullname" (dict "context" $ "suffix" "-metrics-reader") }}
   labels:
     {{- include "k6-operator.labels" . | nindent 4 }}
     {{- include "k6-operator.customLabels" . | default "" | nindent 4 }}
