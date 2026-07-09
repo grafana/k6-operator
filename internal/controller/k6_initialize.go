@@ -180,6 +180,7 @@ func SetupCloudTest(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 			v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRunCreated, metav1.ConditionTrue)
 
 			k6.GetStatus().AggregationVars = cloud.EncodeAggregationConfig(testRunData.ConfigOverride)
+			k6.GetStatus().SecretsVars = cloud.EncodeSecretsConfig(testRunData.SecretsConfig, testRunData.SecretsToken)
 
 			_, err := r.UpdateStatus(ctx, k6, log)
 			if err != nil {
