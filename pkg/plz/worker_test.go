@@ -171,14 +171,14 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		includeSysEnvVarsTestRun = defaultTestRun //nolint:ineffassign
 	)
 
-	cloudExecEnvArgs := " -e K6_CLOUDRUN_DISTRIBUTION=$(K6_CLOUD_OPERATOR_ENV_0)" +
-		" -e K6_CLOUDRUN_LOAD_ZONE=$(K6_CLOUD_OPERATOR_ENV_1)" +
-		" -e K6_CLOUDRUN_TEST_RUN_ID=$(K6_CLOUD_OPERATOR_ENV_2)"
-	cloudEnvVarsEnvArgs := " -e ENV=$(K6_CLOUD_OPERATOR_ENV_0)" +
-		" -e K6_CLOUDRUN_DISTRIBUTION=$(K6_CLOUD_OPERATOR_ENV_1)" +
-		" -e K6_CLOUDRUN_LOAD_ZONE=$(K6_CLOUD_OPERATOR_ENV_2)" +
-		" -e K6_CLOUDRUN_TEST_RUN_ID=$(K6_CLOUD_OPERATOR_ENV_3)" +
-		" -e foo=$(K6_CLOUD_OPERATOR_ENV_4)"
+	cloudExecEnvArgs := ` -e K6_CLOUDRUN_DISTRIBUTION="${K6_CLOUD_OPERATOR_ENV_0}"` +
+		` -e K6_CLOUDRUN_LOAD_ZONE="${K6_CLOUD_OPERATOR_ENV_1}"` +
+		` -e K6_CLOUDRUN_TEST_RUN_ID="${K6_CLOUD_OPERATOR_ENV_2}"`
+	cloudEnvVarsEnvArgs := ` -e ENV="${K6_CLOUD_OPERATOR_ENV_0}"` +
+		` -e K6_CLOUDRUN_DISTRIBUTION="${K6_CLOUD_OPERATOR_ENV_1}"` +
+		` -e K6_CLOUDRUN_LOAD_ZONE="${K6_CLOUD_OPERATOR_ENV_2}"` +
+		` -e K6_CLOUDRUN_TEST_RUN_ID="${K6_CLOUD_OPERATOR_ENV_3}"` +
+		` -e foo="${K6_CLOUD_OPERATOR_ENV_4}"`
 
 	// populate TestRuns for different test cases
 

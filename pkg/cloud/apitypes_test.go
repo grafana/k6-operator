@@ -164,10 +164,10 @@ func TestTestRunData_Preprocess(t *testing.T) {
 		}
 
 		// first are org env vars from API, then the reserved env vars
-		expectedEnvArgs := "-e GREETING=$(K6_CLOUD_OPERATOR_ENV_0)" +
-			" -e K6_CLOUDRUN_DISTRIBUTION=$(K6_CLOUD_OPERATOR_ENV_1)" +
-			" -e K6_CLOUDRUN_LOAD_ZONE=$(K6_CLOUD_OPERATOR_ENV_2)" +
-			" -e K6_CLOUDRUN_TEST_RUN_ID=$(K6_CLOUD_OPERATOR_ENV_3)"
+		expectedEnvArgs := `-e GREETING="${K6_CLOUD_OPERATOR_ENV_0}"` +
+			` -e K6_CLOUDRUN_DISTRIBUTION="${K6_CLOUD_OPERATOR_ENV_1}"` +
+			` -e K6_CLOUDRUN_LOAD_ZONE="${K6_CLOUD_OPERATOR_ENV_2}"` +
+			` -e K6_CLOUDRUN_TEST_RUN_ID="${K6_CLOUD_OPERATOR_ENV_3}"`
 		if trd.EnvArgs != expectedEnvArgs {
 			t.Errorf("EnvArgs = %q, want %q", trd.EnvArgs, expectedEnvArgs)
 		}

@@ -137,14 +137,14 @@ func (trd *TestRunData) Preprocess() error {
 	sort.Strings(keys)
 
 	// These env vars are set as env vars with the name `K6_CLOUD_OPERATOR_ENV_0..N`
-	// in the pods and then passed to k6 command with `-e KEY=$(K6_CLOUD_OPERATOR_ENV_0..N)`.
+	// in the pods and then passed to k6 command with `-e KEY="${K6_CLOUD_OPERATOR_ENV_0..N}"`.
 	// Why: this keeps values with spaces, quotes etc. intact, as we don't have a guarantee
 	// that the values are sanitized here.
 	// Also, see https://github.com/grafana/k6/issues/2730 for additional context.
 	envArgs := make([]string, 0, len(keys))
 	for i, k := range keys {
 		helper := fmt.Sprintf("K6_CLOUD_OPERATOR_ENV_%d", i)
-		envArgs = append(envArgs, fmt.Sprintf("-e %s=$(%s)", k, helper))
+		envArgs = append(envArgs, fmt.Sprintf(`-e %s="${%s}"`, k, helper))
 		trd.RunnerEnvVars = append(trd.RunnerEnvVars, corev1.EnvVar{
 			Name: helper, Value: trd.Environment[k],
 		})
