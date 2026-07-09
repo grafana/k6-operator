@@ -7,22 +7,31 @@ Expand the name of the chart.
 
 
 {{/*
-Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+Create a default fully qualified app name, optionally appending a suffix.
+The whole name is kept within the Kubernetes 63-char name limit (DNS naming
+spec): the fullname part (not the suffix) is truncated, so the suffix is
+always preserved. This keeps names that share a fullname but differ only by
+suffix (e.g. the various Roles/RoleBindings) unique.
 If release name contains chart name it will be used as a full name.
+Usage: {{ include "k6-operator.fullname" (dict "context" $ "suffix" "-controller-manager") }}
+       {{ include "k6-operator.fullname" (dict "context" $) }}
 */}}
 {{- define "k6-operator.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-{{- end }}
+{{- $ctx := .context -}}
+{{- $suffix := .suffix | default "" -}}
+{{- $base := "" -}}
+{{- if $ctx.Values.fullnameOverride -}}
+{{- $base = $ctx.Values.fullnameOverride -}}
+{{- else -}}
+{{- $name := default $ctx.Chart.Name $ctx.Values.nameOverride -}}
+{{- if contains $name $ctx.Release.Name -}}
+{{- $base = $ctx.Release.Name -}}
+{{- else -}}
+{{- $base = printf "%s-%s" $ctx.Release.Name $name -}}
+{{- end -}}
+{{- end -}}
+{{- printf "%s%s" ($base | trunc (int (sub 63 (len $suffix))) | trimSuffix "-") $suffix -}}
+{{- end -}}
 
 {{/*
 Create chart name and version as used by the chart label.
@@ -57,7 +66,7 @@ Create the name of the service account to use
 */}}
 {{- define "k6-operator.serviceAccountName" -}}
 {{- if .Values.manager.serviceAccount.create }}
-{{- default (include "k6-operator.fullname" .) .Values.manager.serviceAccount.name }}
+{{- default (include "k6-operator.fullname" (dict "context" .)) .Values.manager.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.manager.serviceAccount.name }}
 {{- end }}

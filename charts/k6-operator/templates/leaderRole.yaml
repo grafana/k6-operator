@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "k6-operator.fullname" . }}-leader-election-role
+  name: {{ include "k6-operator.fullname" (dict "context" $ "suffix" "-leader-election-role") }}
   namespace: {{- include "k6-operator.namespace" . }}
   labels:
     app.kubernetes.io/component: controller
