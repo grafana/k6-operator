@@ -181,11 +181,19 @@ type Stage string
 
 // TestRunStatus defines the observed state of TestRun.
 type TestRunStatus struct {
-	Stage           Stage  `json:"stage,omitempty"`
-	TestRunID       string `json:"testRunId,omitempty"`
-	AggregationVars string `json:"aggregationVars,omitempty"`
+	// +listType=map
+	// +listMapKey=type
+	// +patchStrategy=merge
+	// +patchMergeKey=type
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	// +optional
+	Stage Stage `json:"stage,omitempty"`
+	// +optional
+	TestRunID string `json:"testRunId,omitempty"`
+	// +optional
+	AggregationVars string `json:"aggregationVars,omitempty"`
 }
 
 //+kubebuilder:object:root=true

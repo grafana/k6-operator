@@ -1,0 +1,36 @@
+version: "2"
+linters:
+  enable:
+    - kubeapilinter
+  settings:
+    custom:
+      kubeapilinter:
+        type: "module"
+        description: "Kube API Linter lints Kube like APIs based on API conventions"
+        settings:
+          linters:
+            # Staged rollout: the rules below currently report pre-existing
+            # violations in the v1alpha1 API types. They are disabled for now
+            # and will be enabled incrementally in follow-up changes once the
+            # existing types are brought into compliance.
+            disable:
+              - commentstart
+              - optionalorrequired
+              - optionalfields
+              - arrayofstruct
+              - ssatags
+              # Added by the newer kube-api-linter version; also report
+              # pre-existing violations in the v1alpha1 types, so keep them
+              # disabled for the staged rollout.
+              - nonpointerstructs
+              - defaults
+          lintersConfig: {}
+  exclusions:
+    rules:
+      # kube-api-linter only applies to the Kubernetes API type definitions.
+      - linters:
+          - kubeapilinter
+        path-except: 'api/'
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
