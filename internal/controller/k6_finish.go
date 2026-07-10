@@ -7,13 +7,14 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
+	"go.k6.io/k6/v2/cloudapi"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // FinishJobs checks if the runners pods have finished execution.
-func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (allFinished bool) {
+func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, cloudClient *cloudapi.Client) (allFinished bool) {
 	if len(k6.GetStatus().TestRunID) > 0 {
 		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}
@@ -57,7 +58,7 @@ func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *T
 		events := cloud.ErrorEvent(cloud.K6OperatorRunnerError).
 			WithDetail(msg).
 			WithAbort()
-		cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
+		cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
 	}
 
 	if finished < k6.GetSpec().Parallelism {

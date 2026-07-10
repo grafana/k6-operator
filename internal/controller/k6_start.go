@@ -11,6 +11,7 @@ import (
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
+	"go.k6.io/k6/v2/cloudapi"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,7 +30,7 @@ func isServiceReady(log logr.Logger, service *v1.Service) bool {
 }
 
 // StartJobs in the Ready phase using a curl container
-func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (res ctrl.Result, err error) {
+func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, cloudClient *cloudapi.Client) (res ctrl.Result, err error) {
 	// It may take some time to get Services up, so check in frequently
 	res = ctrl.Result{RequeueAfter: time.Second}
 
@@ -71,7 +72,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 					events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 						WithDetail(msg).
 						WithAbort()
-					cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
+					cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
 				}
 			}
 		}
@@ -103,7 +104,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 			events := cloud.ErrorEvent(cloud.SetupError).
 				WithDetail(fmt.Sprintf("setup function failed: %v", err)).
 				WithAbort()
-			cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
+			cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
 
 			return ctrl.Result{Requeue: false}, nil
 		}

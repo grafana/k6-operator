@@ -11,9 +11,6 @@ import (
 	null "gopkg.in/guregu/null.v3"
 )
 
-// TODO: refactor this!
-var client *cloudapi.Client
-
 type TestRun struct {
 	Name              string              `json:"name"`
 	ProjectID         int64               `json:"project_id,omitempty"`
@@ -46,7 +43,7 @@ func NewClient(logger logr.Logger, token, host string) *cloudapi.Client {
 	return cloudapi.NewClient(logrusLogger, token, host, "1.2.3", time.Duration(time.Minute))
 }
 
-func CreateTestRun(opts InspectOutput, instances int32, host, token string, log logr.Logger) (*cloudapi.CreateTestRunResponse, error) {
+func CreateTestRun(opts InspectOutput, instances int32, client *cloudapi.Client, log logr.Logger) (*cloudapi.CreateTestRunResponse, error) {
 	cloudConfig := cloudapi.NewConfig()
 
 	if opts.ProjectID() > 0 {
@@ -60,14 +57,6 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 		}
 	}
 
-	if len(host) == 0 {
-		host = cloudConfig.Host.String
-	}
-
-	if client == nil {
-		client = NewClient(log, token, host)
-	}
-
 	tr := TestRun{
 		Name:              opts.TestName(),
 		ProjectID:         cloudConfig.ProjectID.Int64,
@@ -77,13 +66,13 @@ func CreateTestRun(opts InspectOutput, instances int32, host, token string, log 
 		ProcessThresholds: true,
 		Instances:         instances,
 	}
-	return createTestRun(client, host, &tr)
+	return createTestRun(client, &tr)
 }
 
 // We cannot use cloudapi.TestRun struct and cloudapi.Client.CreateTestRun call because they're not aware of
 // process_thresholds argument; so let's use custom struct and function instead
-func createTestRun(client *cloudapi.Client, host string, testRun *TestRun) (*cloudapi.CreateTestRunResponse, error) {
-	url := host + "/v1/tests"
+func createTestRun(client *cloudapi.Client, testRun *TestRun) (*cloudapi.CreateTestRunResponse, error) {
+	url := client.BaseURL() + "/tests"
 	req, err := client.NewRequest("POST", url, testRun)
 	if err != nil {
 		return nil, err
@@ -103,13 +92,7 @@ func createTestRun(client *cloudapi.Client, host string, testRun *TestRun) (*clo
 }
 
 func FinishTestRun(c *cloudapi.Client, refID string) error {
-	if c != nil {
-		return c.TestFinished(refID, cloudapi.ThresholdResult(
-			map[string]map[string]bool{},
-		), false, cloudapi.RunStatusFinished)
-	}
-
-	return client.TestFinished(refID, cloudapi.ThresholdResult(
+	return c.TestFinished(refID, cloudapi.ThresholdResult(
 		map[string]map[string]bool{},
 	), false, cloudapi.RunStatusFinished)
 }

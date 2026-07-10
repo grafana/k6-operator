@@ -9,6 +9,7 @@ import (
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
+	"go.k6.io/k6/v2/cloudapi"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -17,7 +18,7 @@ import (
 )
 
 // CreateJobs creates jobs that will spawn k6 pods for distributed test
-func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (ctrl.Result, error) {
+func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, cloudClient *cloudapi.Client) (ctrl.Result, error) {
 	// needed for cloud tests
 	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
 
@@ -43,7 +44,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *T
 			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 				WithDetail(fmt.Sprintf("Failed to create runner jobs: %v", err)).
 				WithAbort()
-			cloud.SendTestRunEvents(r.k6CloudClient, k6.TestRunID(), log, events)
+			cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
 		}
 
 		return res, err
