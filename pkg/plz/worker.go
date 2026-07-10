@@ -3,6 +3,8 @@ package plz
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -171,25 +173,26 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 		tr.Spec.Runner.VolumeMounts[0],
 	)
 
-	envVars := append(trData.EnvVars(), corev1.EnvVar{
-		Name:  "K6_CLOUD_HOST",
-		Value: cloud.K6CloudHost(),
-	})
-
-	envVars = append(envVars, cloud.AggregationEnvVars(&trData.RuntimeConfig)...)
-
-	envVars = append(envVars, trData.SecretsEnvVars()...)
-
 	tr.Spec.Runner.Image = trData.RunnerImage
 	tr.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		initContainer,
 	}
-	tr.Spec.Runner.Env = envVars
+	tr.Spec.Runner.Env = trData.RunnerEnvVars
 	tr.Spec.Parallelism = int32(trData.InstanceCount)
-	tr.Spec.Arguments = fmt.Sprintf(`--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
-		w.plz.Name,
-		trData.TestRunID())
 	tr.Spec.TestRunID = trData.TestRunID()
+
+	// Building the argument list to k6.
+	args := []string{
+		"--out cloud",
+		trData.TagArgs,
+		"--no-thresholds",
+		fmt.Sprintf(`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`, w.plz.Name, trData.TestRunID()),
+		trData.EnvArgs,
+	}
+	args = append(args, fmt.Sprintf("--include-system-env-vars=%t", trData.IncludeSystemEnvVars))
+
+	args = slices.DeleteFunc(args, func(s string) bool { return s == "" })
+	tr.Spec.Arguments = strings.Join(args, " ")
 }
 
 // handle creates a new PLZ TestRun from the given test run id. The context is
@@ -213,6 +216,11 @@ func (w *PLZWorker) handle(ctx context.Context, testRunId string) {
 	trData, err := cloud.GetTestRunData(w.poller.Client, testRunId)
 	if err != nil {
 		w.logger.Error(err, fmt.Sprintf("Failed to retrieve test run data for `%s`", testRunId))
+		return
+	}
+	if err = trData.Preprocess(); err != nil {
+		w.logger.Error(err, fmt.Sprintf("Failed to preprocess test run data for `%s`", testRunId))
+		// TODO: it'd be nice to fail fast with explicit error here, instead of this ~ waiting for Timeout.
 		return
 	}
 	w.complete(tr, trData)

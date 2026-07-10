@@ -98,10 +98,6 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 							volumeMount,
 						),
 					},
-					Env: append([]corev1.EnvVar{{
-						Name:  "K6_CLOUD_HOST",
-						Value: mainIngest,
-					}}, cloud.AggregationEnvVars(&cloudapi.Config{})...),
 					EnvFrom: []corev1.EnvFromSource{},
 				},
 				Script: v1alpha1.K6Script{
@@ -109,7 +105,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				},
 				Parallelism: int32(0),
 				Separate:    false,
-				Arguments:   "--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization=\"Token $(K6_CLOUD_TOKEN)\"",
+				Arguments:   `--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization="Token $(K6_CLOUD_TOKEN)" --include-system-env-vars=false`,
 				Cleanup:     v1alpha1.Cleanup("post"),
 
 				TestRunID: "0",
@@ -132,6 +128,9 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		someEnvVars     = map[string]string{
 			"ENV": "VALUE",
 			"foo": "bar",
+		}
+		someLZDistribution = cloud.LZDistribution{
+			"some-label": cloud.Distribution{LoadZone: "some-zone", Percent: 100},
 		}
 		// podTemplate test values
 		someAllowPrivEscalation       = false
@@ -167,7 +166,19 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 
 		// TestRuns expected for secrets cases
 		secretsWithTokenTestRun = defaultTestRun //nolint:ineffassign
+
+		// TestRun expected when include_system_env_vars is true
+		includeSysEnvVarsTestRun = defaultTestRun //nolint:ineffassign
 	)
+
+	cloudExecEnvArgs := ` -e K6_CLOUDRUN_DISTRIBUTION="${K6_CLOUD_OPERATOR_ENV_0}"` +
+		` -e K6_CLOUDRUN_LOAD_ZONE="${K6_CLOUD_OPERATOR_ENV_1}"` +
+		` -e K6_CLOUDRUN_TEST_RUN_ID="${K6_CLOUD_OPERATOR_ENV_2}"`
+	cloudEnvVarsEnvArgs := ` -e ENV="${K6_CLOUD_OPERATOR_ENV_0}"` +
+		` -e K6_CLOUDRUN_DISTRIBUTION="${K6_CLOUD_OPERATOR_ENV_1}"` +
+		` -e K6_CLOUDRUN_LOAD_ZONE="${K6_CLOUD_OPERATOR_ENV_2}"` +
+		` -e K6_CLOUDRUN_TEST_RUN_ID="${K6_CLOUD_OPERATOR_ENV_3}"` +
+		` -e foo="${K6_CLOUD_OPERATOR_ENV_4}"`
 
 	// populate TestRuns for different test cases
 
@@ -188,6 +199,15 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		"test_run_id=0",
 		fmt.Sprintf("test_run_id=%d", someTestRunID),
 		1)
+	cloudFieldsTestRun.Spec.Arguments = strings.Replace(cloudFieldsTestRun.Spec.Arguments,
+		`--out cloud --no-thresholds`,
+		`--out cloud --tag load_zone=some-zone --no-thresholds`,
+		1)
+	// env args are inserted before the --include-system-env-vars flag
+	cloudFieldsTestRun.Spec.Arguments = strings.Replace(cloudFieldsTestRun.Spec.Arguments,
+		" --include-system-env-vars",
+		cloudExecEnvArgs+" --include-system-env-vars",
+		1)
 	cloudFieldsTestRun.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		containers.NewS3InitContainer(
 			someArchiveURL,
@@ -197,18 +217,36 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	}
 	cloudFieldsTestRun.Spec.Runner.Image = someRunnerImage
 	cloudFieldsTestRun.Spec.Parallelism = int32(someInstances)
+	cloudFieldsTestRun.Spec.Runner.Env = append([]corev1.EnvVar{}, cloud.AggregationEnvVars(&cloudapi.Config{})...)
+	cloudFieldsTestRun.Spec.Runner.Env = append(
+		cloudFieldsTestRun.Spec.Runner.Env,
+		corev1.EnvVar{Name: "K6_CLOUD_HOST", Value: mainIngest},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "some-label"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "some-zone"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "6543"},
+	)
 
 	cloudEnvVarsTestRun = cloudFieldsTestRun // build up on top of cloud fields case
-	cloudEnvVarsTestRun.Spec.Runner.Env = append([]corev1.EnvVar{
-		{
-			Name:  "ENV",
-			Value: "VALUE",
-		},
-		{
-			Name:  "foo",
-			Value: "bar",
-		},
-	}, defaultTestRun.Spec.Runner.Env...)
+	cloudEnvVarsTestRun.Spec.Arguments = strings.Replace(cloudEnvVarsTestRun.Spec.Arguments,
+		cloudExecEnvArgs,
+		cloudEnvVarsEnvArgs,
+		1)
+	cloudEnvVarsTestRun.Spec.Runner.Env = []corev1.EnvVar{
+		{Name: "K6_USER_AGENT", Value: "Grafana Cloud k6"},
+	}
+	cloudEnvVarsTestRun.Spec.Runner.Env = append(
+		cloudEnvVarsTestRun.Spec.Runner.Env,
+		cloud.AggregationEnvVars(&cloudapi.Config{})...,
+	)
+	cloudEnvVarsTestRun.Spec.Runner.Env = append(
+		cloudEnvVarsTestRun.Spec.Runner.Env,
+		corev1.EnvVar{Name: "K6_CLOUD_HOST", Value: mainIngest},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "VALUE"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "some-label"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "some-zone"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_3", Value: "6543"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_4", Value: "bar"},
+	)
 
 	podTemplateTolerationsTestRun = requiredFieldsTestRun
 	podTemplateTolerationsTestRun.Spec.Runner.Tolerations = someTolerations
@@ -230,6 +268,12 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	podTemplateAllTestRun.Spec.Runner.SecurityContext = somePodSecCtx
 	podTemplateAllTestRun.Spec.Starter.SecurityContext = somePodSecCtx
 
+	includeSysEnvVarsTestRun = cloudFieldsTestRun
+	includeSysEnvVarsTestRun.Spec.Arguments = strings.Replace(cloudFieldsTestRun.Spec.Arguments,
+		"--include-system-env-vars=false",
+		"--include-system-env-vars=true",
+		1)
+
 	someSecretsConfig := &cloud.SecretsConfig{
 		Endpoint:     "https://api.k6.io/provisioning/v1/test_runs/6543/decrypt_secret?name={key}",
 		ResponsePath: "plaintext",
@@ -237,12 +281,17 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	someTestRunToken := "abc123token"
 
 	secretsWithTokenTestRun = cloudFieldsTestRun
+	secretsWithTokenTestRun.Spec.Runner.Env = append([]corev1.EnvVar{}, cloud.AggregationEnvVars(&cloudapi.Config{})...)
 	secretsWithTokenTestRun.Spec.Runner.Env = append(
-		append([]corev1.EnvVar{}, cloudFieldsTestRun.Spec.Runner.Env...),
+		secretsWithTokenTestRun.Spec.Runner.Env,
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE", Value: "url"},
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_URL_TEMPLATE", Value: someSecretsConfig.Endpoint},
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_RESPONSE_PATH", Value: someSecretsConfig.ResponsePath},
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION", Value: "Bearer " + someTestRunToken},
+		corev1.EnvVar{Name: "K6_CLOUD_HOST", Value: mainIngest},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "some-label"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "some-zone"},
+		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "6543"},
 	)
 
 	testCases := []struct {
@@ -309,6 +358,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 					InstanceCount: someInstances,
 					ArchiveURL:    someArchiveURL,
 				},
+				LZDistribution: someLZDistribution,
 			},
 			ingestUrl: mainIngest,
 			expected:  &cloudFieldsTestRun,
@@ -330,7 +380,11 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 					InstanceCount: someInstances,
 					ArchiveURL:    someArchiveURL,
 					Environment:   someEnvVars,
+					CLIArgs: cloud.CLIArgs{
+						UserAgent: "Grafana Cloud k6",
+					},
 				},
+				LZDistribution: someLZDistribution,
 			},
 			ingestUrl: mainIngest,
 			expected:  &cloudEnvVarsTestRun,
@@ -424,6 +478,31 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			expected:  &podTemplateAllTestRun,
 		},
 		{
+			name: "include_system_env_vars is set to true",
+			plz: &v1alpha1.PrivateLoadZone{
+				Spec: v1alpha1.PrivateLoadZoneSpec{
+					Token: someToken,
+					Resources: corev1.ResourceRequirements{
+						Limits: resourceLimits,
+					},
+				},
+			},
+			cloudData: &cloud.TestRunData{
+				TestRunId: someTestRunID,
+				LZConfig: cloud.LZConfig{
+					RunnerImage:   someRunnerImage,
+					InstanceCount: someInstances,
+					ArchiveURL:    someArchiveURL,
+					CLIArgs: cloud.CLIArgs{
+						IncludeSystemEnvVars: true,
+					},
+				},
+				LZDistribution: someLZDistribution,
+			},
+			ingestUrl: mainIngest,
+			expected:  &includeSysEnvVarsTestRun,
+		},
+		{
 			name: "secrets config with token",
 			plz: &v1alpha1.PrivateLoadZone{
 				Spec: v1alpha1.PrivateLoadZoneSpec{
@@ -440,8 +519,9 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 					InstanceCount: someInstances,
 					ArchiveURL:    someArchiveURL,
 				},
-				SecretsToken:  someTestRunToken,
-				SecretsConfig: someSecretsConfig,
+				SecretsToken:   someTestRunToken,
+				SecretsConfig:  someSecretsConfig,
+				LZDistribution: someLZDistribution,
 			},
 			ingestUrl: mainIngest,
 			expected:  &secretsWithTokenTestRun,
@@ -457,6 +537,13 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			worker := NewPLZWorker(testCase.plz, "token", c, logr.Logger{})
 
 			tr := worker.template.Create()
+
+			// Preprocess must succeed only when a single-LZ distribution is provided.
+			err := testCase.cloudData.Preprocess()
+			if expectingError := (len(testCase.cloudData.LZDistribution) != 1); expectingError && (err == nil) {
+				t.Errorf("Preprocess() error = %v, expecting error: %v", err, expectingError)
+			}
+
 			worker.complete(tr, testCase.cloudData)
 
 			if diff := deep.Equal(tr, testCase.expected); diff != nil {

@@ -77,6 +77,11 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 		command = append(command, "--no-setup", "--no-teardown", "--linger")
 	}
 
+	// For PLZ tests, we add a reserved env var containing instance ID.
+	if len(k6.TestRunID()) > 0 && v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+		command = append(command, "-e", fmt.Sprintf(`%s=%d`, cloud.IIDCloudExecVar, index))
+	}
+
 	command = script.UpdateCommand(command)
 
 	var (

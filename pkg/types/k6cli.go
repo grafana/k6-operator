@@ -2,8 +2,14 @@ package types
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
+
+// Initializer relies on `sh -c` script so we can't pass Kubernetes-style `$(NAME)`
+// there. For shell, those vars should be substituted into `${NAME}` form. This
+// regexp helps do that.
+var kubeEnvRefRegexp = regexp.MustCompile(`\$\(([a-zA-Z_][a-zA-Z0-9_]*)\)`)
 
 // CLI is an internal type to support k6 invocation in initialization stage.
 // Not all k6 commands allow the same set of arguments so CLI is an object
@@ -48,10 +54,26 @@ func ParseCLI(arguments string) (*CLI, error) {
 				// `k6 archive` ignores this argument but if it contains an env var
 				// for token (cloud logs for PLZ test runs), it will break the shell;
 				// so omit it.
-				break
+				i = end
+				continue
+			}
+
+			// Unsupported by `k6 archive`.
+			if strings.HasPrefix(args[i], "--block-hostnames") ||
+				strings.HasPrefix(args[i], "--blacklist-ip") ||
+				strings.HasPrefix(args[i], "--user-agent") {
+				i = end
+				continue
 			}
 
 			switch args[i] {
+			case "-e", "--env":
+				// substitute $(NAME) -> ${NAME} for safe initializer command invocation
+				fragment := kubeEnvRefRegexp.ReplaceAllString(strings.Join(args[i:end], " "), `"${$1}"`)
+				if len(cli.ArchiveArgs) > 0 {
+					cli.ArchiveArgs += " "
+				}
+				cli.ArchiveArgs += fragment
 			case "-o", "--out":
 				for j := 0; j < end; j++ {
 					if args[j] == "cloud" {

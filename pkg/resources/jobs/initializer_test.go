@@ -222,7 +222,7 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{`-e FOO="bar"`, `-e OTHER="42"`},
+			expectedInCmd:    []string{`-e FOO="${FOO}"`, `-e OTHER="${OTHER}"`},
 			expectedInEnvVar: []string{"FOO", "OTHER"},
 		},
 		{
@@ -234,7 +234,7 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{`-e FOO="bar"`},
+			expectedInCmd:    []string{`-e FOO="${FOO}"`},
 			expectedInEnvVar: []string{"FOO"},
 		},
 		{
@@ -251,7 +251,7 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{`-e TEST_TAG="2026-03-31 TS Dev Smoke 212"`},
+			expectedInCmd:    []string{`-e TEST_TAG="${TEST_TAG}"`},
 			expectedInEnvVar: []string{"TEST_TAG"},
 		},
 		{
@@ -263,7 +263,7 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{`-e THRESHOLDS="p(95),avg"`},
+			expectedInCmd:    []string{`-e THRESHOLDS="${THRESHOLDS}"`},
 			expectedInEnvVar: []string{"THRESHOLDS"},
 		},
 	}
