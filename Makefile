@@ -225,7 +225,7 @@ KUBECTL ?= kubectl
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
-GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
+GOLANGCI_LINT = $(LOCALBIN)/golangci-lint-kube-api-linter
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.5.0
@@ -255,10 +255,15 @@ $(ENVTEST): $(LOCALBIN)
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT) ## Build golangci-lint with kube-api-linter plugin.
 # Rebuild whenever .custom-gcl.yml changes (e.g. plugin or version bumps) so a
-# stale binary is never reused with an outdated plugin set.
+# stale binary is never reused with an outdated plugin set. The bootstrap
+# golangci-lint is installed via go-install-tool, then `golangci-lint custom`
+# builds the plugin-enabled binary. Per the kube-api-linter docs the custom
+# binary is named distinctly (golangci-lint-kube-api-linter) so it never
+# overwrites the running bootstrap binary (which fails on Linux with
+# "text file busy").
 $(GOLANGCI_LINT): $(LOCALBIN) .custom-gcl.yml
-	@echo "Building golangci-lint with custom plugins..."
-	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	@echo "Building golangci-lint with kube-api-linter plugin..."
+	$(call go-install-tool,$(LOCALBIN)/golangci-lint,github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 	$(LOCALBIN)/golangci-lint custom
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
