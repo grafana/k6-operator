@@ -19,6 +19,11 @@ linters:
               - optionalfields
               - arrayofstruct
               - ssatags
+              # Added by the newer kube-api-linter version; also report
+              # pre-existing violations in the v1alpha1 types, so keep them
+              # disabled for the staged rollout.
+              - nonpointerstructs
+              - defaults
           lintersConfig: {}
   exclusions:
     rules:
