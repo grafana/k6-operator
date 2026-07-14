@@ -99,6 +99,13 @@ tests:
       - "pkg/cloud/"
     requires_env: [CLOUD_TOKEN, PROJECT_ID]
 
+  - name: cloud-stream
+    source_patterns:
+      - "pkg/cloud/"
+      - "pkg/resources/jobs/runner.go"
+      - "internal/controller/k6_initialize.go"
+    requires_env: [CLOUD_TOKEN, PROJECT_ID]
+
   - name: initializer-disabled
     source_patterns:
       - "internal/controller/k6_initialize.go"

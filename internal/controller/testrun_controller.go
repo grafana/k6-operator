@@ -29,7 +29,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
-	k6types "github.com/grafana/k6-operator/pkg/types"
 	batchv1 "k8s.io/api/batch/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -108,7 +107,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			return ctrl.Result{}, err
 		}
 		if !found {
-			log.Info(fmt.Sprintf("Token `%s` is not found yet.", k6.GetSpec().Token))
+			log.Info(fmt.Sprintf("Token `%s` is not found yet.", k6.GetSpec().GetToken()))
 			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
 	}
@@ -130,7 +129,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 	case "":
 		log.Info("Initialize test")
 
-		warnings, err := k6.GetSpec().Validate()
+		cli, warnings, err := k6.GetSpec().Validate()
 		for _, w := range warnings {
 			log.Info(w)
 			r.Recorder.Event(k6, corev1.EventTypeWarning, "DeprecatedField", w)
@@ -142,6 +141,9 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			_, err := r.UpdateStatus(ctx, k6, log)
 			return ctrl.Result{}, err
 		}
+		if cli.HasCloudOut {
+			log.Info("WARNING: `--out cloud` is deprecated; use `spec.cloud.stream` instead.")
+		}
 
 		v1alpha1.Initialize(k6)
 
@@ -149,10 +151,10 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 			return ctrl.Result{}, err
 		}
 
-		// Skip initializer if disabled, unless --out cloud is present
-		// (cloud output tests require initializer to run k6 inspect)
-		cli, _ := k6types.ParseCLI(k6.GetSpec().Arguments)
-		if !cli.HasCloudOut && k6.IsInitializerDisabled() {
+		// Skip initializer if disabled, unless it's a cloud test.
+		// (cloud output tests require initializer to run k6 inspect,
+		// and PLZ tests require validation in general case.)
+		if !k6.GetSpec().IsCloudTest() && k6.IsInitializerDisabled() {
 			log.Info("Initializer is disabled, skipping initialization step")
 
 			log.Info("Changing stage of TestRun status to initialized")
@@ -191,7 +193,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 						events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 							WithDetail(msg).
 							WithAbort()
-						cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+						cloud.SendTestRunEvents(cloudClient, k6.GetTestRunID(), log, events)
 					}
 				}
 			}
@@ -457,12 +459,12 @@ func (r *TestRunReconciler) UpdateStatus(ctx context.Context, k6 *v1alpha1.TestR
 // cause a forced stop. It is meant to be used only by PLZ test runs.
 func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRun, cloudClient *cloudapi.Client, log logr.Logger) bool {
 	// sanity check
-	if len(k6.TestRunID()) == 0 {
+	if len(k6.GetTestRunID()) == 0 {
 		// log.Error(errors.New("empty test run ID"), "Trying to get state of test run with empty test run ID")
 		return false
 	}
 
-	status, err := cloud.GetTestRunState(cloudClient, k6.TestRunID(), log)
+	status, err := cloud.GetTestRunState(cloudClient, k6.GetTestRunID(), log)
 	if err != nil {
 		return false
 	}

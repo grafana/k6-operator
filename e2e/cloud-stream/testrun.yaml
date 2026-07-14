@@ -1,0 +1,18 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: k6-sample
+  namespace: k6-tests
+spec:
+  parallelism: 1
+  script:
+    configMap:
+      name: "test"
+      file: "test.js"
+  cloud:
+    stream: true
+  runner:
+    env:
+      - name: BASE_URL
+        value: https://pizza.grafana.fun
