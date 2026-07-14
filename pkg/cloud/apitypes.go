@@ -12,8 +12,8 @@ import (
 // GCk6 can set only a limited number of env vars to k6 process:
 // these are known and whitelisted with this "const" map.
 var reservedGCk6EnvVars = map[string]struct{}{
+	"K6_CLOUD_TOKEN": struct{}{},
 	// Future candidates:
-	// "K6_CLOUD_TOKEN": struct{}{},
 	// K6_LOG_OUTPUT, K6_TRACES_OUTPUT, K6_BROWSER_ENABLED_MSG, K6_CLOUD_TRACES_ENABLED, K6_BROWSER_SCREENSHOTS_OUTPUT
 }
 

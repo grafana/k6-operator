@@ -20,26 +20,26 @@ import (
 // CreateJobs creates jobs that will spawn k6 pods for distributed test
 func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, cloudClient *cloudapi.Client) (ctrl.Result, error) {
 	// needed for cloud tests
-	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
+	sti := cloud.NewSecretTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
 
 	if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) && v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunCreated) {
 		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 
-		err := tokenInfo.Load(ctx, log, r.Client)
+		err := sti.Load(ctx, log, r.Client)
 		if err != nil {
 			// An error here means a very likely mis-configuration of the token.
 			// TODO: update status to error to let a user know quicker
 			log.Error(err, "A problem while getting token.")
 			return ctrl.Result{}, nil
 		}
-		if !tokenInfo.Ready {
+		if !sti.Ready {
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 	}
 
 	log.Info("Creating test jobs")
 
-	if res, recheck, err := createJobSpecs(ctx, log, k6, r, tokenInfo); err != nil {
+	if res, recheck, err := createJobSpecs(ctx, log, k6, r, sti); err != nil {
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
 			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 				WithDetail(fmt.Sprintf("Failed to create runner jobs: %v", err)).
@@ -63,7 +63,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *T
 	return ctrl.Result{}, nil
 }
 
-func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, tokenInfo *cloud.TokenInfo) (ctrl.Result, bool, error) {
+func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, sti *cloud.SecretTokenInfo) (ctrl.Result, bool, error) {
 	found := &batchv1.Job{}
 	namespacedName := types.NamespacedName{
 		Name:      fmt.Sprintf("%s-1", k6.NamespacedName().Name),
@@ -90,14 +90,14 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 	}
 
 	for i := 1; i <= int(k6.GetSpec().Parallelism); i++ {
-		if err := launchTest(ctx, k6, i, log, r, tokenInfo); err != nil {
+		if err := launchTest(ctx, k6, i, log, r, sti); err != nil {
 			return ctrl.Result{}, false, err
 		}
 	}
 	return ctrl.Result{}, false, nil
 }
 
-func launchTest(ctx context.Context, k6 *v1alpha1.TestRun, index int, log logr.Logger, r *TestRunReconciler, tokenInfo *cloud.TokenInfo) error {
+func launchTest(ctx context.Context, k6 *v1alpha1.TestRun, index int, log logr.Logger, r *TestRunReconciler, sti *cloud.SecretTokenInfo) error {
 	var job *batchv1.Job
 	var service *corev1.Service
 	var err error
@@ -105,7 +105,7 @@ func launchTest(ctx context.Context, k6 *v1alpha1.TestRun, index int, log logr.L
 	msg := fmt.Sprintf("Launching k6 test #%d", index)
 	log.Info(msg)
 
-	if job, err = jobs.NewRunnerJob(k6, index, tokenInfo); err != nil {
+	if job, err = jobs.NewRunnerJob(k6, index, sti); err != nil {
 		log.Error(err, "Failed to generate k6 test job")
 		return err
 	}
