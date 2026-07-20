@@ -48,11 +48,11 @@ func StopJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Tes
 		log.Error(err, "Failed to set controller reference for the stop job")
 	}
 
-	created, err := createJobIfNotExists(ctx, r.Client, stopJob)
-	if err != nil {
-		log.Error(err, "Failed to launch k6 test stop job.")
-		return res, nil
-	}
+created, err := createJobIfNotExists(ctx, r.Client, stopJob)
+if err != nil {
+	log.Error(err, "Failed to launch k6 test stop job.")
+	return res, err
+}
 
 	if created {
 		log.Info("Created stop job")
