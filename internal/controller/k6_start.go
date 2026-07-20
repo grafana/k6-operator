@@ -118,14 +118,17 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 		log.Error(err, "Failed to set controller reference for the start job")
 	}
 
-	// TODO: add a check for existence of starter job
-
-	if err = r.Create(ctx, starter); err != nil {
+	created, err := createJobIfNotExists(ctx, r.Client, starter)
+	if err != nil {
 		log.Error(err, "Failed to launch k6 test starter")
 		return res, nil
 	}
 
-	log.Info("Created starter job")
+	if created {
+		log.Info("Created starter job")
+	} else {
+		log.Info("Starter job already exists")
+	}
 
 	log.Info("Changing stage of TestRun status to started")
 	k6.GetStatus().Stage = "started"
