@@ -27,7 +27,7 @@ func isJobRunning(log logr.Logger, service *v1.Service) bool {
 	// Response has been received so assume the job is running.
 
 	if resp.StatusCode >= 400 {
-		log.Error(err, fmt.Sprintf("status from from runner job %v is %d", service.Name, resp.StatusCode))
+		log.Error(nil, fmt.Sprintf("status from runner job %v is %d", service.Name, resp.StatusCode))
 		return true
 	}
 
