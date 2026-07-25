@@ -85,21 +85,24 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	command = script.UpdateCommand(command)
 
 	var (
-		zero32        int32 = 0
-		schedulerName       = corev1.DefaultSchedulerName
+		zero32                       int32 = 0
+		image                              = "grafana/k6:latest"
+		runnerAnnotations                  = make(map[string]string)
+		runnerLabels                       = newLabels(k6.NamespacedName().Name)
+		serviceAccountName                 = "default"
+		automountServiceAccountToken       = true
+		ports                              = append([]corev1.ContainerPort{{ContainerPort: 6565}}, k6.GetSpec().Ports...)
+		schedulerName                      = corev1.DefaultSchedulerName
 	)
 
-	image := "grafana/k6:latest"
 	if k6.GetSpec().Runner.Image != "" {
 		image = k6.GetSpec().Runner.Image
 	}
 
-	runnerAnnotations := make(map[string]string)
 	if k6.GetSpec().Runner.Metadata.Annotations != nil {
 		runnerAnnotations = k6.GetSpec().Runner.Metadata.Annotations
 	}
 
-	runnerLabels := newLabels(k6.NamespacedName().Name)
 	runnerLabels["runner"] = "true"
 	if k6.GetSpec().Runner.Metadata.Labels != nil {
 		for k, v := range k6.GetSpec().Runner.Metadata.Labels { // Order not specified
@@ -109,18 +112,13 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 		}
 	}
 
-	serviceAccountName := "default"
 	if k6.GetSpec().Runner.ServiceAccountName != "" {
 		serviceAccountName = k6.GetSpec().Runner.ServiceAccountName
 	}
 
-	automountServiceAccountToken := true
 	if k6.GetSpec().Runner.AutomountServiceAccountToken != "" {
 		automountServiceAccountToken, _ = strconv.ParseBool(k6.GetSpec().Runner.AutomountServiceAccountToken)
 	}
-
-	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
-	ports = append(ports, k6.GetSpec().Ports...)
 
 	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
 
