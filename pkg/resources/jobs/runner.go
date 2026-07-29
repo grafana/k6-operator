@@ -17,39 +17,39 @@ import (
 
 // NewRunnerJob creates a new k6 job from a CRD
 // secretName is the name of the Secret with Cloud token, which must be in the same namespace.
-func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (*batchv1.Job, error) {
-	name := fmt.Sprintf("%s-%d", k6.NamespacedName().Name, index)
+func NewRunnerJob(tr *v1alpha1.TestRun, index int, sti *cloud.SecretTokenInfo) (*batchv1.Job, error) {
+	name := fmt.Sprintf("%s-%d", tr.NamespacedName().Name, index)
 	postCommand := []string{"k6", "run"}
 
-	command, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, postCommand)
+	command, istioEnabled := newIstioCommand(tr.GetSpec().Scuttle.Enabled, postCommand)
 
 	quiet := true
-	if k6.GetSpec().Quiet != "" {
-		quiet, _ = strconv.ParseBool(k6.GetSpec().Quiet)
+	if tr.GetSpec().Quiet != "" {
+		quiet, _ = strconv.ParseBool(tr.GetSpec().Quiet)
 	}
 
 	if quiet {
 		command = append(command, "--quiet")
 	}
 
-	if k6.GetSpec().Parallelism > 1 {
+	if tr.GetSpec().Parallelism > 1 {
 		var args []string
 		var err error
 
-		if args, err = segmentation.NewCommandFragments(index, int(k6.GetSpec().Parallelism)); err != nil {
+		if args, err = segmentation.NewCommandFragments(index, int(tr.GetSpec().Parallelism)); err != nil {
 			return nil, err
 
 		}
 		command = append(command, args...)
 	}
 
-	script, err := k6.GetSpec().ParseScript()
+	script, err := tr.GetSpec().ParseScript()
 	if err != nil {
 		return nil, err
 	}
 
-	if k6.GetSpec().Arguments != "" {
-		args := strings.Split(k6.GetSpec().Arguments, " ")
+	if tr.GetSpec().Arguments != "" {
+		args := strings.Split(tr.GetSpec().Arguments, " ")
 		command = append(command, args...)
 	}
 
@@ -59,8 +59,8 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 		"--address=0.0.0.0:6565")
 
 	paused := true
-	if k6.GetSpec().Paused != "" {
-		paused, _ = strconv.ParseBool(k6.GetSpec().Paused)
+	if tr.GetSpec().Paused != "" {
+		paused, _ = strconv.ParseBool(tr.GetSpec().Paused)
 	}
 
 	if paused {
@@ -71,14 +71,14 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	command = append(command, "--tag", fmt.Sprintf("instance_id=%d", index))
 
 	// Add a testrun name tag: in case metrics are stored, they need to be distinguished by test run name
-	command = append(command, "--tag", fmt.Sprintf("testrun_name=%s", k6.NamespacedName().Name))
+	command = append(command, "--tag", fmt.Sprintf("testrun_name=%s", tr.NamespacedName().Name))
 
-	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+	if v1alpha1.IsTrue(tr, v1alpha1.CloudPLZTestRun) {
 		command = append(command, "--no-setup", "--no-teardown", "--linger")
 	}
 
 	// For PLZ tests, we add a reserved env var containing instance ID.
-	if len(k6.TestRunID()) > 0 && v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+	if len(tr.TestRunID()) > 0 && v1alpha1.IsTrue(tr, v1alpha1.CloudPLZTestRun) {
 		command = append(command, "-e", fmt.Sprintf(`%s=%d`, cloud.IIDCloudExecVar, index))
 	}
 
@@ -90,19 +90,19 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	)
 
 	image := "grafana/k6:latest"
-	if k6.GetSpec().Runner.Image != "" {
-		image = k6.GetSpec().Runner.Image
+	if tr.GetSpec().Runner.Image != "" {
+		image = tr.GetSpec().Runner.Image
 	}
 
 	runnerAnnotations := make(map[string]string)
-	if k6.GetSpec().Runner.Metadata.Annotations != nil {
-		runnerAnnotations = k6.GetSpec().Runner.Metadata.Annotations
+	if tr.GetSpec().Runner.Metadata.Annotations != nil {
+		runnerAnnotations = tr.GetSpec().Runner.Metadata.Annotations
 	}
 
-	runnerLabels := newLabels(k6.NamespacedName().Name)
+	runnerLabels := newLabels(tr.NamespacedName().Name)
 	runnerLabels["runner"] = "true"
-	if k6.GetSpec().Runner.Metadata.Labels != nil {
-		for k, v := range k6.GetSpec().Runner.Metadata.Labels { // Order not specified
+	if tr.GetSpec().Runner.Metadata.Labels != nil {
+		for k, v := range tr.GetSpec().Runner.Metadata.Labels { // Order not specified
 			if _, ok := runnerLabels[k]; !ok {
 				runnerLabels[k] = v
 			}
@@ -110,69 +110,42 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 	}
 
 	serviceAccountName := "default"
-	if k6.GetSpec().Runner.ServiceAccountName != "" {
-		serviceAccountName = k6.GetSpec().Runner.ServiceAccountName
+	if tr.GetSpec().Runner.ServiceAccountName != "" {
+		serviceAccountName = tr.GetSpec().Runner.ServiceAccountName
 	}
 
 	automountServiceAccountToken := true
-	if k6.GetSpec().Runner.AutomountServiceAccountToken != "" {
-		automountServiceAccountToken, _ = strconv.ParseBool(k6.GetSpec().Runner.AutomountServiceAccountToken)
+	if tr.GetSpec().Runner.AutomountServiceAccountToken != "" {
+		automountServiceAccountToken, _ = strconv.ParseBool(tr.GetSpec().Runner.AutomountServiceAccountToken)
 	}
 
 	ports := []corev1.ContainerPort{{ContainerPort: 6565}}
-	ports = append(ports, k6.GetSpec().Ports...)
+	ports = append(ports, tr.GetSpec().Ports...)
 
-	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
+	env := newIstioEnvVar(tr.GetSpec().Scuttle, istioEnabled)
 
-	// this is a cloud test run: either cloud output or PLZ
-	if len(k6.TestRunID()) > 0 {
-		// cloud output case
-		tokenVar := corev1.EnvVar{
-			Name:  "K6_CLOUD_TOKEN",
-			Value: tokenInfo.Value(),
-		}
-
-		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
-			tokenVar = corev1.EnvVar{
-				Name: "K6_CLOUD_TOKEN",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: tokenInfo.SecretName()},
-						Key:                  "token",
-					},
-				},
-			}
-		} else {
-			// cloud output case
-			aggregationVars, err := cloud.DecodeAggregationConfig(k6.GetStatus().AggregationVars)
-			if err != nil {
-				return nil, err
-			}
-			env = append(env, aggregationVars...)
-		}
-
-		env = append(env, corev1.EnvVar{
-			Name:  "K6_CLOUD_PUSH_REF_ID",
-			Value: k6.TestRunID(),
-		}, tokenVar)
+	cloudEnvVars, err := getCloudEnvVars(tr, sti)
+	if err != nil {
+		return nil, err
 	}
+	env = append(env, cloudEnvVars...)
 
-	env = append(env, k6.GetSpec().Runner.Env...)
+	env = append(env, tr.GetSpec().Runner.Env...)
 
 	volumes := script.Volume()
-	volumes = append(volumes, k6.GetSpec().Runner.Volumes...)
+	volumes = append(volumes, tr.GetSpec().Runner.Volumes...)
 
 	volumeMounts := script.VolumeMount()
-	volumeMounts = append(volumeMounts, k6.GetSpec().Runner.VolumeMounts...)
+	volumeMounts = append(volumeMounts, tr.GetSpec().Runner.VolumeMounts...)
 
-	if k6.GetSpec().Runner.SchedulerName != "" {
-		schedulerName = k6.GetSpec().Runner.SchedulerName
+	if tr.GetSpec().Runner.SchedulerName != "" {
+		schedulerName = tr.GetSpec().Runner.SchedulerName
 	}
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   k6.NamespacedName().Namespace,
+			Namespace:   tr.NamespacedName().Namespace,
 			Labels:      runnerLabels,
 			Annotations: runnerAnnotations,
 		},
@@ -189,54 +162,54 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 					Hostname:                     name,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SchedulerName:                schedulerName,
-					Affinity:                     k6.GetSpec().Runner.Affinity,
-					NodeSelector:                 k6.GetSpec().Runner.NodeSelector,
-					Tolerations:                  k6.GetSpec().Runner.Tolerations,
-					TopologySpreadConstraints:    k6.GetSpec().Runner.TopologySpreadConstraints,
-					SecurityContext:              &k6.GetSpec().Runner.SecurityContext,
-					ImagePullSecrets:             k6.GetSpec().Runner.ImagePullSecrets,
-					InitContainers:               getInitContainers(&k6.GetSpec().Runner, script),
+					Affinity:                     tr.GetSpec().Runner.Affinity,
+					NodeSelector:                 tr.GetSpec().Runner.NodeSelector,
+					Tolerations:                  tr.GetSpec().Runner.Tolerations,
+					TopologySpreadConstraints:    tr.GetSpec().Runner.TopologySpreadConstraints,
+					SecurityContext:              &tr.GetSpec().Runner.SecurityContext,
+					ImagePullSecrets:             tr.GetSpec().Runner.ImagePullSecrets,
+					InitContainers:               getInitContainers(&tr.GetSpec().Runner, script),
 					Containers: []corev1.Container{{
 						Image:           image,
-						ImagePullPolicy: k6.GetSpec().Runner.ImagePullPolicy,
+						ImagePullPolicy: tr.GetSpec().Runner.ImagePullPolicy,
 						Name:            "k6",
 						Command:         command,
 						Env:             env,
-						Resources:       k6.GetSpec().Runner.Resources,
+						Resources:       tr.GetSpec().Runner.Resources,
 						VolumeMounts:    volumeMounts,
 						Ports:           ports,
-						EnvFrom:         k6.GetSpec().Runner.EnvFrom,
-						LivenessProbe:   generateProbe(k6.GetSpec().Runner.LivenessProbe),
-						ReadinessProbe:  generateProbe(k6.GetSpec().Runner.ReadinessProbe),
-						SecurityContext: &k6.GetSpec().Runner.ContainerSecurityContext,
+						EnvFrom:         tr.GetSpec().Runner.EnvFrom,
+						LivenessProbe:   generateProbe(tr.GetSpec().Runner.LivenessProbe),
+						ReadinessProbe:  generateProbe(tr.GetSpec().Runner.ReadinessProbe),
+						SecurityContext: &tr.GetSpec().Runner.ContainerSecurityContext,
 					}},
 					Volumes:           volumes,
-					PriorityClassName: k6.GetSpec().Runner.PriorityClassName,
+					PriorityClassName: tr.GetSpec().Runner.PriorityClassName,
 				},
 			},
 		},
 	}
 
-	if k6.GetSpec().Separate {
+	if tr.GetSpec().Separate {
 		job.Spec.Template.Spec.Affinity = newAntiAffinity()
 	}
 
 	return job, nil
 }
 
-func NewRunnerService(k6 *v1alpha1.TestRun, index int) (*corev1.Service, error) {
-	serviceName := fmt.Sprintf("%s-%s-%d", k6.NamespacedName().Name, "service", index)
-	runnerName := fmt.Sprintf("%s-%d", k6.NamespacedName().Name, index)
+func NewRunnerService(tr *v1alpha1.TestRun, index int) (*corev1.Service, error) {
+	serviceName := fmt.Sprintf("%s-%s-%d", tr.NamespacedName().Name, "service", index)
+	runnerName := fmt.Sprintf("%s-%d", tr.NamespacedName().Name, index)
 
 	runnerAnnotations := make(map[string]string)
-	if k6.GetSpec().Runner.Metadata.Annotations != nil {
-		runnerAnnotations = k6.GetSpec().Runner.Metadata.Annotations
+	if tr.GetSpec().Runner.Metadata.Annotations != nil {
+		runnerAnnotations = tr.GetSpec().Runner.Metadata.Annotations
 	}
 
-	runnerLabels := newLabels(k6.NamespacedName().Name)
+	runnerLabels := newLabels(tr.NamespacedName().Name)
 	runnerLabels["runner"] = "true"
-	if k6.GetSpec().Runner.Metadata.Labels != nil {
-		for k, v := range k6.GetSpec().Runner.Metadata.Labels { // Order not specified
+	if tr.GetSpec().Runner.Metadata.Labels != nil {
+		for k, v := range tr.GetSpec().Runner.Metadata.Labels { // Order not specified
 			if _, ok := runnerLabels[k]; !ok {
 				runnerLabels[k] = v
 			}
@@ -252,7 +225,7 @@ func NewRunnerService(k6 *v1alpha1.TestRun, index int) (*corev1.Service, error) 
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        serviceName,
-			Namespace:   k6.NamespacedName().Namespace,
+			Namespace:   tr.NamespacedName().Namespace,
 			Labels:      runnerLabels,
 			Annotations: runnerAnnotations,
 		},
@@ -310,4 +283,53 @@ func generateProbe(configuredProbe *corev1.Probe) *corev1.Probe {
 			},
 		},
 	}
+}
+
+// TODO: these are to be moved to an internal API package once it's up (separate PR & work, see #616)
+func getCloudEnvVars(tr *v1alpha1.TestRun, sti *cloud.SecretTokenInfo) ([]corev1.EnvVar, error) {
+	ev := make([]corev1.EnvVar, 0)
+
+	// non-cloud mode - no-op
+	if len(tr.TestRunID()) <= 0 {
+		return ev, nil
+	}
+
+	ev = append(ev, tokenEnvVar(tr, sti)...)
+
+	// Add aggregation vars for cloud output mode;
+	// PLZ mode already has them.
+	if !v1alpha1.IsTrue(tr, v1alpha1.CloudPLZTestRun) {
+		aggregationVars, err := cloud.DecodeAggregationConfig(tr.GetStatus().AggregationVars)
+		if err != nil {
+			return nil, err
+		}
+		ev = append(ev, aggregationVars...)
+	}
+
+	ev = append(ev, corev1.EnvVar{
+		Name:  "K6_CLOUD_PUSH_REF_ID",
+		Value: tr.TestRunID(),
+	})
+
+	return ev, nil
+}
+
+// assumes tr is a cloud test run
+func tokenEnvVar(tr *v1alpha1.TestRun, sti *cloud.SecretTokenInfo) []corev1.EnvVar {
+	// cloud output mode
+	// old auth path, with `--out cloud`
+	if !v1alpha1.IsTrue(tr, v1alpha1.CloudPLZTestRun) {
+		return []corev1.EnvVar{{
+			Name:  "K6_CLOUD_TOKEN",
+			Value: sti.Value(),
+		}}
+	}
+
+	return nil
+
+	// PLZ mode is a no-op because ephemeral `K6_CLOUD_TOKEN` is set in test run data
+
+	// new auth path, with `--local-execution`
+	//   K6_CLOUD_TEST_RUN_TOKEN for all modes
+	// Future TODO, see https://github.com/grafana/k6-operator/issues/668
 }

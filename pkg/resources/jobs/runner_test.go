@@ -165,7 +165,7 @@ func Test_NewRunnerJob(t *testing.T) {
 	tests := []struct {
 		name             string
 		script           *types.Script
-		tokenInfo        *cloud.TokenInfo
+		sti              *cloud.SecretTokenInfo
 		setupTestRun     func(*v1alpha1.TestRun)
 		setupExpectedJob func(*batchv1.Job)
 	}{
@@ -250,8 +250,8 @@ func Test_NewRunnerJob(t *testing.T) {
 			},
 		},
 		{
-			name:      "cloud output mode",
-			tokenInfo: cloud.NewTokenInfo("", "").InjectValue("token"),
+			name: "cloud output mode",
+			sti:  cloud.NewSecretTokenInfo("", "").InjectValue("token"),
 			setupTestRun: func(k6 *v1alpha1.TestRun) {
 				k6.Spec.Arguments = "--out cloud"
 				k6.Spec.Runner.Metadata.Labels = nil
@@ -265,9 +265,11 @@ func Test_NewRunnerJob(t *testing.T) {
 					"k6", "run", "--quiet", "--out", "cloud", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
 					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
-				j.Spec.Template.Spec.Containers[0].Env = append(aggregationEnvVars,
-					corev1.EnvVar{Name: "K6_CLOUD_PUSH_REF_ID", Value: "testrunid"},
-					corev1.EnvVar{Name: "K6_CLOUD_TOKEN", Value: "token"},
+				j.Spec.Template.Spec.Containers[0].Env = append(
+					[]corev1.EnvVar{{Name: "K6_CLOUD_TOKEN", Value: "token"}},
+					append(aggregationEnvVars,
+						corev1.EnvVar{Name: "K6_CLOUD_PUSH_REF_ID", Value: "testrunid"},
+					)...,
 				)
 			},
 		},
@@ -431,8 +433,8 @@ func Test_NewRunnerJob(t *testing.T) {
 			},
 		},
 		{
-			name:      "PLZ test run",
-			tokenInfo: cloud.NewTokenInfo("plz-token-secret", "test"),
+			name: "PLZ test run",
+			sti:  cloud.NewSecretTokenInfo("plz-token-secret", "test"),
 			setupTestRun: func(k6 *v1alpha1.TestRun) {
 				k6.Spec.TestRunID = "plz-run-123"
 				k6.Spec.Runner.EnvFrom = envFromConfigMap("env")
@@ -455,16 +457,8 @@ func Test_NewRunnerJob(t *testing.T) {
 					"-e", "K6_CLOUDRUN_INSTANCE_ID=1",
 				}
 				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
+					// This is the only env var set in this package for PLZ now
 					{Name: "K6_CLOUD_PUSH_REF_ID", Value: "plz-run-123"},
-					{
-						Name: "K6_CLOUD_TOKEN",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "plz-token-secret"},
-								Key:                  "token",
-							},
-						},
-					},
 				}
 			},
 		},
@@ -487,12 +481,12 @@ func Test_NewRunnerJob(t *testing.T) {
 				tt.setupExpectedJob(expected)
 			}
 
-			tokenInfo := tt.tokenInfo
-			if tokenInfo == nil {
-				tokenInfo = cloud.NewTokenInfo("", "")
+			sti := tt.sti
+			if sti == nil {
+				sti = cloud.NewSecretTokenInfo("", "")
 			}
 
-			job, err := NewRunnerJob(k6, 1, tokenInfo)
+			job, err := NewRunnerJob(k6, 1, sti)
 			if err != nil {
 				t.Fatalf("NewRunnerJob errored: %v", err)
 			}

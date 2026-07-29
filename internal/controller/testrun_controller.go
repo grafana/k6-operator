@@ -471,18 +471,18 @@ func (r *TestRunReconciler) ShouldAbort(ctx context.Context, k6 *v1alpha1.TestRu
 }
 
 func (r *TestRunReconciler) createClient(ctx context.Context, k6 *v1alpha1.TestRun, log logr.Logger) (*cloudapi.Client, bool, error) {
-	tokenInfo := cloud.NewTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
-	err := tokenInfo.Load(ctx, log, r.Client)
+	sti := cloud.NewSecretTokenInfo(k6.GetSpec().Token, k6.NamespacedName().Namespace)
+	err := sti.Load(ctx, log, r.Client)
 
 	if err != nil {
 		log.Error(err, "A problem while getting token.")
 		return nil, false, err
 	}
-	if !tokenInfo.Ready {
+	if !sti.Ready {
 		return nil, false, nil
 	}
 
 	host := getEnvVar(k6.GetSpec().Runner.Env, "K6_CLOUD_HOST")
 
-	return cloud.NewClient(log, tokenInfo.Value(), host), true, nil
+	return cloud.NewClient(log, sti.Value(), host), true, nil
 }
