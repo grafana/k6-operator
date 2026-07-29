@@ -58,7 +58,7 @@ func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *T
 		events := cloud.ErrorEvent(cloud.K6OperatorRunnerError).
 			WithDetail(msg).
 			WithAbort()
-		cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+		cloud.SendTestRunEvents(cloudClient, k6.GetTestRunID(), log, events)
 	}
 
 	if finished < k6.GetSpec().Parallelism {

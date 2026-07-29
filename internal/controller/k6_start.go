@@ -72,7 +72,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 					events := cloud.ErrorEvent(cloud.K6OperatorStartError).
 						WithDetail(msg).
 						WithAbort()
-					cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+					cloud.SendTestRunEvents(cloudClient, k6.GetTestRunID(), log, events)
 				}
 			}
 		}
@@ -104,7 +104,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 			events := cloud.ErrorEvent(cloud.SetupError).
 				WithDetail(fmt.Sprintf("setup function failed: %v", err)).
 				WithAbort()
-			cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+			cloud.SendTestRunEvents(cloudClient, k6.GetTestRunID(), log, events)
 
 			return ctrl.Result{Requeue: false}, nil
 		}
