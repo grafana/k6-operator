@@ -24,7 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -51,7 +51,7 @@ type TestRunReconciler struct {
 	client.Client
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 }
 
 // Reconcile takes a K6 object and takes the appropriate action in the cluster
@@ -63,7 +63,7 @@ type TestRunReconciler struct {
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 
 func (r *TestRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.Namespace, "name", req.Name, "reconcileID", controller.ReconcileIDFromContext(ctx))
@@ -133,7 +133,8 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		warnings, err := k6.GetSpec().Validate()
 		for _, w := range warnings {
 			log.Info(w)
-			r.Recorder.Event(k6, corev1.EventTypeWarning, "DeprecatedField", w)
+
+			r.Recorder.Eventf(k6, nil, corev1.EventTypeWarning, "DeprecatedField", "Validating", w)
 		}
 		if err != nil {
 			log.Error(err, "Invalid TestRun")

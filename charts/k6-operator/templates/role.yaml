@@ -19,13 +19,8 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
-  verbs:
-  - create
-  - patch
-- apiGroups:
-  - ""
-  resources:
+  - pods
+  - pods/log
   - secrets
   verbs:
   - get
@@ -77,66 +72,16 @@ rules:
   - list
   - update
 - apiGroups:
-  - ""
+  - events.k8s.io
   resources:
-  - pods
-  - pods/log
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - k6.io
-  resources:
-  - k6s
+  - events
   verbs:
   - create
-  - delete
-  - get
-  - list
   - patch
-  - update
-  - watch
-- apiGroups:
-  - k6.io
-  resources:
-  - k6s/finalizers
-  - k6s/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - k6.io
   resources:
   - privateloadzones
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - k6.io
-  resources:
-  - privateloadzones/finalizers
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - k6.io
-  resources:
-  - privateloadzones/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - k6.io
-  resources:
   - testruns
   verbs:
   - create
@@ -149,6 +94,8 @@ rules:
 - apiGroups:
   - k6.io
   resources:
+  - privateloadzones/finalizers
+  - privateloadzones/status
   - testruns/finalizers
   - testruns/status
   verbs:

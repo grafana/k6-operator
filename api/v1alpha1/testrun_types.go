@@ -220,10 +220,6 @@ type TestRunList struct {
 	Items           []TestRun `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&TestRun{}, &TestRunList{})
-}
-
 func (k6 *TestRunSpec) Validate() (warnings []string, err error) {
 	// Check for deprecated fields.
 	if len(k6.Scuttle.Enabled) > 0 {

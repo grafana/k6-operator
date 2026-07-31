@@ -104,10 +104,6 @@ type PLZSecretsConfig struct {
 	SecretRef    *corev1.SecretEnvSource    `json:"secretRef,omitempty"`
 }
 
-func init() {
-	SchemeBuilder.Register(&PrivateLoadZone{}, &PrivateLoadZoneList{})
-}
-
 // Register attempts to register PLZ with the k6 Cloud.
 // Regardless of the result, condition PLZRegistered will be set to False.
 // Callee is expected to check the returned error and set condition when it's appropriate.
