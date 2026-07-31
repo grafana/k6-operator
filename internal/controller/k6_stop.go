@@ -48,14 +48,17 @@ func StopJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Tes
 		log.Error(err, "Failed to set controller reference for the stop job")
 	}
 
-	// TODO: add a check for existence of stop job
-
-	if err = r.Create(ctx, stopJob); err != nil {
+	created, err := createJobIfNotExists(ctx, r.Client, stopJob)
+	if err != nil {
 		log.Error(err, "Failed to launch k6 test stop job.")
 		return res, nil
 	}
 
-	log.Info("Created stop job")
+	if created {
+		log.Info("Created stop job")
+	} else {
+		log.Info("Stop job already exists")
+	}
 
 	log.Info("Changing stage of TestRun status to stopped")
 	k6.GetStatus().Stage = "stopped"
