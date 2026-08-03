@@ -16,20 +16,33 @@ import (
 func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 
 	var (
-		schedulerName = corev1.DefaultSchedulerName
+		starterImage                 = "ghcr.io/grafana/k6-operator:latest-starter"
+		starterAnnotations           = make(map[string]string)
+		starterLabels                = newLabels(k6.NamespacedName().Name)
+		serviceAccountName           = "default"
+		automountServiceAccountToken = true
+		schedulerName                = corev1.DefaultSchedulerName
+		// Default resource requests and limits to use as a fallback
+		resourceRequirements = corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
+				corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
+				corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
+			},
+		}
 	)
 
-	starterAnnotations := make(map[string]string)
 	if k6.GetSpec().Starter.Metadata.Annotations != nil {
 		starterAnnotations = k6.GetSpec().Starter.Metadata.Annotations
 	}
 
-	starterImage := "ghcr.io/grafana/k6-operator:latest-starter"
 	if k6.GetSpec().Starter.Image != "" {
 		starterImage = k6.GetSpec().Starter.Image
 	}
 
-	starterLabels := newLabels(k6.NamespacedName().Name)
 	if k6.GetSpec().Starter.Metadata.Labels != nil {
 		for k, v := range k6.GetSpec().Starter.Metadata.Labels { // Order not specified
 			if _, ok := starterLabels[k]; !ok {
@@ -37,29 +50,15 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 			}
 		}
 	}
-	serviceAccountName := "default"
 	if k6.GetSpec().Starter.ServiceAccountName != "" {
 		serviceAccountName = k6.GetSpec().Starter.ServiceAccountName
 	}
-	automountServiceAccountToken := true
 	if k6.GetSpec().Starter.AutomountServiceAccountToken != "" {
 		automountServiceAccountToken, _ = strconv.ParseBool(k6.GetSpec().Starter.AutomountServiceAccountToken)
 	}
 
 	command, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, []string{"sh", "-c"})
 	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
-
-	// Default resource requests and limits to use as a fallback
-	resourceRequirements := corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
-			corev1.ResourceMemory: *resource.NewQuantity(2097152, resource.BinarySI),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
-			corev1.ResourceMemory: *resource.NewQuantity(209715200, resource.BinarySI),
-		},
-	}
 
 	// User specified resource requirements
 	if len(k6.GetSpec().Starter.Resources.Requests) > 0 || len(k6.GetSpec().Starter.Resources.Limits) > 0 {
