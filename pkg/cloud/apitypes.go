@@ -82,7 +82,7 @@ func (trd *TestRunData) Preprocess() error {
 		return fmt.Errorf("only tests with one load zone are supported, provided: %+v", trd.LZDistribution)
 	}
 
-	trd.TagArgs = []string{"--tag", "load_zone=" + escapeKubeExpansion(trd.LZName())}
+	trd.preprocessTags()
 
 	// Handle k6 CLI options that need to be passed as env vars to the runners.
 
@@ -104,7 +104,6 @@ func (trd *TestRunData) Preprocess() error {
 	}
 
 	// Handle env vars that configure k6 CLI as received from the Cloud.
-	// Note: GCk6 reserved env vars are handled separately ATM.
 
 	trd.RunnerEnvVars = append(trd.RunnerEnvVars, AggregationEnvVars(&trd.RuntimeConfig)...)
 	trd.RunnerEnvVars = append(trd.RunnerEnvVars, trd.secretsEnvVars()...)
@@ -174,12 +173,11 @@ type LZConfig struct {
 }
 
 type CLIArgs struct {
-	BlacklistIPs         []string `json:"blacklist_ips,omitempty"`
-	BlockedHostnames     []string `json:"blocked_hostnames,omitempty"`
-	IncludeSystemEnvVars bool     `json:"include_system_env_vars,omitempty"`
-	UserAgent            string   `json:"user_agent,omitempty"`
-	// not used ATM
-	// Tags                 map[string]string `json:"tags,omitempty"`
+	BlacklistIPs         []string          `json:"blacklist_ips,omitempty"`
+	BlockedHostnames     []string          `json:"blocked_hostnames,omitempty"`
+	IncludeSystemEnvVars bool              `json:"include_system_env_vars,omitempty"`
+	UserAgent            string            `json:"user_agent,omitempty"`
+	Tags                 map[string]string `json:"tags,omitempty"`
 }
 
 type LZDistribution map[string]Distribution
@@ -226,6 +224,35 @@ func (trd *TestRunData) secretsEnvVars() []corev1.EnvVar {
 		})
 	}
 	return ev
+}
+
+func (trd *TestRunData) preprocessTags() {
+	if trd.Tags == nil {
+		trd.Tags = make(map[string]string)
+	}
+	// trd.Tags holds the user-set tags from the archive, extracted by GCk6.
+	// We need to overwrite by key here to prevent k6 from discarding the
+	// whole map. This way, we're effectively "merging" the user-provided
+	// tags with the Cloud reserved tag.
+	// Related k6 issue: https://github.com/grafana/k6/issues/2694
+	// If this issue becomes the default behaviour of k6 CLI, we'll be
+	// be able to remove this logic (and once everyone has migrated to the newest k6).
+	trd.Tags["load_zone"] = trd.LZName()
+
+	keys := make([]string, 0, len(trd.Tags))
+	for k := range trd.Tags {
+		// k6 doesn't forbid empty values in general case
+		if len(k) > 0 && len(trd.Tags[k]) > 0 {
+			keys = append(keys, k)
+		}
+	}
+	// to have deterministic order in the resulting args
+	sort.Strings(keys)
+
+	trd.TagArgs = make([]string, 0, len(keys)*3)
+	for _, k := range keys {
+		trd.TagArgs = append(trd.TagArgs, "--tag", fmt.Sprintf("%s=%s", escapeKubeExpansion(k), escapeKubeExpansion(trd.Tags[k])))
+	}
 }
 
 // LZLabel assumes there is only one LZ.

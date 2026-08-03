@@ -83,6 +83,8 @@ func Test_plzk6Args(t *testing.T) {
 				"--no-thresholds",
 				"--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization=Token $(K6_CLOUD_TOKEN)",
 				"--include-system-env-vars=false",
+				"--verbose",
+				"--summary-mode=disabled",
 			},
 		},
 		{

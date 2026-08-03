@@ -53,7 +53,7 @@ func ParseCLI(argv []string) (*CLI, error) {
 			switch {
 			case strings.HasPrefix(argv[i], "--log-output"):
 				// `k6 archive` ignores this argument but if it contains an env var
-				// for token (may be the case for PLZ test runs), it will break the shell;
+				// for token (cloud logs for PLZ test runs), it will break the shell;
 				// so omit it.
 
 			case strings.HasPrefix(argv[i], "--block-hostnames"),
