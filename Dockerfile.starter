@@ -2,4 +2,4 @@ FROM curlimages/curl:8.21.0@sha256:7c12af72ceb38b7432ab85e1a265cff6ae58e06f95539
 
 # as defined by distroless for nonroot
 USER 65532:65532
-COPY --from=kvij/scuttle@sha256:1b3fb35aa13dd80b30ecceee9f913156eace6cf7656129a99a2dfad5010f68a4 /scuttle /bin/scuttle
+COPY --from=kvij/scuttle@sha256:b29c07c68df23ada8f467efb7489260c8d84a2bd792220720bc0edd7a1435af3 /scuttle /bin/scuttle
