@@ -20,6 +20,12 @@ func FinishJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *T
 	}
 
 	log.Info("Checking if all runner pods are finished")
+	if oomKilled, err := checkRunnerOOMKilled(ctx, log, k6, r, cloudClient); err != nil {
+		log.Error(err, "Could not check runner pods for OOM termination")
+		return
+	} else if oomKilled {
+		return
+	}
 
 	selector := labels.SelectorFromSet(map[string]string{
 		"app":    "k6",

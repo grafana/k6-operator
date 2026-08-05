@@ -47,6 +47,11 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 		log.Error(err, "Could not list pods")
 		return res, nil
 	}
+	if oomKilled, err := handleRunnerOOMKilled(ctx, log, k6, r, pl.Items, cloudClient); err != nil {
+		return ctrl.Result{}, err
+	} else if oomKilled {
+		return ctrl.Result{RequeueAfter: time.Second}, nil
+	}
 
 	var count int
 	for _, pod := range pl.Items {
@@ -95,14 +100,21 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 	// setup
 
 	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
-		if err, retry := runSetup(ctx, hostnames, log); err != nil {
+		setupErr, retry := runSetup(ctx, hostnames, log)
+		if oomKilled, err := checkRunnerOOMKilled(ctx, log, k6, r, cloudClient); err != nil {
+			return ctrl.Result{}, err
+		} else if oomKilled {
+			return ctrl.Result{RequeueAfter: time.Second}, nil
+		}
+
+		if setupErr != nil {
 			if retry {
-				return ctrl.Result{}, err
+				return ctrl.Result{}, setupErr
 			}
 
-			log.Error(err, "Setup function failed, requesting abort.")
+			log.Error(setupErr, "Setup function failed, requesting abort.")
 			events := cloud.ErrorEvent(cloud.SetupError).
-				WithDetail(fmt.Sprintf("setup function failed: %v", err)).
+				WithDetail(fmt.Sprintf("setup function failed: %v", setupErr)).
 				WithAbort()
 			cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
 
