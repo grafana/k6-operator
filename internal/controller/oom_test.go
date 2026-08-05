@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"go.k6.io/k6/v2/cloudapi"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -100,13 +101,15 @@ func TestCheckRunnerOOMKilled(t *testing.T) {
 		})
 	}
 
-	t.Run("requests a cloud test run abort", func(t *testing.T) {
+	t.Run("requests a cloud test run abort once", func(t *testing.T) {
 		k6 := newOOMTestRun(true)
 		r := newOOMReconciler(t, k6, newOOMPod(k6))
 		var received cloud.Events
 		var method, path string
 		var decodeErr error
+		requestCount := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			requestCount++
 			method = req.Method
 			path = req.URL.Path
 			decodeErr = json.NewDecoder(req.Body).Decode(&received)
@@ -127,6 +130,36 @@ func TestCheckRunnerOOMKilled(t *testing.T) {
 		require.Equal(t, cloud.OOMError, received[0].ErrorCode)
 		require.Equal(t, "runner pod sample-1 container k6 was terminated with reason OOMKilled", received[0].Detail)
 		require.Equal(t, "TestRunAbortEvent", string(received[1].EventType))
+		updated := &v1alpha1.TestRun{}
+		require.NoError(t, r.Get(context.Background(), client.ObjectKeyFromObject(k6), updated))
+		require.Equal(t, v1alpha1.Stage("stopped"), updated.Status.Stage)
+		require.True(t, v1alpha1.IsFalse(updated, v1alpha1.TestRunRunning))
+		require.True(t, v1alpha1.IsTrue(updated, v1alpha1.CloudTestRunAborted))
+
+		found, err = checkRunnerOOMKilled(context.Background(), logr.Discard(), updated, r, cloudClient)
+
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Equal(t, 1, requestCount)
+	})
+
+	t.Run("retries when cloud event delivery fails", func(t *testing.T) {
+		k6 := newOOMTestRun(true)
+		r := newOOMReconciler(t, k6, newOOMPod(k6))
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer server.Close()
+		cloudClient := cloudapi.NewClient(logrus.New(), "", server.URL, "test", time.Second)
+
+		found, err := checkRunnerOOMKilled(context.Background(), logr.Discard(), k6, r, cloudClient)
+
+		require.Error(t, err)
+		require.True(t, found)
+		updated := &v1alpha1.TestRun{}
+		require.NoError(t, r.Get(context.Background(), client.ObjectKeyFromObject(k6), updated))
+		require.Equal(t, v1alpha1.Stage("started"), updated.Status.Stage)
+		require.False(t, v1alpha1.IsTrue(updated, v1alpha1.CloudTestRunAborted))
 	})
 
 	t.Run("ignores unrelated pods", func(t *testing.T) {
@@ -175,6 +208,7 @@ func newOOMReconciler(t *testing.T, k6 *v1alpha1.TestRun, pods ...*corev1.Pod) *
 	scheme := runtime.NewScheme()
 	require.NoError(t, v1alpha1.AddToScheme(scheme))
 	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, batchv1.AddToScheme(scheme))
 	objects := []client.Object{k6.DeepCopy()}
 	for _, pod := range pods {
 		objects = append(objects, pod)
@@ -184,5 +218,5 @@ func newOOMReconciler(t *testing.T, k6 *v1alpha1.TestRun, pods ...*corev1.Pod) *
 		WithStatusSubresource(&v1alpha1.TestRun{}).
 		WithObjects(objects...).
 		Build()
-	return &TestRunReconciler{Client: k8sClient}
+	return &TestRunReconciler{Client: k8sClient, Scheme: scheme}
 }

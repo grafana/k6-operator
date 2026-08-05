@@ -225,12 +225,18 @@ func handleRunnerOOMKilled(ctx context.Context, log logr.Logger, k6 *v1alpha1.Te
 	log.Info(msg)
 
 	if isCloudTestRun(k6) {
+		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunAborted) {
+			return true, nil
+		}
 		if cloudClient == nil {
 			return true, errors.New("cloud client is not configured")
 		}
 		events := cloud.ErrorEvent(cloud.OOMError).WithDetail(msg).WithAbort()
-		cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
-		return true, nil
+		if err := cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events); err != nil {
+			return true, err
+		}
+		_, err := StopJobs(ctx, log, k6, r)
+		return true, err
 	}
 
 	v1alpha1.UpdateCondition(k6, v1alpha1.TestRunRunning, metav1.ConditionFalse)
