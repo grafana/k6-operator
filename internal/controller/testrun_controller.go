@@ -251,6 +251,11 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		}
 
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+			if oomKilled, err := checkRunnerOOMKilled(ctx, log, k6, r, cloudClient); err != nil {
+				return ctrl.Result{}, err
+			} else if oomKilled {
+				return ctrl.Result{RequeueAfter: time.Second}, nil
+			}
 			runningTime, _ := v1alpha1.LastUpdate(k6, v1alpha1.TestRunRunning)
 
 			if v1alpha1.IsFalse(k6, v1alpha1.TeardownExecuted) {
@@ -267,6 +272,11 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 						return ctrl.Result{}, nil
 					}
 					runTeardown(ctx, hostnames, log)
+					if oomKilled, err := checkRunnerOOMKilled(ctx, log, k6, r, cloudClient); err != nil {
+						return ctrl.Result{}, err
+					} else if oomKilled {
+						return ctrl.Result{RequeueAfter: time.Second}, nil
+					}
 					v1alpha1.UpdateCondition(k6, v1alpha1.TeardownExecuted, metav1.ConditionTrue)
 
 					_, err = r.UpdateStatus(ctx, k6, log)
