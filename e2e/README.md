@@ -63,7 +63,7 @@ nano e2e/.env
 Run the following command from the root of repository to help avoid committing secrets by mistake:
 
 ```sh
-git update-index --skip-worktree e2e/testrun-cloud-output/manifests/secret.yaml e2e/testrun-simultaneous-cloud-output/manifests/secret.yaml
+git update-index --skip-worktree e2e/testrun-cloud-output/manifests/secret.yaml e2e/testrun-cloud-output-args/manifests/secret.yaml e2e/testrun-simultaneous-cloud-output/manifests/secret.yaml
 ```
 
 ## How to add a test

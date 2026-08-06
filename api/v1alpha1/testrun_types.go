@@ -16,7 +16,10 @@ package v1alpha1
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
@@ -100,8 +103,14 @@ type TestRunSpec struct {
 	// using the podAntiAffinity rule.
 	Separate bool `json:"separate,omitempty"`
 
-	// Arguments to pass to the k6 process.
+	// Arguments to pass to the k6 process, as a space-separated string.
+	// Prefer `args` for values that contain spaces or quotes.
 	Arguments string `json:"arguments,omitempty"`
+
+	// Args contains exact argv elements passed to k6.
+	// A non-empty Args overrides Arguments.
+	// +listType=atomic
+	Args []string `json:"args,omitempty"`
 
 	// Port to configure on all k6 containers.
 	// Port 6565 is always configured for k6 processes.
@@ -226,9 +235,39 @@ func (k6 *TestRunSpec) Validate() (warnings []string, err error) {
 		warnings = append(warnings, "`.spec.scuttle` is deprecated and will be removed in the future. See https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/usage/istio/ on how to set up Istio.")
 	}
 
-	// Currently, we validate "manually" only arguments field.
-	_, err = types.ParseCLI(k6.Arguments)
+	// An empty argument here is likely a misconfiguration.
+	// Fail early instead of propagating this to the initializer pod.
+	if i := slices.Index(k6.Args, ""); i >= 0 {
+		return warnings, fmt.Errorf("`.spec.args` contains an empty element at index %d", i)
+	}
+
+	// Currently, we validate "manually" only the k6 arguments.
+	_, err = types.ParseCLI(k6.Argv())
 	return
+}
+
+// Argv returns the exact argv elements to be passed to k6.
+// A non-empty Args takes precedence over Arguments. Otherwise,
+// Arguments is split on spaces.
+func (k6 *TestRunSpec) Argv() []string {
+	if len(k6.Args) > 0 {
+		return slices.Clone(k6.Args)
+	}
+
+	if len(k6.Arguments) == 0 {
+		return nil
+	}
+
+	argv := make([]string, 0, strings.Count(k6.Arguments, " ")+1)
+	for _, arg := range strings.Split(k6.Arguments, " ") {
+		if arg = strings.TrimSpace(arg); len(arg) > 0 {
+			argv = append(argv, arg)
+		}
+	}
+	if len(argv) == 0 {
+		return nil
+	}
+	return argv
 }
 
 // Parse extracts Script data bits from K6 spec and performs basic validation

@@ -69,6 +69,17 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	// The following are the definitions that
 	// are expected from PLZ worker now.
 
+	// plzArgs builds the exact argv the worker is expected to produce.
+	plzArgs := func(tagArgs []string, testRunID string, envArgs []string, includeSysEnvVars bool) []string {
+		args := []string{"--out", "cloud"}
+		args = append(args, tagArgs...)
+		args = append(args, "--no-thresholds", fmt.Sprintf(
+			`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=%s,header.Authorization=Token $(K6_CLOUD_TOKEN)`,
+			testRunID))
+		args = append(args, envArgs...)
+		return append(args, fmt.Sprintf("--include-system-env-vars=%t", includeSysEnvVars))
+	}
+
 	var (
 		mainIngest = "https://ingest.k6.io"
 
@@ -105,7 +116,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				},
 				Parallelism: int32(0),
 				Separate:    false,
-				Arguments:   `--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization="Token $(K6_CLOUD_TOKEN)" --include-system-env-vars=false`,
+				Args:        plzArgs(nil, "0", nil, false),
 				Cleanup:     v1alpha1.Cleanup("post"),
 
 				TestRunID: "0",
@@ -171,14 +182,19 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		includeSysEnvVarsTestRun = defaultTestRun //nolint:ineffassign
 	)
 
-	cloudExecEnvArgs := ` -e K6_CLOUDRUN_DISTRIBUTION="${K6_CLOUD_OPERATOR_ENV_0}"` +
-		` -e K6_CLOUDRUN_LOAD_ZONE="${K6_CLOUD_OPERATOR_ENV_1}"` +
-		` -e K6_CLOUDRUN_TEST_RUN_ID="${K6_CLOUD_OPERATOR_ENV_2}"`
-	cloudEnvVarsEnvArgs := ` -e ENV="${K6_CLOUD_OPERATOR_ENV_0}"` +
-		` -e K6_CLOUDRUN_DISTRIBUTION="${K6_CLOUD_OPERATOR_ENV_1}"` +
-		` -e K6_CLOUDRUN_LOAD_ZONE="${K6_CLOUD_OPERATOR_ENV_2}"` +
-		` -e K6_CLOUDRUN_TEST_RUN_ID="${K6_CLOUD_OPERATOR_ENV_3}"` +
-		` -e foo="${K6_CLOUD_OPERATOR_ENV_4}"`
+	someLZTagArgs := []string{"--tag", "load_zone=some-zone"}
+	cloudExecEnvArgs := []string{
+		"-e", "K6_CLOUDRUN_DISTRIBUTION=some-label",
+		"-e", "K6_CLOUDRUN_LOAD_ZONE=some-zone",
+		"-e", "K6_CLOUDRUN_TEST_RUN_ID=6543",
+	}
+	cloudEnvVarsEnvArgs := []string{
+		"-e", "ENV=VALUE",
+		"-e", "K6_CLOUDRUN_DISTRIBUTION=some-label",
+		"-e", "K6_CLOUDRUN_LOAD_ZONE=some-zone",
+		"-e", "K6_CLOUDRUN_TEST_RUN_ID=6543",
+		"-e", "foo=bar",
+	}
 
 	// populate TestRuns for different test cases
 
@@ -195,19 +211,11 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	cloudFieldsTestRun = requiredFieldsTestRun // build up on top of required field case
 	cloudFieldsTestRun.Name = testrun.PLZTestName(fmt.Sprintf("%d", someTestRunID))
 	cloudFieldsTestRun.Spec.TestRunID = fmt.Sprintf("%d", someTestRunID)
-	cloudFieldsTestRun.Spec.Arguments = strings.Replace(requiredFieldsTestRun.Spec.Arguments,
-		"test_run_id=0",
-		fmt.Sprintf("test_run_id=%d", someTestRunID),
-		1)
-	cloudFieldsTestRun.Spec.Arguments = strings.Replace(cloudFieldsTestRun.Spec.Arguments,
-		`--out cloud --no-thresholds`,
-		`--out cloud --tag load_zone=some-zone --no-thresholds`,
-		1)
-	// env args are inserted before the --include-system-env-vars flag
-	cloudFieldsTestRun.Spec.Arguments = strings.Replace(cloudFieldsTestRun.Spec.Arguments,
-		" --include-system-env-vars",
-		cloudExecEnvArgs+" --include-system-env-vars",
-		1)
+	cloudFieldsTestRun.Spec.Args = plzArgs(
+		someLZTagArgs,
+		fmt.Sprintf("%d", someTestRunID),
+		cloudExecEnvArgs,
+		false)
 	cloudFieldsTestRun.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		containers.NewS3InitContainer(
 			someArchiveURL,
@@ -221,16 +229,14 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	cloudFieldsTestRun.Spec.Runner.Env = append(
 		cloudFieldsTestRun.Spec.Runner.Env,
 		corev1.EnvVar{Name: "K6_CLOUD_HOST", Value: mainIngest},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "some-label"},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "some-zone"},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "6543"},
 	)
 
 	cloudEnvVarsTestRun = cloudFieldsTestRun // build up on top of cloud fields case
-	cloudEnvVarsTestRun.Spec.Arguments = strings.Replace(cloudEnvVarsTestRun.Spec.Arguments,
-		cloudExecEnvArgs,
+	cloudEnvVarsTestRun.Spec.Args = plzArgs(
+		someLZTagArgs,
+		fmt.Sprintf("%d", someTestRunID),
 		cloudEnvVarsEnvArgs,
-		1)
+		false)
 	cloudEnvVarsTestRun.Spec.Runner.Env = []corev1.EnvVar{
 		{Name: "K6_USER_AGENT", Value: "Grafana Cloud k6"},
 	}
@@ -241,11 +247,6 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	cloudEnvVarsTestRun.Spec.Runner.Env = append(
 		cloudEnvVarsTestRun.Spec.Runner.Env,
 		corev1.EnvVar{Name: "K6_CLOUD_HOST", Value: mainIngest},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "VALUE"},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "some-label"},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "some-zone"},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_3", Value: "6543"},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_4", Value: "bar"},
 	)
 
 	podTemplateTolerationsTestRun = requiredFieldsTestRun
@@ -269,10 +270,11 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	podTemplateAllTestRun.Spec.Starter.SecurityContext = somePodSecCtx
 
 	includeSysEnvVarsTestRun = cloudFieldsTestRun
-	includeSysEnvVarsTestRun.Spec.Arguments = strings.Replace(cloudFieldsTestRun.Spec.Arguments,
-		"--include-system-env-vars=false",
-		"--include-system-env-vars=true",
-		1)
+	includeSysEnvVarsTestRun.Spec.Args = plzArgs(
+		someLZTagArgs,
+		fmt.Sprintf("%d", someTestRunID),
+		cloudExecEnvArgs,
+		true)
 
 	someSecretsConfig := &cloud.SecretsConfig{
 		Endpoint:     "https://api.k6.io/provisioning/v1/test_runs/6543/decrypt_secret?name={key}",
@@ -289,9 +291,6 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_RESPONSE_PATH", Value: someSecretsConfig.ResponsePath},
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION", Value: "Bearer " + someTestRunToken},
 		corev1.EnvVar{Name: "K6_CLOUD_HOST", Value: mainIngest},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "some-label"},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "some-zone"},
-		corev1.EnvVar{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "6543"},
 	)
 
 	testCases := []struct {
@@ -550,6 +549,54 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				t.Errorf("worker.complete returned unexpected data, diff: %s", diff)
 			}
 		})
+	}
+}
+
+func Test_complete_argsAreExact(t *testing.T) {
+	c, _ := client.New(nil, client.Options{})
+	worker := NewPLZWorker(&v1alpha1.PrivateLoadZone{
+		ObjectMeta: metav1.ObjectMeta{Name: "my-plz"},
+	}, "token", c, logr.Logger{})
+
+	trData := &cloud.TestRunData{
+		TestRunId:      42,
+		LZDistribution: cloud.LZDistribution{"label": cloud.Distribution{LoadZone: "zone", Percent: 100}},
+		LZConfig: cloud.LZConfig{
+			Environment: map[string]string{"GREETING": "hello world"},
+		},
+	}
+	if err := trData.Preprocess(); err != nil {
+		t.Fatalf("Preprocess errored: %v", err)
+	}
+
+	tr := worker.template.Create()
+	worker.complete(tr, trData)
+
+	if tr.Spec.Arguments != "" {
+		t.Errorf("legacy Arguments should stay empty, got: %q", tr.Spec.Arguments)
+	}
+
+	expected := []string{
+		"--out", "cloud",
+		"--tag", "load_zone=zone",
+		"--no-thresholds",
+		`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,label.test_run_id=42,header.Authorization=Token $(K6_CLOUD_TOKEN)`,
+		"-e", "GREETING=hello world",
+		"-e", "K6_CLOUDRUN_DISTRIBUTION=label",
+		"-e", "K6_CLOUDRUN_LOAD_ZONE=zone",
+		"-e", "K6_CLOUDRUN_TEST_RUN_ID=42",
+		"--include-system-env-vars=false",
+	}
+	if diff := deep.Equal(tr.Spec.Args, expected); diff != nil {
+		t.Errorf("Spec.Args diff: %s", diff)
+	}
+
+	// Nothing parses quotes on this path, so a literal one would end up inside
+	// the Authorization header value.
+	for _, arg := range tr.Spec.Args {
+		if strings.Contains(arg, `"`) {
+			t.Errorf("argument should carry no literal quote: %q", arg)
+		}
 	}
 }
 

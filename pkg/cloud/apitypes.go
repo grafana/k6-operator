@@ -63,10 +63,10 @@ type TestRunData struct {
 	LZDistribution `json:"load_zone_distribution,omitempty"`
 
 	// Pre-processed k6 arguments and env vars, populated by Preprocess().
-	TagArgs string `json:"-"`
-	EnvArgs string `json:"-"`
-	// RunnerEnvVars holds k6 option env vars (user agent, blacklists) and
-	// K6_CLOUD_OPERATOR_ENV_* helper env vars referenced from EnvArgs.
+	// TagArgs and EnvArgs hold exact argv pairs, e.g. `--tag`, `key=value`.
+	TagArgs []string `json:"-"`
+	EnvArgs []string `json:"-"`
+	// RunnerEnvVars holds k6 option env vars, e.g. user agent and blacklists.
 	RunnerEnvVars []corev1.EnvVar `json:"-"`
 }
 
@@ -82,7 +82,7 @@ func (trd *TestRunData) Preprocess() error {
 		return fmt.Errorf("only tests with one load zone are supported, provided: %+v", trd.LZDistribution)
 	}
 
-	trd.TagArgs = "--tag load_zone=" + trd.LZName()
+	trd.TagArgs = []string{"--tag", "load_zone=" + escapeKubeExpansion(trd.LZName())}
 
 	// Handle k6 CLI options that need to be passed as env vars to the runners.
 
@@ -136,22 +136,24 @@ func (trd *TestRunData) Preprocess() error {
 	}
 	sort.Strings(keys)
 
-	// These env vars are set as env vars with the name `K6_CLOUD_OPERATOR_ENV_0..N`
-	// in the pods and then passed to k6 command with `-e KEY="${K6_CLOUD_OPERATOR_ENV_0..N}"`.
-	// Why: this keeps values with spaces, quotes etc. intact, as we don't have a guarantee
-	// that the values are sanitized here.
+	// These env vars are passed to the k6 command as exact `-e`, `KEY=value`
+	// argv pairs, so values with spaces, quotes etc. stay intact even though we
+	// don't have a guarantee that they are sanitized here.
 	// Also, see https://github.com/grafana/k6/issues/2730 for additional context.
-	envArgs := make([]string, 0, len(keys))
-	for i, k := range keys {
-		helper := fmt.Sprintf("K6_CLOUD_OPERATOR_ENV_%d", i)
-		envArgs = append(envArgs, fmt.Sprintf(`-e %s="${%s}"`, k, helper))
-		trd.RunnerEnvVars = append(trd.RunnerEnvVars, corev1.EnvVar{
-			Name: helper, Value: trd.Environment[k],
-		})
+	envArgs := make([]string, 0, len(keys)*2)
+	for _, k := range keys {
+		envArgs = append(envArgs, "-e", k+"="+escapeKubeExpansion(trd.Environment[k]))
 	}
-	trd.EnvArgs = strings.Join(envArgs, " ")
+	trd.EnvArgs = envArgs
 
 	return nil
+}
+
+// escapeKubeExpansion: `$` -> `$$`
+// Kubelet reduces `$$` back to a single `$` without further expansion.
+// If someone passes $(..) as a value, this will allow it to reach k6 as it was sent.
+func escapeKubeExpansion(value string) string {
+	return strings.ReplaceAll(value, "$", "$$")
 }
 
 type LZConfig struct {

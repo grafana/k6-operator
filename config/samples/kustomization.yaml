@@ -2,6 +2,7 @@
 resources:
   - k6_v1alpha1_configmap.yaml
   - k6_v1alpha1_privateloadzone.yaml
+  - k6_v1alpha1_testrun_with_args.yaml
   - k6_v1alpha1_testrun_with_initContainers.yaml
   - k6_v1alpha1_testrun_with_localfile.yaml
   - k6_v1alpha1_testrun_with_output.yaml

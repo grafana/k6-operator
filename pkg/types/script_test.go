@@ -140,18 +140,38 @@ func Test_Script_UpdateCommand(t *testing.T) {
 	baseCmd := []string{"k6", "run", "script.js"}
 
 	tests := []struct {
-		name   string
-		script Script
-		check  func(t *testing.T, result []string)
+		name          string
+		script        Script
+		needsShellCmd bool
+		check         func(t *testing.T, result []string)
 	}{
 		{
-			name:   "LocalFile wraps command with existence check",
+			name:          "LocalFile with .spec.arguments",
+			script:        Script{Type: "LocalFile", Path: "/test/", Filename: "script.js"},
+			needsShellCmd: true,
+			check: func(t *testing.T, result []string) {
+				assert.Equal(t, []string{
+					"sh", "-c", localFileCheckScript,
+					"sh", "/test/script.js",
+					"sh", "-c", "k6 run script.js",
+				}, result)
+				// no dynamic value in the shell source
+				assert.NotContains(t, result[2], "/test/script.js")
+				assert.NotContains(t, result[2], "k6")
+			},
+		},
+		{
+			name:   "LocalFile with .spec.args",
 			script: Script{Type: "LocalFile", Path: "/test/", Filename: "script.js"},
 			check: func(t *testing.T, result []string) {
-				assert.Equal(t, []string{"sh", "-c"}, result[:2])
-				assert.Contains(t, result[2], "/test/script.js")
-				assert.Contains(t, result[2], "LocalFile not found exiting...")
-				assert.Contains(t, result[2], "k6 run script.js")
+				assert.Equal(t, []string{
+					"sh", "-c", localFileCheckScript,
+					"sh", "/test/script.js",
+					"k6", "run", "script.js",
+				}, result)
+				// no dynamic value in the shell source
+				assert.NotContains(t, result[2], "/test/script.js")
+				assert.NotContains(t, result[2], "k6")
 			},
 		},
 		{
@@ -172,7 +192,7 @@ func Test_Script_UpdateCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.script.UpdateCommand(baseCmd)
+			result := tt.script.UpdateCommand(baseCmd, tt.needsShellCmd)
 			tt.check(t, result)
 		})
 	}

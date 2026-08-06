@@ -1,0 +1,25 @@
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: k6-sample-with-args
+spec:
+  parallelism: 2
+  script:
+    configMap:
+      name: k6-test
+      file: test.js
+  # Each element of `args` is passed to k6 exactly as written, so values can
+  # contain spaces, quotes and `$`. Shell features are never interpreted here.
+  # A non-empty `args` overrides `arguments`.
+  args:
+    - --tag
+    - note=nightly run of "checkout" flow
+    - -e
+    - PRICE_LABEL=$$100 and up
+    # Kubernetes expands `$(NAME)`, so env vars are still usable:
+    - -e
+    - BASE_URL=$(BASE_URL)
+  runner:
+    env:
+      - name: BASE_URL
+        value: https://test.k6.io
