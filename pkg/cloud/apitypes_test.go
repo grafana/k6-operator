@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"reflect"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -159,16 +160,19 @@ func TestTestRunData_Preprocess(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if expected := "--tag load_zone=zone"; trd.TagArgs != expected {
-			t.Errorf("TagArgs = %q, want %q", trd.TagArgs, expected)
+		expectedTagArgs := []string{"--tag", "load_zone=zone"}
+		if !reflect.DeepEqual(trd.TagArgs, expectedTagArgs) {
+			t.Errorf("TagArgs = %q, want %q", trd.TagArgs, expectedTagArgs)
 		}
 
 		// first are org env vars from API, then the reserved env vars
-		expectedEnvArgs := `-e GREETING="${K6_CLOUD_OPERATOR_ENV_0}"` +
-			` -e K6_CLOUDRUN_DISTRIBUTION="${K6_CLOUD_OPERATOR_ENV_1}"` +
-			` -e K6_CLOUDRUN_LOAD_ZONE="${K6_CLOUD_OPERATOR_ENV_2}"` +
-			` -e K6_CLOUDRUN_TEST_RUN_ID="${K6_CLOUD_OPERATOR_ENV_3}"`
-		if trd.EnvArgs != expectedEnvArgs {
+		expectedEnvArgs := []string{
+			"-e", "GREETING=hello world",
+			"-e", "K6_CLOUDRUN_DISTRIBUTION=label",
+			"-e", "K6_CLOUDRUN_LOAD_ZONE=zone",
+			"-e", "K6_CLOUDRUN_TEST_RUN_ID=42",
+		}
+		if !reflect.DeepEqual(trd.EnvArgs, expectedEnvArgs) {
 			t.Errorf("EnvArgs = %q, want %q", trd.EnvArgs, expectedEnvArgs)
 		}
 
@@ -182,10 +186,6 @@ func TestTestRunData_Preprocess(t *testing.T) {
 			{Name: "K6_CLOUD_METRIC_PUSH_INTERVAL", Value: "0s"},
 			{Name: "K6_CLOUD_METRIC_PUSH_CONCURRENCY", Value: "0"},
 			{Name: "K6_CLOUD_HOST", Value: "https://ingest.k6.io"},
-			{Name: "K6_CLOUD_OPERATOR_ENV_0", Value: "hello world"},
-			{Name: "K6_CLOUD_OPERATOR_ENV_1", Value: "label"},
-			{Name: "K6_CLOUD_OPERATOR_ENV_2", Value: "zone"},
-			{Name: "K6_CLOUD_OPERATOR_ENV_3", Value: "42"},
 		}
 
 		if len(trd.RunnerEnvVars) != len(expectedEnvVars) {
@@ -195,6 +195,36 @@ func TestTestRunData_Preprocess(t *testing.T) {
 			if trd.RunnerEnvVars[i] != expectedEnvVars[i] {
 				t.Errorf("RunnerEnvVars[%d] = %v, want %v", i, trd.RunnerEnvVars[i], expectedEnvVars[i])
 			}
+		}
+	})
+
+	t.Run("escape `$` in literals", func(t *testing.T) {
+		t.Parallel()
+		trd := TestRunData{
+			LZDistribution: LZDistribution{"label": Distribution{LoadZone: "zone-$(EVIL)", Percent: 100}},
+			LZConfig: LZConfig{
+				Environment: map[string]string{
+					"PRICE": "$100 for $(NAME) and ${OTHER}",
+				},
+			},
+		}
+		if err := trd.Preprocess(); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		expectedTagArgs := []string{"--tag", "load_zone=zone-$$(EVIL)"}
+		if !reflect.DeepEqual(trd.TagArgs, expectedTagArgs) {
+			t.Errorf("TagArgs = %q, want %q", trd.TagArgs, expectedTagArgs)
+		}
+
+		expectedEnvArgs := []string{
+			"-e", "K6_CLOUDRUN_DISTRIBUTION=label",
+			"-e", "K6_CLOUDRUN_LOAD_ZONE=zone-$$(EVIL)",
+			"-e", "K6_CLOUDRUN_TEST_RUN_ID=0",
+			"-e", "PRICE=$$100 for $$(NAME) and $${OTHER}",
+		}
+		if !reflect.DeepEqual(trd.EnvArgs, expectedEnvArgs) {
+			t.Errorf("EnvArgs = %q, want %q", trd.EnvArgs, expectedEnvArgs)
 		}
 	})
 }

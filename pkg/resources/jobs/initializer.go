@@ -3,6 +3,7 @@ package jobs
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -12,8 +13,8 @@ import (
 
 const initializerMissingK6Message = `level=error msg="k6 executable not found in PATH; initializer image must contain k6"`
 
-// NewInitializerJob builds a template used to initializefor creating a starter job
-func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, error) {
+// NewInitializerJob builds a template used to create an initializer job
+func NewInitializerJob(k6 *v1alpha1.TestRun, archiveArgs []string) (*batchv1.Job, error) {
 	script, err := k6.GetSpec().ParseScript()
 	if err != nil {
 		return nil, err
@@ -57,26 +58,18 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 		automountServiceAccountToken, _ = strconv.ParseBool(k6.GetSpec().Initializer.AutomountServiceAccountToken)
 	}
 
-	// NOTE: only .env are passed to k6 CLI, not .envFrom
-	// This is esp. relevant for the cloud output test where
-	// duration of the test may depend on env var values. IOW,
-	// these env vars must always be passed in cloud output mode.
-	//
-	// The value of env var is expanded by Shell inside quotes.
-	// This keeps values with spaces, quotes, `$(...)` etc. intact.
-	// It also passes the actual values of Secret-backed env vars (ValueFrom).
-	var envVarString string
-	for _, ev := range k6.GetSpec().Initializer.Env {
-		envVarString += fmt.Sprintf(` -e %s="${%s}"`, ev.Name, ev.Name)
-	}
-
 	var (
 		// k6 allows to run archive command on archives too so type of file here doesn't matter
 		scriptName  = script.FullName()
 		archiveName = fmt.Sprintf("/tmp/%s.archived.tar", script.Filename)
 	)
 	istioCommand, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, []string{"sh", "-c"})
-	command := append(istioCommand, newInitializerCommand(scriptName, archiveName, envVarString, argLine))
+
+	// NOTE: only .env are passed to k6 CLI, not .envFrom.
+	// This is esp. relevant for the cloud output test where
+	// duration of the test may depend on env var values.
+	command := append(istioCommand,
+		newInitializerCommand(scriptName, archiveName, k6.GetSpec().Initializer.Env, archiveArgs, k6.GetSpec().NeedsShellCmd())...)
 
 	env := append(newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled), k6.GetSpec().Initializer.Env...)
 
@@ -141,26 +134,34 @@ func NewInitializerJob(k6 *v1alpha1.TestRun, argLine string) (*batchv1.Job, erro
 	return job, nil
 }
 
-func newInitializerCommand(scriptName, archiveName, envVarString, argLine string) string {
-	// There can be several scenarios from k6 command here:
-	// a) script is correct and `k6 inspect` outputs JSON;
-	// b) script is partially incorrect and `k6` outputs a warning log message and
-	// then a JSON;
-	// c) script is incorrect and `k6` outputs an error log message;
-	// d) k6 binary is missing;
-	// e) k6 binary exists but is corrupted or otherwise unexecutable.
-	//
-	// Warnings at this point are not necessary (warning messages will re-appear in
-	// runner's logs and the user can see them there) so we need a pure JSON here,
-	// without any additional messages in cases a) and b). In cases c) - e), output
-	// should contain an error message and the Job is to exit with non-zero code.
-	//
-	// Due to some peculiarities of k6 logging, to achieve the above behaviour,
-	// we need to use a workaround to store all log messages in temp file while
-	// printing JSON as usual. Then parse temp file only for errors, ignoring
-	// any other log messages.
-	// Related: https://github.com/grafana/k6-docs/issues/877
-
+// initializerShellScript renders the initializer's shell program.
+// Parameters:
+//   - setup: executed before k6 invocation; used by .spec.args flow.
+//   - archiveRef: where k6 archive is stored.
+//   - archiveCmd: the `k6 archive` command.
+//
+// About the log handling: there can be several scenarios from the k6 command:
+// a) script is correct and `k6 inspect` outputs JSON;
+// b) script is partially incorrect and `k6` outputs a warning log message and
+// then a JSON;
+// c) script is incorrect and `k6` outputs an error log message;
+// d) k6 binary is missing;
+// e) k6 binary exists but is corrupted or otherwise unexecutable.
+//
+// Warnings at this point are not necessary (warning messages will re-appear in
+// runner's logs and the user can see them there) so we need a pure JSON here,
+// without any additional messages in cases a) and b). In cases c) - e), output
+// should contain an error message and the Job is to exit with non-zero code.
+//
+// Due to some peculiarities of k6 logging, to achieve the above behaviour,
+// we need to use a workaround to store all log messages in temp file while
+// printing JSON as usual. Then parse temp file only for errors, ignoring
+// any other log messages.
+// Related: https://github.com/grafana/k6-docs/issues/877
+func initializerShellScript(setup, archiveRef, archiveCmd string) string {
+	if setup != "" {
+		setup += "\n"
+	}
 	return fmt.Sprintf(
 		`if ! command -v k6 >/dev/null 2>&1; then
   echo '%[1]s' >&2
@@ -168,12 +169,12 @@ func newInitializerCommand(scriptName, archiveName, envVarString, argLine string
 fi
 
 logs=/tmp/k6logs
-
+%[2]s
 if ! mkdir -p "$(dirname %[3]s)"; then
   exit 1
 fi
 
-if ! k6 archive %[2]s%[4]s -O %[3]s %[5]s 2> "${logs}"; then
+if ! %[4]s 2> "${logs}"; then
   cat "${logs}"
   exit 1
 fi
@@ -187,9 +188,51 @@ if grep 'level.*error' "${logs}"; then
   exit 1
 fi`,
 		initializerMissingK6Message,
-		scriptName,
-		archiveName,
-		envVarString,
-		argLine,
+		setup,
+		archiveRef,
+		archiveCmd,
 	)
+}
+
+// also referenced by the unit tests
+var initializerScript = initializerShellScript("archive=\"$1\"\nshift", `"${archive}"`, `"$@"`)
+
+// newInitializerCommand builds the `sh -c` arguments that run the initializer.
+// As the necessary step, it builds the archive command from the arguments.
+// The command can take two forms:
+//   - with .spec.arguments, via shell interpreter `sh -c` and concat of arguments.
+//     The env var values are passed as ${..} to be expanded by Shell.
+//   - with .spec.args, via shell positional arguments (more correct and safer)
+//     The env var values are passed as $(..) to be expanded by kubelet.
+//
+// Env vars are passed as a ref by name to account for both Value and ValueFrom cases.
+// The function assumes that the env vars are being passed to the container.
+func newInitializerCommand(scriptName, archiveName string, env []corev1.EnvVar, archiveArgs []string, needsShellCmd bool) []string {
+	if needsShellCmd {
+		// .spec.arguments case
+		var envVarString string
+		for _, ev := range env {
+			// Env values are expanded by the shell inside quotes.
+			envVarString += fmt.Sprintf(` -e %s="${%s}"`, ev.Name, ev.Name)
+		}
+
+		// Arguments are joined back verbatim, retaining their original quote
+		// context; `$(NAME)` refs in them are left for kubelet expansion.
+		argLine := strings.Join(archiveArgs, " ")
+
+		archiveCmd := fmt.Sprintf("k6 archive %s%s -O %s %s", scriptName, envVarString, archiveName, argLine)
+		return []string{initializerShellScript("", archiveName, archiveCmd)}
+	}
+
+	// .spec.args case
+	archiveCommand := []string{"k6", "archive", scriptName}
+	for _, ev := range env {
+		archiveCommand = append(archiveCommand, "-e", fmt.Sprintf("%s=$(%s)", ev.Name, ev.Name))
+	}
+	archiveCommand = append(archiveCommand, "-O", archiveName)
+	archiveCommand = append(archiveCommand, archiveArgs...)
+
+	// `sh` is a placeholder for $0 (unused in the script), archive name is $1.
+	command := []string{initializerScript, "sh", archiveName}
+	return append(command, archiveCommand...)
 }

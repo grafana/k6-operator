@@ -2,31 +2,37 @@ package types
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 )
-
-// Initializer relies on `sh -c` script so we can't pass Kubernetes-style `$(NAME)`
-// there. For shell, those vars should be substituted into `${NAME}` form. This
-// regexp helps do that.
-var kubeEnvRefRegexp = regexp.MustCompile(`\$\(([a-zA-Z_][a-zA-Z0-9_]*)\)`)
 
 // CLI is an internal type to support k6 invocation in initialization stage.
 // Not all k6 commands allow the same set of arguments so CLI is an object
 // meant to contain only the ones fit for the archive call.
 // Maybe revise this once crococonf is closer to integration?
 type CLI struct {
-	ArchiveArgs string
+	ArchiveArgs []string
 	// k6-operator doesn't care for most values of CLI arguments to k6, with an exception of cloud output
 	HasCloudOut bool
 }
 
-func ParseCLI(arguments string) (*CLI, error) {
+// ParseCLI parses the k6 arguments and returns the subset of them that is
+// suitable for the `k6 archive` call.
+func ParseCLI(argv []string) (*CLI, error) {
+	// find the end of value for last argument
 	lastArgV := func(start int, args []string) (end int) {
 		end = start
 		for end < len(args) {
-			args[end] = strings.TrimSpace(args[end])
-			if len(args[end]) > 0 && args[end][0] == '-' {
+			if len(args[end]) == 0 {
+				// An empty element right after a flag is its value, e.g. `--user-agent ""`:
+				// k6 CLI allows it, so keep the pairing intact. An empty element anywhere
+				// else is positional: don't consume it here, so that the main loop errors
+				// on it; just like k6 CLI errors on an extra empty positional argument.
+				if end == start {
+					end++
+				}
+				break
+			}
+			if args[end][0] == '-' {
 				break
 			}
 			end++
@@ -39,63 +45,42 @@ func ParseCLI(arguments string) (*CLI, error) {
 		err error
 	)
 
-	args := strings.Split(arguments, " ")
 	i := 0
-	for i < len(args) {
-		args[i] = strings.TrimSpace(args[i])
-		if len(args[i]) == 0 {
-			i++
-			continue
-		}
-		if args[i][0] == '-' {
-			end := lastArgV(i+1, args)
+	for i < len(argv) {
+		if len(argv[i]) > 0 && argv[i][0] == '-' {
+			end := lastArgV(i+1, argv)
 
-			if strings.HasPrefix(args[i], "--log-output") {
+			switch {
+			case strings.HasPrefix(argv[i], "--log-output"):
 				// `k6 archive` ignores this argument but if it contains an env var
 				// for token (cloud logs for PLZ test runs), it will break the shell;
 				// so omit it.
-				i = end
-				continue
-			}
 
-			// Unsupported by `k6 archive`.
-			if strings.HasPrefix(args[i], "--block-hostnames") ||
-				strings.HasPrefix(args[i], "--blacklist-ip") ||
-				strings.HasPrefix(args[i], "--user-agent") {
-				i = end
-				continue
-			}
+			case strings.HasPrefix(argv[i], "--block-hostnames"),
+				strings.HasPrefix(argv[i], "--blacklist-ip"),
+				strings.HasPrefix(argv[i], "--user-agent"):
+				// Unsupported by `k6 archive`.
 
-			switch args[i] {
-			case "-e", "--env":
-				// substitute $(NAME) -> ${NAME} for safe initializer command invocation
-				fragment := kubeEnvRefRegexp.ReplaceAllString(strings.Join(args[i:end], " "), `"${$1}"`)
-				if len(cli.ArchiveArgs) > 0 {
-					cli.ArchiveArgs += " "
+			case argv[i] == "-o", argv[i] == "--out":
+				// "cloud" should appear after -o / --out
+				// (Historically) Supported forms: --out cloud, -o cloud
+				if i+1 < end && argv[i+1] == "cloud" {
+					cli.HasCloudOut = true
 				}
-				cli.ArchiveArgs += fragment
-			case "-o", "--out":
-				for j := 0; j < end; j++ {
-					if args[j] == "cloud" {
-						cli.HasCloudOut = true
-					}
-				}
-			case "-l", "--linger", "--no-usage-report":
+
+			case argv[i] == "-l", argv[i] == "--linger", argv[i] == "--no-usage-report":
 				// non-archive arguments, so skip them
-				break
-			case "--verbose", "-v":
+
+			case argv[i] == "--verbose", argv[i] == "-v":
 				// this argument is acceptable by archive but it'd
 				// mess up the JSON output of `k6 inspect`
-				break
+
 			default:
-				if len(cli.ArchiveArgs) > 0 {
-					cli.ArchiveArgs += " "
-				}
-				cli.ArchiveArgs += strings.Join(args[i:end], " ")
+				cli.ArchiveArgs = append(cli.ArchiveArgs, argv[i:end]...)
 			}
 			i = end
 		} else {
-			err = fmt.Errorf("encountered an invalid value for k6 CLI argument: `%s`", args[i])
+			err = fmt.Errorf("encountered an invalid value for k6 CLI argument: `%s`", argv[i])
 			break
 		}
 	}

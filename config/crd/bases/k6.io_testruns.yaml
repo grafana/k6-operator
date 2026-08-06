@@ -37,6 +37,11 @@ spec:
             type: object
           spec:
             properties:
+              args:
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: atomic
               arguments:
                 type: string
               cleanup:

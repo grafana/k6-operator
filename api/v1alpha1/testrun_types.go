@@ -17,6 +17,8 @@ package v1alpha1
 import (
 	"errors"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/grafana/k6-operator/pkg/types"
 	corev1 "k8s.io/api/core/v1"
@@ -100,8 +102,14 @@ type TestRunSpec struct {
 	// using the podAntiAffinity rule.
 	Separate bool `json:"separate,omitempty"`
 
-	// Arguments to pass to the k6 process.
+	// Arguments to pass to the k6 process, as a space-separated string.
+	// Prefer `args` for values that contain spaces or quotes.
 	Arguments string `json:"arguments,omitempty"`
+
+	// Args contains exact argv elements passed to k6.
+	// A non-empty Args overrides Arguments.
+	// +listType=atomic
+	Args []string `json:"args,omitempty"`
 
 	// Port to configure on all k6 containers.
 	// Port 6565 is always configured for k6 processes.
@@ -226,9 +234,39 @@ func (k6 *TestRunSpec) Validate() (warnings []string, err error) {
 		warnings = append(warnings, "`.spec.scuttle` is deprecated and will be removed in the future. See https://grafana.com/docs/k6/latest/set-up/set-up-distributed-k6/usage/istio/ on how to set up Istio.")
 	}
 
-	// Currently, we validate "manually" only arguments field.
-	_, err = types.ParseCLI(k6.Arguments)
+	// Currently, we validate "manually" only the k6 arguments.
+	_, err = types.ParseCLI(k6.Argv())
+
+	// Note: an empty element in .spec.args is allowed as a flag value (e.g. `--user-agent ""`)
+	// because k6 CLI allows it; a standalone empty element is rejected by ParseCLI,
+	// same as k6 CLI rejects an extra empty positional argument.
+
 	return
+}
+
+func (k6 *TestRunSpec) usesArgs() bool {
+	return len(k6.Args) > 0
+}
+
+// Argv returns the exact argv elements to be passed to k6.
+// A non-empty .spec.args takes precedence over .spec.arguments.
+// Otherwise, .spec.arguments is split on whitespace.
+func (k6 *TestRunSpec) Argv() []string {
+	if k6.usesArgs() {
+		return slices.Clone(k6.Args)
+	}
+
+	if argv := strings.Fields(k6.Arguments); len(argv) > 0 {
+		return argv
+	}
+	return nil
+}
+
+// NeedsShellCmd reports whether the k6 command must be interpreted by shell:
+// that is the backward-compatible behaviour of .spec.arguments, used unless
+// exact argv elements are provided in .spec.args.
+func (k6 *TestRunSpec) NeedsShellCmd() bool {
+	return !k6.usesArgs()
 }
 
 // Parse extracts Script data bits from K6 spec and performs basic validation

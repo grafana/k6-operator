@@ -23,7 +23,7 @@ func InitializeJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
 	// validation has already happened, so error here can be ignored
-	cli, _ := types.ParseCLI(k6.GetSpec().Arguments)
+	cli, _ := types.ParseCLI(k6.GetSpec().Argv())
 
 	var initializer *batchv1.Job
 	if initializer, err = jobs.NewInitializerJob(k6, cli.ArchiveArgs); err != nil {
@@ -53,7 +53,7 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 	res = ctrl.Result{RequeueAfter: time.Second * 5}
 
 	// validation has already happened, so error here can be ignored
-	cli, _ := types.ParseCLI(k6.GetSpec().Arguments)
+	cli, _ := types.ParseCLI(k6.GetSpec().Argv())
 
 	inspectOutput, inspectReady, err := inspectTestRun(ctx, log, k6, r.Client)
 	if err != nil {

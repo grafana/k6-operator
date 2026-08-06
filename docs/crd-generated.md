@@ -16952,10 +16952,19 @@ TestRunSpec defines the desired state of TestRun
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>args</b></td>
+        <td>[]string</td>
+        <td>
+          Args contains exact argv elements passed to k6.
+A non-empty Args overrides Arguments.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>arguments</b></td>
         <td>string</td>
         <td>
-          Arguments to pass to the k6 process.<br/>
+          Arguments to pass to the k6 process, as a space-separated string.
+Prefer `args` for values that contain spaces or quotes.<br/>
         </td>
         <td>false</td>
       </tr><tr>
