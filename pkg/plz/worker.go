@@ -3,8 +3,6 @@ package plz
 import (
 	"context"
 	"fmt"
-	"slices"
-	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -182,17 +180,16 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 	tr.Spec.TestRunID = trData.TestRunID()
 
 	// Building the argument list to k6.
-	args := []string{
-		"--out cloud",
-		trData.TagArgs,
-		"--no-thresholds",
-		fmt.Sprintf(`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization="Token $(K6_CLOUD_TOKEN)"`, w.plz.Name, trData.TestRunID()),
-		trData.EnvArgs,
-	}
+	args := []string{"--out", "cloud"}
+	args = append(args, trData.TagArgs...)
+	args = append(args, "--no-thresholds")
+	args = append(args, fmt.Sprintf(
+		`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization=Token $(K6_CLOUD_TOKEN)`,
+		w.plz.Name, trData.TestRunID()))
+	args = append(args, trData.EnvArgs...)
 	args = append(args, fmt.Sprintf("--include-system-env-vars=%t", trData.IncludeSystemEnvVars))
 
-	args = slices.DeleteFunc(args, func(s string) bool { return s == "" })
-	tr.Spec.Arguments = strings.Join(args, " ")
+	tr.Spec.Args = args
 }
 
 // handle creates a new PLZ TestRun from the given test run id. The context is

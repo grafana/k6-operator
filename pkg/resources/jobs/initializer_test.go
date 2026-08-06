@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -100,15 +101,14 @@ func defaultExpectedJobForInitializer() *batchv1.Job {
 							Image:           "grafana/k6:latest",
 							ImagePullPolicy: "",
 							Name:            "k6",
-							Command: []string{
-								"sh", "-c",
+							Command: append([]string{"sh", "-c"},
 								newInitializerCommand(
 									"/test/test.js",
 									"/tmp/test.js.archived.tar",
-									"",
-									"--out cloud",
-								),
-							},
+									nil,
+									[]string{"--out", "cloud"},
+									true,
+								)...),
 							Env: []corev1.EnvVar{},
 							EnvFrom: []corev1.EnvFromSource{
 								{
@@ -135,24 +135,41 @@ func defaultExpectedJobForInitializer() *batchv1.Job {
 func Test_NewInitializerJob(t *testing.T) {
 	tests := []struct {
 		name             string
-		argLine          string
+		archiveArgs      []string
 		setupTestRun     func(*v1alpha1.TestRun)
 		setupExpectedJob func(*batchv1.Job)
 	}{
 		{
 			name:             "base",
-			argLine:          "--out cloud",
+			archiveArgs:      []string{"--out", "cloud"},
 			setupTestRun:     func(k6 *v1alpha1.TestRun) {},
 			setupExpectedJob: func(j *batchv1.Job) {},
 		},
 		{
-			name:    "with custom scheduler name",
-			argLine: "--out cloud",
+			name:        "with custom scheduler name",
+			archiveArgs: []string{"--out", "cloud"},
 			setupTestRun: func(k6 *v1alpha1.TestRun) {
 				k6.Spec.Initializer.SchedulerName = "custom-scheduler"
 			},
 			setupExpectedJob: func(j *batchv1.Job) {
 				j.Spec.Template.Spec.SchedulerName = "custom-scheduler"
+			},
+		},
+		{
+			name:        ".spec.args use the static script",
+			archiveArgs: []string{"--tag", "note=hello world"},
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Arguments = ""
+				k6.Spec.Args = []string{"--out", "cloud", "--tag", "note=hello world"}
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Containers[0].Command = []string{
+					"sh", "-c", initializerScript,
+					"sh", "/tmp/test.js.archived.tar",
+					"k6", "archive", "/test/test.js",
+					"-O", "/tmp/test.js.archived.tar",
+					"--tag", "note=hello world",
+				}
 			},
 		},
 	}
@@ -172,7 +189,7 @@ func Test_NewInitializerJob(t *testing.T) {
 				tt.setupExpectedJob(expectedJob)
 			}
 
-			job, err := NewInitializerJob(k6, tt.argLine)
+			job, err := NewInitializerJob(k6, tt.archiveArgs)
 
 			if err != nil {
 				t.Fatalf("NewInitializerJob errored: %v", err)
@@ -208,7 +225,6 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 	tests := []struct {
 		name             string
 		setup            func(k6 *v1alpha1.TestRun)
-		expectedInCmd    []string
 		expectedInEnvVar []string
 		noEFlag          bool
 	}{
@@ -222,7 +238,6 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{`-e FOO="${FOO}"`, `-e OTHER="${OTHER}"`},
 			expectedInEnvVar: []string{"FOO", "OTHER"},
 		},
 		{
@@ -234,7 +249,6 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{`-e FOO="${FOO}"`},
 			expectedInEnvVar: []string{"FOO"},
 		},
 		{
@@ -251,7 +265,6 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{`-e TEST_TAG="${TEST_TAG}"`},
 			expectedInEnvVar: []string{"TEST_TAG"},
 		},
 		{
@@ -263,48 +276,179 @@ func Test_InitializerEnvVarFlags(t *testing.T) {
 					},
 				}
 			},
-			expectedInCmd:    []string{`-e THRESHOLDS="${THRESHOLDS}"`},
 			expectedInEnvVar: []string{"THRESHOLDS"},
+		},
+		{
+			name: "env var from a Secret",
+			setup: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Runner = v1alpha1.Pod{
+					Env: []corev1.EnvVar{
+						{Name: "SECRET_TOKEN", ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "creds"},
+								Key:                  "token",
+							},
+						}},
+					},
+				}
+			},
+			expectedInEnvVar: []string{"SECRET_TOKEN"},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			k6 := baseTestRun()
-			tt.setup(k6)
+	// modes creates a "matrix" of passing the same test cases to both
+	// .spec.arguments and .spec.args. The diff is in format of env var.
+	modes := []struct {
+		name      string
+		args      []string // add this to TestRun .spec.args
+		envVarFmt string   // expected -e format
+	}{
+		{".spec.arguments", nil, `-e %s="${%s}"`},
+		{".spec.args", []string{"--vus", "1"}, `-e %s=$(%s)`},
+	}
 
-			job, err := NewInitializerJob(k6, "")
-			if err != nil {
-				t.Fatalf("NewInitializerJob errored: %v", err)
-			}
+	for _, mode := range modes {
+		for _, tt := range tests {
+			t.Run(mode.name+": "+tt.name, func(t *testing.T) {
+				k6 := baseTestRun()
+				tt.setup(k6)
+				k6.Spec.Args = mode.args
 
-			cmd := strings.Join(job.Spec.Template.Spec.Containers[0].Command, " ")
-
-			for _, want := range tt.expectedInCmd {
-				if !strings.Contains(cmd, want) {
-					t.Errorf("command should contain %q, got: %s", want, cmd)
+				job, err := NewInitializerJob(k6, nil)
+				if err != nil {
+					t.Fatalf("NewInitializerJob errored: %v", err)
 				}
-			}
 
-			envVars := job.Spec.Template.Spec.Containers[0].Env
-			for _, expected := range tt.expectedInEnvVar {
-				found := false
-				for _, ev := range envVars {
-					if ev.Name == expected {
-						found = true
-						break
+				// find expected env vars in command and container's env vars
+				cmd := strings.Join(job.Spec.Template.Spec.Containers[0].Command, " ")
+				envVars := job.Spec.Template.Spec.Containers[0].Env
+
+				for _, name := range tt.expectedInEnvVar {
+					if want := fmt.Sprintf(mode.envVarFmt, name, name); !strings.Contains(cmd, want) {
+						t.Errorf("command should contain %q, got: %s", want, cmd)
+					}
+
+					found := false
+					for _, ev := range envVars {
+						if ev.Name == name {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("container env should contain %q, got: %v", name, envVars)
 					}
 				}
-				if !found {
-					t.Errorf("container env should contain %q, got: %v", expected, envVars)
-				}
-			}
 
-			if tt.noEFlag {
-				if strings.Contains(cmd, " -e ") {
-					t.Errorf("command should NOT contain `-e`, got: %s", cmd)
+				if tt.noEFlag {
+					if strings.Contains(cmd, " -e ") {
+						t.Errorf("command should NOT contain `-e`, got: %s", cmd)
+					}
 				}
-			}
-		})
+			})
+		}
 	}
+}
+
+// When YAML block scalar is used for .spec.arguments, it adds a newline to it.
+// It can break the initializer shell script, so checking its removal.
+func Test_InitializerCommand_ArgumentsRemoveNewlineInYamlBlock(t *testing.T) {
+	k6 := &v1alpha1.TestRun{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
+		Spec: v1alpha1.TestRunSpec{
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{Name: "test", File: "test.js"},
+			},
+			Arguments: "--vus 10 --duration 5s\n",
+		},
+	}
+
+	cli, err := types.ParseCLI(k6.Spec.Argv())
+	if err != nil {
+		t.Fatalf("ParseCLI errored: %v", err)
+	}
+
+	job, err := NewInitializerJob(k6, cli.ArchiveArgs)
+	if err != nil {
+		t.Fatalf("NewInitializerJob errored: %v", err)
+	}
+
+	shellSource := job.Spec.Template.Spec.Containers[0].Command[2]
+	if want := `--duration 5s 2> "${logs}"`; !strings.Contains(shellSource, want) {
+		t.Errorf("archive line should be one line ending in %q, got:\n%s", want, shellSource)
+	}
+}
+
+func Test_InitializerScuttle(t *testing.T) {
+	baseTestRun := func() *v1alpha1.TestRun {
+		return &v1alpha1.TestRun{
+			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
+			Spec: v1alpha1.TestRunSpec{
+				Script: v1alpha1.K6Script{
+					ConfigMap: v1alpha1.K6Configmap{Name: "test", File: "test.js"},
+				},
+				Scuttle: v1alpha1.K6Scuttle{Enabled: "true"},
+			},
+		}
+	}
+
+	t.Run(".spec.arguments", func(t *testing.T) {
+		k6 := baseTestRun()
+		k6.Spec.Arguments = "--vus 1"
+
+		job, err := NewInitializerJob(k6, []string{"--vus", "1"})
+		if err != nil {
+			t.Fatalf("NewInitializerJob errored: %v", err)
+		}
+
+		cmd := job.Spec.Template.Spec.Containers[0].Command
+		if diff := deep.Equal(cmd, append([]string{"scuttle", "sh", "-c"},
+			newInitializerCommand("/test/test.js", "/tmp/test.js.archived.tar", nil, []string{"--vus", "1"}, true)...)); diff != nil {
+			t.Errorf("initializer command diff: %v", diff)
+		}
+	})
+
+	t.Run(".spec.args", func(t *testing.T) {
+		k6 := baseTestRun()
+		k6.Spec.Args = []string{"--vus", "1"}
+
+		job, err := NewInitializerJob(k6, []string{"--vus", "1"})
+		if err != nil {
+			t.Fatalf("NewInitializerJob errored: %v", err)
+		}
+
+		cmd := job.Spec.Template.Spec.Containers[0].Command
+		if diff := deep.Equal(cmd, []string{
+			"scuttle", "sh", "-c", initializerScript,
+			"sh", "/tmp/test.js.archived.tar",
+			"k6", "archive", "/test/test.js",
+			"-O", "/tmp/test.js.archived.tar",
+			"--vus", "1",
+		}); diff != nil {
+			t.Errorf("initializer command diff: %v", diff)
+		}
+	})
+}
+
+func Test_InitializerScript_NoDynamicValues(t *testing.T) {
+	k6 := &v1alpha1.TestRun{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
+		Spec: v1alpha1.TestRunSpec{
+			Script: v1alpha1.K6Script{
+				ConfigMap: v1alpha1.K6Configmap{Name: "test", File: "test.js"},
+			},
+			Args: []string{"--tag", "note=hello world; rm -rf /"}, // shell injection
+		},
+	}
+
+	job, err := NewInitializerJob(k6, []string{"--tag", "note=hello world; rm -rf /"})
+	if err != nil {
+		t.Fatalf("NewInitializerJob errored: %v", err)
+	}
+
+	command := job.Spec.Template.Spec.Containers[0].Command
+	if command[2] != initializerScript {
+		t.Errorf("shell source is not the static script: %s", command[2])
+	}
+	// at this point, we can be certain that command[2] does not contain rm -rf
 }
