@@ -161,8 +161,19 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 	}
 }
 
-// the --log-output argument of PLZ runners; also used in unit tests
+// the --log-output argument of PLZ runners
 const plzLogOutputFormat = `--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization=Token $(K6_CLOUD_TOKEN)`
+
+// plzk6Args builds the exact argv the worker is expected to produce.
+func plzk6Args(plzName string, testRunID string, trData *cloud.TestRunData) []string {
+	args := []string{"--out", "cloud"}
+	args = append(args, trData.TagArgs...)
+	args = append(args, "--no-thresholds")
+	args = append(args, fmt.Sprintf(plzLogOutputFormat, plzName, testRunID))
+	args = append(args, trData.EnvArgs...)
+	args = append(args, fmt.Sprintf("--include-system-env-vars=%t", trData.IncludeSystemEnvVars))
+	return args
+}
 
 // complete modifies tr with data from trData, which is specific for this test run.
 func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
@@ -183,14 +194,7 @@ func (w *PLZWorker) complete(tr *v1alpha1.TestRun, trData *cloud.TestRunData) {
 	tr.Spec.TestRunID = trData.TestRunID()
 
 	// Building the argument list to k6.
-	args := []string{"--out", "cloud"}
-	args = append(args, trData.TagArgs...)
-	args = append(args, "--no-thresholds")
-	args = append(args, fmt.Sprintf(plzLogOutputFormat, w.plz.Name, trData.TestRunID()))
-	args = append(args, trData.EnvArgs...)
-	args = append(args, fmt.Sprintf("--include-system-env-vars=%t", trData.IncludeSystemEnvVars))
-
-	tr.Spec.Args = args
+	tr.Spec.Args = plzk6Args(w.plz.Name, trData.TestRunID(), trData)
 }
 
 // handle creates a new PLZ TestRun from the given test run id. The context is

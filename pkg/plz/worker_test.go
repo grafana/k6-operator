@@ -64,18 +64,66 @@ func Test_StopFactory_idempotent(t *testing.T) {
 	}
 }
 
+func Test_plzk6Args(t *testing.T) {
+	tests := []struct {
+		name      string
+		plzName   string
+		testRunID string
+		trData    *cloud.TestRunData
+		expected  []string
+	}{
+		{
+			name:      "default, hard-coded values",
+			plzName:   "",
+			testRunID: "0",
+			trData:    &cloud.TestRunData{},
+			expected: []string{
+				"--out",
+				"cloud",
+				"--no-thresholds",
+				"--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=,label.test_run_id=0,header.Authorization=Token $(K6_CLOUD_TOKEN)",
+				"--include-system-env-vars=false",
+			},
+		},
+		{
+			name:      "arguments from preprocessing",
+			plzName:   "private-zone",
+			testRunID: "1234",
+			trData: &cloud.TestRunData{
+				TagArgs: []string{"--tag", "load_zone=private-zone", "--tag", "team=operator"},
+				EnvArgs: []string{"-e", "K6_CLOUDRUN_TEST_RUN_ID=1234"},
+				LZConfig: cloud.LZConfig{
+					CLIArgs: cloud.CLIArgs{IncludeSystemEnvVars: true},
+				},
+			},
+			expected: []string{
+				"--out",
+				"cloud",
+				"--tag",
+				"load_zone=private-zone",
+				"--tag",
+				"team=operator",
+				"--no-thresholds",
+				"--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=private-zone,label.test_run_id=1234,header.Authorization=Token $(K6_CLOUD_TOKEN)",
+				"-e",
+				"K6_CLOUDRUN_TEST_RUN_ID=1234",
+				"--include-system-env-vars=true",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if diff := deep.Equal(test.expected, plzk6Args(test.plzName, test.testRunID, test.trData)); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
 func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	// The following are the definitions that
 	// are expected from PLZ worker now.
-
-	// plzArgs builds the exact argv the worker is expected to produce.
-	plzArgs := func(plzName string, tagArgs []string, testRunID string, envArgs []string, includeSysEnvVars bool) []string {
-		args := []string{"--out", "cloud"}
-		args = append(args, tagArgs...)
-		args = append(args, "--no-thresholds", fmt.Sprintf(plzLogOutputFormat, plzName, testRunID))
-		args = append(args, envArgs...)
-		return append(args, fmt.Sprintf("--include-system-env-vars=%t", includeSysEnvVars))
-	}
 
 	var (
 		mainIngest = "https://ingest.k6.io"
@@ -113,7 +161,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				},
 				Parallelism: int32(0),
 				Separate:    false,
-				Args:        plzArgs("", nil, "0", nil, false),
+				Args:        plzk6Args("", "0", &cloud.TestRunData{}),
 				Cleanup:     v1alpha1.Cleanup("post"),
 
 				TestRunID: "0",
@@ -209,12 +257,13 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	cloudFieldsTestRun = requiredFieldsTestRun // build up on top of required field case
 	cloudFieldsTestRun.Name = testrun.PLZTestName(fmt.Sprintf("%d", someTestRunID))
 	cloudFieldsTestRun.Spec.TestRunID = fmt.Sprintf("%d", someTestRunID)
-	cloudFieldsTestRun.Spec.Args = plzArgs(
+	cloudFieldsTestRun.Spec.Args = plzk6Args(
 		"",
-		someLZTagArgs,
 		fmt.Sprintf("%d", someTestRunID),
-		cloudExecEnvArgs,
-		false)
+		&cloud.TestRunData{
+			TagArgs: someLZTagArgs,
+			EnvArgs: cloudExecEnvArgs,
+		})
 	cloudFieldsTestRun.Spec.Runner.InitContainers = []v1alpha1.InitContainer{
 		containers.NewS3InitContainer(
 			someArchiveURL,
@@ -231,12 +280,13 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	)
 
 	cloudEnvVarsTestRun = cloudFieldsTestRun // build up on top of cloud fields case
-	cloudEnvVarsTestRun.Spec.Args = plzArgs(
+	cloudEnvVarsTestRun.Spec.Args = plzk6Args(
 		somePLZName,
-		someLZTagArgs,
 		fmt.Sprintf("%d", someTestRunID),
-		cloudEnvVarsEnvArgs,
-		false)
+		&cloud.TestRunData{
+			TagArgs: someLZTagArgs,
+			EnvArgs: cloudEnvVarsEnvArgs,
+		})
 	cloudEnvVarsTestRun.Spec.Runner.Env = []corev1.EnvVar{
 		{Name: "K6_USER_AGENT", Value: "Grafana Cloud k6"},
 	}
@@ -270,12 +320,14 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	podTemplateAllTestRun.Spec.Starter.SecurityContext = somePodSecCtx
 
 	includeSysEnvVarsTestRun = cloudFieldsTestRun
-	includeSysEnvVarsTestRun.Spec.Args = plzArgs(
+	includeSysEnvVarsTestRun.Spec.Args = plzk6Args(
 		"",
-		someLZTagArgs,
 		fmt.Sprintf("%d", someTestRunID),
-		cloudExecEnvArgs,
-		true)
+		&cloud.TestRunData{
+			TagArgs:  someLZTagArgs,
+			EnvArgs:  cloudExecEnvArgs,
+			LZConfig: cloud.LZConfig{CLIArgs: cloud.CLIArgs{IncludeSystemEnvVars: true}},
+		})
 
 	someSecretsConfig := &cloud.SecretsConfig{
 		Endpoint:     "https://api.k6.io/provisioning/v1/test_runs/6543/decrypt_secret?name={key}",
