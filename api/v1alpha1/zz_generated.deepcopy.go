@@ -485,6 +485,11 @@ func (in *TestRunList) DeepCopyObject() runtime.Object {
 func (in *TestRunSpec) DeepCopyInto(out *TestRunSpec) {
 	*out = *in
 	out.Script = in.Script
+	if in.Args != nil {
+		in, out := &in.Args, &out.Args
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Ports != nil {
 		in, out := &in.Ports, &out.Ports
 		*out = make([]v1.ContainerPort, len(*in))

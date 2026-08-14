@@ -152,7 +152,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 
 		// Skip initializer if disabled, unless --out cloud is present
 		// (cloud output tests require initializer to run k6 inspect)
-		cli, _ := k6types.ParseCLI(k6.GetSpec().Arguments)
+		cli, _ := k6types.ParseCLI(k6.GetSpec().Argv())
 		if !cli.HasCloudOut && k6.IsInitializerDisabled() {
 			log.Info("Initializer is disabled, skipping initialization step")
 

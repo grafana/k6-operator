@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"strings"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -39,6 +40,14 @@ func defaultScript() *types.Script {
 		Name:     "test",
 		Filename: "thing.js",
 		Type:     "ConfigMap",
+	}
+}
+
+func localFileScript() *types.Script {
+	return &types.Script{
+		Name:     "test",
+		Filename: "/test/test.js",
+		Type:     "LocalFile",
 	}
 }
 
@@ -221,13 +230,27 @@ func Test_NewRunnerJob(t *testing.T) {
 			},
 		},
 		{
-			name: "modifying k6 command: arguments",
+			name: "modifying k6 command: .spec.arguments",
 			setupTestRun: func(k6 *v1alpha1.TestRun) {
 				k6.Spec.Arguments = "--cool-thing"
 			},
 			setupExpectedJob: func(j *batchv1.Job) {
 				j.Spec.Template.Spec.Containers[0].Command = []string{
 					"k6", "run", "--quiet", "--cool-thing", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
+				}
+			},
+		},
+		{
+			name: "modifying k6 command: .spec.args",
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Args = []string{"--tag", "note=hello world", "-e", `QUOTED="value"`, "-e", "PRICE=$$100"}
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Containers[0].Command = []string{
+					"k6", "run", "--quiet",
+					"--tag", "note=hello world", "-e", `QUOTED="value"`, "-e", "PRICE=$$100",
+					"/test/test.js", "--address=0.0.0.0:6565", "--paused",
 					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
 			},
@@ -272,7 +295,7 @@ func Test_NewRunnerJob(t *testing.T) {
 			},
 		},
 		{
-			name: "LocalFile",
+			name: "LocalFile with .spec.arguments",
 			script: &types.Script{
 				Name:     "test",
 				Filename: "/test/test.js",
@@ -283,17 +306,55 @@ func Test_NewRunnerJob(t *testing.T) {
 				k6.Spec.Scuttle = v1alpha1.K6Scuttle{Enabled: "false"}
 			},
 			setupExpectedJob: func(j *batchv1.Job) {
-				localScript := &types.Script{
-					Name:     "test",
-					Filename: "/test/test.js",
-					Type:     "LocalFile",
-				}
-				j.Spec.Template.Spec.Containers[0].Command = []string{
-					"sh", "-c",
-					"if [ ! -f /test/test.js ]; then echo \"LocalFile not found exiting...\"; exit 1; fi;\nk6 run --quiet /test/test.js --address=0.0.0.0:6565 --paused --tag instance_id=1 --tag testrun_name=test",
-				}
+				localScript := localFileScript()
+				j.Spec.Template.Spec.Containers[0].Command = localScript.UpdateCommand([]string{
+					"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565",
+					"--paused", "--tag", "instance_id=1", "--tag", "testrun_name=test",
+				}, true)
 				j.Spec.Template.Spec.Containers[0].VolumeMounts = localScript.VolumeMount()
 				j.Spec.Template.Spec.Volumes = localScript.Volume()
+			},
+		},
+		{
+			name:   "LocalFile with .spec.args",
+			script: localFileScript(),
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Script = v1alpha1.K6Script{LocalFile: "/test/test.js"}
+				k6.Spec.Args = []string{"--tag", "note=hello world"}
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				localScript := localFileScript()
+				j.Spec.Template.Spec.Containers[0].Command = localScript.UpdateCommand([]string{
+					"k6", "run", "--quiet", "--tag", "note=hello world",
+					"/test/test.js", "--address=0.0.0.0:6565", "--paused",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
+				}, false)
+				j.Spec.Template.Spec.Containers[0].VolumeMounts = localScript.VolumeMount()
+				j.Spec.Template.Spec.Volumes = localScript.Volume()
+			},
+		},
+		{
+			name:   "LocalFile with .spec.args and scuttle",
+			script: localFileScript(),
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Script = v1alpha1.K6Script{LocalFile: "/test/test.js"}
+				k6.Spec.Args = []string{"--tag", "note=hello world"}
+				k6.Spec.Scuttle = v1alpha1.K6Scuttle{Enabled: "true"}
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				localScript := localFileScript()
+				j.Spec.Template.Spec.Containers[0].Command = localScript.UpdateCommand([]string{
+					"scuttle", "k6", "run", "--quiet", "--tag", "note=hello world",
+					"/test/test.js", "--address=0.0.0.0:6565", "--paused",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
+				}, false)
+				j.Spec.Template.Spec.Containers[0].VolumeMounts = localScript.VolumeMount()
+				j.Spec.Template.Spec.Volumes = localScript.Volume()
+				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
+					{Name: "ENVOY_ADMIN_API", Value: "http://127.0.0.1:15000"},
+					{Name: "ISTIO_QUIT_API", Value: "http://127.0.0.1:15020"},
+					{Name: "WAIT_FOR_ENVOY_TIMEOUT", Value: "15"},
+				}
 			},
 		},
 		{
@@ -501,6 +562,61 @@ func Test_NewRunnerJob(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_NewRunnerJob_LocalFilePreservesLogOutputArgument(t *testing.T) {
+	const (
+		argsLogOutput      = `--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,header.Authorization=Token $(K6_CLOUD_TOKEN)`
+		argumentsLogOutput = `--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,header.Authorization="Token $(K6_CLOUD_TOKEN)"`
+	)
+
+	t.Run(".spec.arguments keep the shell quoting", func(t *testing.T) {
+		k6 := defaultTestRun()
+		k6.Spec.Script = v1alpha1.K6Script{LocalFile: "/test/test.js"}
+		k6.Spec.Arguments = "--out cloud " + argumentsLogOutput
+
+		job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
+		if err != nil {
+			t.Fatalf("NewRunnerJob errored: %v", err)
+		}
+
+		command := job.Spec.Template.Spec.Containers[0].Command
+		// arguments are wrapped as `sh -c "<joined>"` and passed as
+		// positional parameters to the existence-check script.
+		if len(command) != 8 || command[5] != "sh" || command[6] != "-c" {
+			t.Fatalf("expected a `sh -c` wrapper as positional parameters, got: %v", command)
+		}
+		if !strings.Contains(command[7], argumentsLogOutput) {
+			t.Errorf("inner shell command should contain %q, got: %s", argumentsLogOutput, command[7])
+		}
+	})
+
+	t.Run(".spec.args propagate the log output as one element", func(t *testing.T) {
+		k6 := defaultTestRun()
+		k6.Spec.Script = v1alpha1.K6Script{LocalFile: "/test/test.js"}
+		k6.Spec.Args = []string{"--out", "cloud", argsLogOutput}
+
+		job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
+		if err != nil {
+			t.Fatalf("NewRunnerJob errored: %v", err)
+		}
+
+		command := job.Spec.Template.Spec.Containers[0].Command
+		found := 0
+		for _, arg := range command {
+			if arg == argsLogOutput {
+				found++
+			}
+		}
+		if found != 1 {
+			t.Errorf("expected the log output as exactly one element, found %d in: %v", found, command)
+		}
+		for _, arg := range command[3:] {
+			if strings.Contains(arg, `"`) {
+				t.Errorf("no argument should carry a literal quote, got: %q", arg)
+			}
+		}
+	})
 }
 
 func Test_NewAntiAffinity(t *testing.T) {

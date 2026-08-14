@@ -1,6 +1,7 @@
 package types
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,140 +10,241 @@ import (
 func Test_ParseCLI(t *testing.T) {
 	tests := []struct {
 		name             string
-		argLine          string
+		argv             []string
 		cli              CLI
 		invalidArguments bool
 	}{
 		{
 			"EmptyArgs",
-			"",
+			nil,
 			CLI{},
 			false,
 		},
 		{
 			"ShortArchiveArgs",
-			"-u 10 -d 5",
+			[]string{"-u", "10", "-d", "5"},
 			CLI{
-				ArchiveArgs: "-u 10 -d 5",
+				ArchiveArgs: []string{"-u", "10", "-d", "5"},
 			},
 			false,
 		},
 		{
 			"LongArchiveArgs",
-			"--vus 10 --duration 5",
+			[]string{"--vus", "10", "--duration", "5"},
 			CLI{
-				ArchiveArgs: "--vus 10 --duration 5",
+				ArchiveArgs: []string{"--vus", "10", "--duration", "5"},
 			},
 			false,
 		},
 		{
 			"ShortNonArchiveArg",
-			"-u 10 -d 5 -l",
+			[]string{"-u", "10", "-d", "5", "-l"},
 			CLI{
-				ArchiveArgs: "-u 10 -d 5",
+				ArchiveArgs: []string{"-u", "10", "-d", "5"},
 			},
 			false,
 		},
 		{
 			"LongNonArchiveArgs",
-			"--vus 10 --duration 5 --linger",
+			[]string{"--vus", "10", "--duration", "5", "--linger"},
 			CLI{
-				ArchiveArgs: "--vus 10 --duration 5",
+				ArchiveArgs: []string{"--vus", "10", "--duration", "5"},
 			},
 			false,
 		},
 		{
 			"OutWithoutCloudArgs",
-			"--vus 10 -o json -o csv",
+			[]string{"--vus", "10", "-o", "json", "-o", "csv"},
 			CLI{
-				ArchiveArgs: "--vus 10",
+				ArchiveArgs: []string{"--vus", "10"},
 				HasCloudOut: false,
 			},
 			false,
 		},
 		{
 			"OutWithCloudArgs",
-			"--vus 10 --out json -o csv --out cloud",
+			[]string{"--vus", "10", "--out", "json", "-o", "csv", "--out", "cloud"},
 			CLI{
-				ArchiveArgs: "--vus 10",
+				ArchiveArgs: []string{"--vus", "10"},
 				HasCloudOut: true,
 			},
 			false,
 		},
 		{
 			"VerboseOutWithCloudArgs",
-			"--vus 10 --out json -o csv --out cloud --verbose",
+			[]string{"--vus", "10", "--out", "json", "-o", "csv", "--out", "cloud", "--verbose"},
 			CLI{
-				ArchiveArgs: "--vus 10",
+				ArchiveArgs: []string{"--vus", "10"},
 				HasCloudOut: true,
 			},
 			false,
 		},
 		{
-			"OmitLogOutput",
-			`--out cloud --no-thresholds --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,label.test_run_id=1111,header.Authorization="Token $(K6_CLOUD_TOKEN)"`,
+			"FalseCloudInTag",
+			[]string{"--tag", "cloud", "--out", "json"},
 			CLI{
-				ArchiveArgs: "--no-thresholds",
+				ArchiveArgs: []string{"--tag", "cloud"},
+				HasCloudOut: false,
+			},
+			false,
+		},
+		{
+			"StandaloneCloudOut",
+			[]string{"--out", "cloud"},
+			CLI{
 				HasCloudOut: true,
 			},
 			false,
 		},
 		{
-			"OmitLogOutputInDiffOrder",
-			`--out cloud --log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,label.test_run_id=1111,header.Authorization="Token $(K6_CLOUD_TOKEN)" --no-thresholds`,
+			"StandaloneShortCloudOut",
+			[]string{"-o", "cloud"},
 			CLI{
-				ArchiveArgs: "--no-thresholds",
+				HasCloudOut: true,
+			},
+			false,
+		},
+		{
+			// with `.spec.arguments`, the value is split and has quotes
+			"OmitLogOutputArguments",
+			[]string{
+				"--out", "cloud", "--no-thresholds",
+				`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,label.test_run_id=1111,header.Authorization="Token`,
+				`$(K6_CLOUD_TOKEN)"`,
+			},
+			CLI{
+				ArchiveArgs: []string{"--no-thresholds"},
+				HasCloudOut: true,
+			},
+			false,
+		},
+		{
+			// with `.spec.arguments`, the value is split and has quotes
+			"OmitLogOutputAgumentsInDiffOrder",
+			[]string{
+				"--out", "cloud",
+				`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,label.test_run_id=1111,header.Authorization="Token`,
+				`$(K6_CLOUD_TOKEN)"`,
+				"--no-thresholds",
+			},
+			CLI{
+				ArchiveArgs: []string{"--no-thresholds"},
+				HasCloudOut: true,
+			},
+			false,
+		},
+		{
+			// with `.spec.args`, the value is kept together, without quotes
+			"OmitLogOutputArgs",
+			[]string{
+				"--out", "cloud",
+				`--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=my-plz,label.test_run_id=1111,header.Authorization=Token $(K6_CLOUD_TOKEN)`,
+				"--no-thresholds",
+			},
+			CLI{
+				ArchiveArgs: []string{"--no-thresholds"},
 				HasCloudOut: true,
 			},
 			false,
 		},
 		{
 			"InvalidArguments",
-			`run this-argument-does-not-matter.js -o json`,
+			[]string{"run", "this-argument-does-not-matter.js", "-o", "json"},
 			CLI{},
 			true,
 		},
 		{
 			"SkipBlockHostnamesEquals",
-			`--vus 10 --block-hostnames="google.com" --duration 5s`,
+			[]string{"--vus", "10", `--block-hostnames="google.com"`, "--duration", "5s"},
 			CLI{
-				ArchiveArgs: "--vus 10 --duration 5s",
+				ArchiveArgs: []string{"--vus", "10", "--duration", "5s"},
 			},
 			false,
 		},
 		{
 			"SkipBlacklistIpEquals",
-			`--vus 10 --blacklist-ip="8.8.8.8/32" --duration 5s`,
+			[]string{"--vus", "10", `--blacklist-ip="8.8.8.8/32"`, "--duration", "5s"},
 			CLI{
-				ArchiveArgs: "--vus 10 --duration 5s",
+				ArchiveArgs: []string{"--vus", "10", "--duration", "5s"},
 			},
 			false,
 		},
 		{
 			"SkipUserAgentEquals",
-			`--vus 10 --user-agent="foo" --duration 5s`,
+			[]string{"--vus", "10", `--user-agent="foo"`, "--duration", "5s"},
 			CLI{
-				ArchiveArgs: "--vus 10 --duration 5s",
+				ArchiveArgs: []string{"--vus", "10", "--duration", "5s"},
 			},
 			false,
 		},
 		{
-			"RewriteKubeEnvRefsForShell",
-			`--out cloud -e FOO=$(K6_OP_ENV_FOO) --no-thresholds -e BAR=plain`,
+			"KeepKubeEnvRefs",
+			[]string{"--out", "cloud", "-e", "FOO=$(K6_OP_ENV_FOO)", "--no-thresholds", "-e", "BAR=plain"},
 			CLI{
-				ArchiveArgs: `-e FOO="${K6_OP_ENV_FOO}" --no-thresholds -e BAR=plain`,
+				ArchiveArgs: []string{"-e", "FOO=$(K6_OP_ENV_FOO)", "--no-thresholds", "-e", "BAR=plain"},
 				HasCloudOut: true,
 			},
 			false,
 		},
 		{
 			"IncludeSystemEnvVars",
-			`--out cloud --include-system-env-vars`,
+			[]string{"--out", "cloud", "--include-system-env-vars"},
 			CLI{
-				ArchiveArgs: "--include-system-env-vars",
+				ArchiveArgs: []string{"--include-system-env-vars"},
 				HasCloudOut: true,
 			},
 			false,
+		},
+		{
+			// valid for .spec.args only
+			"ExactSpacedAndQuotedElements",
+			[]string{"--tag", "note=hello world", "-e", `QUOTED="value"`},
+			CLI{
+				ArchiveArgs: []string{"--tag", "note=hello world", "-e", `QUOTED="value"`},
+			},
+			false,
+		},
+		{
+			// valid for .spec.args only
+			"ExactDollarsAreNotInterpreted",
+			[]string{"--tag", "price=$$100 $(NAME)"},
+			CLI{
+				ArchiveArgs: []string{"--tag", "price=$$100 $(NAME)"},
+			},
+			false,
+		},
+		{
+			// `k6 archive --tag "" --vus 10` is valid, so the pairing must be kept
+			"EmptyElementAsFlagValue",
+			[]string{"--tag", "", "--vus", "10"},
+			CLI{
+				ArchiveArgs: []string{"--tag", "", "--vus", "10"},
+			},
+			false,
+		},
+		{
+			"EmptyElementAsValueOfFilteredFlag",
+			[]string{"--user-agent", "", "--vus", "10"},
+			CLI{
+				ArchiveArgs: []string{"--vus", "10"},
+			},
+			false,
+		},
+		{
+			// k6 CLI rejects an extra empty positional argument, so should ParseCLI
+			"EmptyElementStandaloneLeading",
+			[]string{"", "--vus", "10"},
+			CLI{},
+			true,
+		},
+		{
+			// an empty element after a flag's value is positional, not part of the value
+			"EmptyElementStandaloneTrailing",
+			[]string{"--vus", "10", ""},
+			CLI{
+				ArchiveArgs: []string{"--vus", "10"},
+			},
+			true,
 		},
 	}
 
@@ -150,10 +252,14 @@ func Test_ParseCLI(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			cli, err := ParseCLI(test.argLine)
+
+			original := slices.Clone(test.argv)
+
+			cli, err := ParseCLI(test.argv)
 			assert.Equal(t, test.invalidArguments, err != nil)
 			assert.Equal(t, test.cli.ArchiveArgs, cli.ArchiveArgs)
 			assert.Equal(t, test.cli.HasCloudOut, cli.HasCloudOut)
+			assert.Equal(t, original, test.argv, "ParseCLI must not modify its input")
 		})
 	}
 }

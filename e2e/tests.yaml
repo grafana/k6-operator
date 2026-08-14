@@ -94,6 +94,15 @@ tests:
       - "pkg/resources/jobs/runner.go"
     requires_env: [CLOUD_TOKEN, PROJECT_ID]
 
+  - name: testrun-cloud-output-args
+    source_patterns:
+      - "pkg/cloud/"
+      - "pkg/types/k6cli.go"
+      - "pkg/types/script.go"
+      - "pkg/resources/jobs/runner.go"
+      - "pkg/resources/jobs/initializer.go"
+    requires_env: [CLOUD_TOKEN, PROJECT_ID]
+
   - name: testrun-simultaneous-cloud-output
     source_patterns:
       - "pkg/cloud/"

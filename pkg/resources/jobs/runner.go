@@ -3,7 +3,6 @@ package jobs
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -48,10 +47,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 		return nil, err
 	}
 
-	if k6.GetSpec().Arguments != "" {
-		args := strings.Split(k6.GetSpec().Arguments, " ")
-		command = append(command, args...)
-	}
+	command = append(command, k6.GetSpec().Argv()...)
 
 	command = append(
 		command,
@@ -82,7 +78,7 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 		command = append(command, "-e", fmt.Sprintf(`%s=%d`, cloud.IIDCloudExecVar, index))
 	}
 
-	command = script.UpdateCommand(command)
+	command = script.UpdateCommand(command, k6.GetSpec().NeedsShellCmd())
 
 	var (
 		zero32                       int32 = 0

@@ -201,3 +201,116 @@ func Test_ParseScript(t *testing.T) {
 		})
 	}
 }
+
+func Test_Argv(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		spec     TestRunSpec
+		expected []string
+	}{
+		{
+			name:     "nothing set",
+			spec:     TestRunSpec{},
+			expected: nil,
+		},
+		{
+			name:     "empty args fall back to arguments",
+			spec:     TestRunSpec{Arguments: "--vus 10", Args: []string{}},
+			expected: []string{"--vus", "10"},
+		},
+		{
+			name:     "args override arguments",
+			spec:     TestRunSpec{Arguments: "--vus 10", Args: []string{"--vus", "20"}},
+			expected: []string{"--vus", "20"},
+		},
+		{
+			name:     "arguments splitting on spaces",
+			spec:     TestRunSpec{Arguments: "--vus 10 --duration 5s"},
+			expected: []string{"--vus", "10", "--duration", "5s"},
+		},
+		{
+			name:     "arguments splitting drops empty elements",
+			spec:     TestRunSpec{Arguments: "  --vus  10   --duration 5s  "},
+			expected: []string{"--vus", "10", "--duration", "5s"},
+		},
+		{
+			name:     "arguments with spaces only",
+			spec:     TestRunSpec{Arguments: "   "},
+			expected: nil,
+		},
+		{
+			// A YAML block scalar leaves a trailing newline. It must be trimmed.
+			name:     "arguments from a block scalar",
+			spec:     TestRunSpec{Arguments: "--vus 10 --duration 5s\n"},
+			expected: []string{"--vus", "10", "--duration", "5s"},
+		},
+		{
+			name: "args come back verbatim",
+			spec: TestRunSpec{Args: []string{
+				"--tag", "note=hello world",
+				"-e", `QUOTED="value"`,
+				"-e", "EMPTY=",
+				"--tag", "price=$$100 $(NAME)",
+				"",
+			}},
+			expected: []string{
+				"--tag", "note=hello world",
+				"-e", `QUOTED="value"`,
+				"-e", "EMPTY=",
+				"--tag", "price=$$100 $(NAME)",
+				"",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			argv := tt.spec.Argv()
+			if !reflect.DeepEqual(argv, tt.expected) {
+				t.Errorf("Argv() = %#v, want %#v", argv, tt.expected)
+			}
+		})
+	}
+}
+
+// ATM, Validate calls Argv() and ParseCLI(), both of which have their own tests.
+// So keeping only simple checks here, with potential future expansion.
+func Test_Validate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		spec        TestRunSpec
+		expectedErr bool
+	}{
+		{
+			name: "exact args",
+			spec: TestRunSpec{Args: []string{"--tag", "note=hello world", "-e", "EMPTY="}},
+		},
+		{
+			name:        "invalid arguments",
+			spec:        TestRunSpec{Arguments: "run script.js"},
+			expectedErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := tt.spec.Validate()
+			if tt.expectedErr && err == nil {
+				t.Errorf("Validate() should have returned an error")
+			}
+			if !tt.expectedErr && err != nil {
+				t.Errorf("Validate() returned unexpected error: %v", err)
+			}
+		})
+	}
+}

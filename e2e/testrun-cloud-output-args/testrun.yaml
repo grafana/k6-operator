@@ -1,0 +1,29 @@
+---
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: k6-sample-args
+  namespace: k6-tests
+spec:
+  parallelism: 4
+  script:
+    configMap:
+      name: "test"
+      file: "test.js"
+  # Same test as testrun-cloud-output, expressed with `args` instead of
+  # `arguments`. Each element reaches k6 exactly as written, so values can
+  # hold spaces and quotes. `$$` is a literal `$` and `$(NAME)` is resolved
+  # by Kubernetes.
+  args:
+    - --out
+    - cloud
+    - --tag
+    - office=hours
+    - --tag
+    - note=hello world
+    - -e
+    - PIZZA_NOTE=hello "world" $$5 and $(BASE_URL)
+  runner:
+    env:
+      - name: BASE_URL
+        value: https://pizza.grafana.fun
