@@ -2,7 +2,7 @@ module github.com/grafana/k6-operator
 
 go 1.26.0
 
-toolchain go1.26.5
+toolchain go1.26.6
 
 require (
 	github.com/go-logr/logr v1.4.4
