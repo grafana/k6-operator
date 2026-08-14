@@ -122,6 +122,98 @@ func TestLZConfig_reservedEnvVars(t *testing.T) {
 	}
 }
 
+func TestTestRunData_preprocessTags(t *testing.T) {
+	t.Parallel()
+
+	oneLZ := LZDistribution{"label": Distribution{LoadZone: "zone", Percent: 100}}
+
+	tests := []struct {
+		name     string
+		trd      TestRunData
+		expected []string
+	}{
+		{
+			name:     "nil tags from API",
+			trd:      TestRunData{LZDistribution: oneLZ},
+			expected: []string{"--tag", "load_zone=zone"},
+		},
+		{
+			name: "empty tags from API",
+			trd: TestRunData{
+				LZDistribution: oneLZ,
+				LZConfig:       LZConfig{CLIArgs: CLIArgs{Tags: map[string]string{}}},
+			},
+			expected: []string{"--tag", "load_zone=zone"},
+		},
+		{
+			name: "merging tags",
+			trd: TestRunData{
+				LZDistribution: oneLZ,
+				LZConfig: LZConfig{CLIArgs: CLIArgs{Tags: map[string]string{
+					"env":  "staging",
+					"team": "backend",
+				}}},
+			},
+			expected: []string{"--tag", "env=staging", "--tag", "load_zone=zone", "--tag", "team=backend"},
+		},
+		{
+			name: "load_zone tag is reserved and can't be overwritten",
+			trd: TestRunData{
+				LZDistribution: oneLZ,
+				LZConfig: LZConfig{CLIArgs: CLIArgs{Tags: map[string]string{
+					"load_zone": "user-zone",
+					"env":       "staging",
+				}}},
+			},
+			expected: []string{"--tag", "env=staging", "--tag", "load_zone=zone"},
+		},
+		{
+			name: "tag values with spaces",
+			trd: TestRunData{
+				LZDistribution: oneLZ,
+				LZConfig: LZConfig{CLIArgs: CLIArgs{Tags: map[string]string{
+					"description": "my test run",
+				}}},
+			},
+			expected: []string{"--tag", "description=my test run", "--tag", "load_zone=zone"},
+		},
+		{
+			// k6 CLI rejects `--tag k=` with "invalid tag, empty value",
+			// while `options.tags` in the script allows empty values, so
+			// such tags can legitimately reach trd.Tags. They are skipped.
+			// TODO: come up with a test for k6 bug report
+			name: "skip tags with empty keys or values",
+			trd: TestRunData{
+				LZDistribution: oneLZ,
+				LZConfig: LZConfig{CLIArgs: CLIArgs{Tags: map[string]string{
+					"env":      "staging",
+					"emptyval": "",
+					"":         "emptykey",
+				}}},
+			},
+			expected: []string{"--tag", "env=staging", "--tag", "load_zone=zone"},
+		},
+		{
+			name:     "missing distribution",
+			trd:      TestRunData{},
+			expected: []string{"--tag", "load_zone=unknown_lz_name"},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			tt.trd.preprocessTags()
+
+			if !reflect.DeepEqual(tt.trd.TagArgs, tt.expected) {
+				t.Errorf("TagArgs = %q, want %q", tt.trd.TagArgs, tt.expected)
+			}
+		})
+	}
+}
+
 func TestTestRunData_Preprocess(t *testing.T) {
 	t.Parallel()
 
@@ -153,6 +245,7 @@ func TestTestRunData_Preprocess(t *testing.T) {
 					UserAgent:        "Grafana Cloud k6",
 					BlacklistIPs:     []string{"8.8.8.8/32", "1.1.1.1/32"},
 					BlockedHostnames: []string{"example.com"},
+					Tags:             map[string]string{"env": "staging"},
 				},
 			},
 		}
@@ -160,7 +253,7 @@ func TestTestRunData_Preprocess(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		expectedTagArgs := []string{"--tag", "load_zone=zone"}
+		expectedTagArgs := []string{"--tag", "env=staging", "--tag", "load_zone=zone"}
 		if !reflect.DeepEqual(trd.TagArgs, expectedTagArgs) {
 			t.Errorf("TagArgs = %q, want %q", trd.TagArgs, expectedTagArgs)
 		}

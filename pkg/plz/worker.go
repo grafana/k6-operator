@@ -172,6 +172,11 @@ func plzk6Args(plzName string, testRunID string, trData *cloud.TestRunData) []st
 	args = append(args, fmt.Sprintf(plzLogOutputFormat, plzName, testRunID))
 	args = append(args, trData.EnvArgs...)
 	args = append(args, fmt.Sprintf("--include-system-env-vars=%t", trData.IncludeSystemEnvVars))
+	if !trData.IncludeSystemEnvVars {
+		// internal usage; currently PLZ users receive true for system env vars
+		args = append(args, "--verbose", "--summary-mode=disabled")
+	}
+
 	return args
 }
 
