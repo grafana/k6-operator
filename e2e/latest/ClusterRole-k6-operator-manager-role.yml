@@ -6,13 +6,6 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - events
-    verbs:
-      - create
-      - patch
-  - apiGroups:
-      - ""
-    resources:
       - pods
       - pods/log
       - secrets
@@ -65,6 +58,13 @@ rules:
       - get
       - list
       - update
+  - apiGroups:
+      - events.k8s.io
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
   - apiGroups:
       - k6.io
     resources:
