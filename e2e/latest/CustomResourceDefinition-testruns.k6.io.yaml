@@ -36,6 +36,11 @@ spec:
               type: object
             spec:
               properties:
+                args:
+                  items:
+                    type: string
+                  type: array
+                  x-kubernetes-list-type: atomic
                 arguments:
                   type: string
                 cleanup:
@@ -1861,6 +1866,10 @@ spec:
                                           type: integer
                                         signerName:
                                           type: string
+                                        userAnnotations:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
                                       required:
                                         - keyType
                                         - signerName
@@ -3901,6 +3910,10 @@ spec:
                                           type: integer
                                         signerName:
                                           type: string
+                                        userAnnotations:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
                                       required:
                                         - keyType
                                         - signerName
@@ -5962,6 +5975,10 @@ spec:
                                           type: integer
                                         signerName:
                                           type: string
+                                        userAnnotations:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
                                       required:
                                         - keyType
                                         - signerName
@@ -6202,6 +6219,9 @@ spec:
                       - type
                     type: object
                   type: array
+                  x-kubernetes-list-map-keys:
+                    - type
+                  x-kubernetes-list-type: map
                 stage:
                   enum:
                     - initialization
