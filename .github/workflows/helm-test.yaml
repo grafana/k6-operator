@@ -11,6 +11,7 @@ on:
   pull_request:
     branches-ignore:
       - "release-**/bundle-update"
+      - "release-**/prepare"
 
 jobs:
   test:
