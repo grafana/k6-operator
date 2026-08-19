@@ -139,9 +139,9 @@ func GetTestRunState(client *cloudapi.Client, refID string, logger logr.Logger) 
 
 // called by TestRun controller
 // If there's an error, it'll be logged.
-func SendTestRunEvents(client *cloudapi.Client, refID string, logger logr.Logger, events *Events) {
+func SendTestRunEvents(client *cloudapi.Client, refID string, logger logr.Logger, events *Events) error {
 	if len(*events) == 0 {
-		return
+		return nil
 	}
 
 	host := strings.TrimSuffix(client.BaseURL(), "/v1")
@@ -152,7 +152,7 @@ func SendTestRunEvents(client *cloudapi.Client, refID string, logger logr.Logger
 
 	if err != nil {
 		logger.Error(err, fmt.Sprintf("Failed to create events HTTP request %+v", events))
-		return
+		return err
 	}
 
 	logger.Info(fmt.Sprintf("Sending events to k6 Cloud %+v", *events))
@@ -160,5 +160,8 @@ func SendTestRunEvents(client *cloudapi.Client, refID string, logger logr.Logger
 	// status code is checked in Do
 	if err = client.Do(req, nil); err != nil {
 		logger.Error(err, fmt.Sprintf("Failed to send events %+v", events))
+		return err
 	}
+
+	return nil
 }
