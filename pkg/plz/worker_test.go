@@ -289,17 +289,9 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 			TagArgs: someLZTagArgs,
 			EnvArgs: cloudEnvVarsEnvArgs,
 		})
-	cloudEnvVarsTestRun.Spec.Runner.Env = []corev1.EnvVar{
+	cloudEnvVarsTestRun.Spec.Runner.Env = append([]corev1.EnvVar{
 		{Name: "K6_USER_AGENT", Value: "Grafana Cloud k6"},
-	}
-	cloudEnvVarsTestRun.Spec.Runner.Env = append(
-		cloudEnvVarsTestRun.Spec.Runner.Env,
-		cloud.AggregationEnvVars(&cloudapi.Config{})...,
-	)
-	cloudEnvVarsTestRun.Spec.Runner.Env = append(
-		cloudEnvVarsTestRun.Spec.Runner.Env,
-		corev1.EnvVar{Name: "K6_CLOUD_HOST", Value: mainIngest},
-	)
+	}, cloudEnvVarsTestRun.Spec.Runner.Env...)
 
 	podTemplateTolerationsTestRun = requiredFieldsTestRun
 	podTemplateTolerationsTestRun.Spec.Runner.Tolerations = someTolerations
@@ -346,6 +338,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_RESPONSE_PATH", Value: someSecretsConfig.ResponsePath},
 		corev1.EnvVar{Name: "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION", Value: "Bearer " + someTestRunToken},
 		corev1.EnvVar{Name: "K6_CLOUD_HOST", Value: mainIngest},
+		corev1.EnvVar{Name: "K6_CLOUD_TOKEN", Value: someTestRunToken},
 	)
 
 	testCases := []struct {

@@ -174,7 +174,7 @@ func Test_NewRunnerJob(t *testing.T) {
 	tests := []struct {
 		name             string
 		script           *types.Script
-		tokenInfo        *cloud.TokenInfo
+		sti              *cloud.SecretTokenInfo
 		setupTestRun     func(*v1alpha1.TestRun)
 		setupExpectedJob func(*batchv1.Job)
 	}{
@@ -273,8 +273,8 @@ func Test_NewRunnerJob(t *testing.T) {
 			},
 		},
 		{
-			name:      "cloud output mode",
-			tokenInfo: cloud.NewTokenInfo("", "").InjectValue("token"),
+			name: "cloud output mode",
+			sti:  cloud.NewSecretTokenInfo("", "").InjectValue("token"),
 			setupTestRun: func(k6 *v1alpha1.TestRun) {
 				k6.Spec.Arguments = "--out cloud"
 				k6.Spec.Runner.Metadata.Labels = nil
@@ -288,9 +288,11 @@ func Test_NewRunnerJob(t *testing.T) {
 					"k6", "run", "--quiet", "--out", "cloud", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
 					"--tag", "instance_id=1", "--tag", "testrun_name=test",
 				}
-				j.Spec.Template.Spec.Containers[0].Env = append(aggregationEnvVars,
-					corev1.EnvVar{Name: "K6_CLOUD_PUSH_REF_ID", Value: "testrunid"},
-					corev1.EnvVar{Name: "K6_CLOUD_TOKEN", Value: "token"},
+				j.Spec.Template.Spec.Containers[0].Env = append(
+					[]corev1.EnvVar{{Name: "K6_CLOUD_TOKEN", Value: "token"}},
+					append(aggregationEnvVars,
+						corev1.EnvVar{Name: "K6_CLOUD_PUSH_REF_ID", Value: "testrunid"},
+					)...,
 				)
 			},
 		},
@@ -492,8 +494,8 @@ func Test_NewRunnerJob(t *testing.T) {
 			},
 		},
 		{
-			name:      "PLZ test run",
-			tokenInfo: cloud.NewTokenInfo("plz-token-secret", "test"),
+			name: "legacy PLZ test run falls back to token Secret",
+			sti:  cloud.NewSecretTokenInfo("plz-token-secret", "test"),
 			setupTestRun: func(k6 *v1alpha1.TestRun) {
 				k6.Spec.TestRunID = "plz-run-123"
 				k6.Spec.Runner.EnvFrom = envFromConfigMap("env")
@@ -516,7 +518,6 @@ func Test_NewRunnerJob(t *testing.T) {
 					"-e", "K6_CLOUDRUN_INSTANCE_ID=1",
 				}
 				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
-					{Name: "K6_CLOUD_PUSH_REF_ID", Value: "plz-run-123"},
 					{
 						Name: "K6_CLOUD_TOKEN",
 						ValueFrom: &corev1.EnvVarSource{
@@ -526,6 +527,38 @@ func Test_NewRunnerJob(t *testing.T) {
 							},
 						},
 					},
+					{Name: "K6_CLOUD_PUSH_REF_ID", Value: "plz-run-123"},
+				}
+			},
+		},
+		{
+			name: "PLZ test run uses token from env var when present",
+			sti:  cloud.NewSecretTokenInfo("plz-token-secret", "test"),
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.TestRunID = "plz-run-123"
+				k6.Spec.Runner.EnvFrom = envFromConfigMap("env")
+				k6.Spec.Runner.ImagePullPolicy = corev1.PullNever
+				k6.Spec.Runner.Env = []corev1.EnvVar{{Name: "K6_CLOUD_TOKEN", Value: "ephemeral-token"}}
+				k6.Status.Conditions = []metav1.Condition{
+					{
+						Type:               v1alpha1.CloudPLZTestRun,
+						Status:             metav1.ConditionTrue,
+						LastTransitionTime: metav1.Now(),
+					},
+				}
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				j.Spec.Template.Spec.Containers[0].ImagePullPolicy = corev1.PullNever
+				j.Spec.Template.Spec.Containers[0].EnvFrom = envFromConfigMap("env")
+				j.Spec.Template.Spec.Containers[0].Command = []string{
+					"k6", "run", "--quiet", "/test/test.js", "--address=0.0.0.0:6565", "--paused",
+					"--tag", "instance_id=1", "--tag", "testrun_name=test",
+					"--no-setup", "--no-teardown", "--linger",
+					"-e", "K6_CLOUDRUN_INSTANCE_ID=1",
+				}
+				j.Spec.Template.Spec.Containers[0].Env = []corev1.EnvVar{
+					{Name: "K6_CLOUD_PUSH_REF_ID", Value: "plz-run-123"},
+					{Name: "K6_CLOUD_TOKEN", Value: "ephemeral-token"},
 				}
 			},
 		},
@@ -548,12 +581,12 @@ func Test_NewRunnerJob(t *testing.T) {
 				tt.setupExpectedJob(expected)
 			}
 
-			tokenInfo := tt.tokenInfo
-			if tokenInfo == nil {
-				tokenInfo = cloud.NewTokenInfo("", "")
+			sti := tt.sti
+			if sti == nil {
+				sti = cloud.NewSecretTokenInfo("", "")
 			}
 
-			job, err := NewRunnerJob(k6, 1, tokenInfo)
+			job, err := NewRunnerJob(k6, 1, sti)
 			if err != nil {
 				t.Fatalf("NewRunnerJob errored: %v", err)
 			}
@@ -575,7 +608,7 @@ func Test_NewRunnerJob_LocalFilePreservesLogOutputArgument(t *testing.T) {
 		k6.Spec.Script = v1alpha1.K6Script{LocalFile: "/test/test.js"}
 		k6.Spec.Arguments = "--out cloud " + argumentsLogOutput
 
-		job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
+		job, err := NewRunnerJob(k6, 1, cloud.NewSecretTokenInfo("", "").InjectValue("token"))
 		if err != nil {
 			t.Fatalf("NewRunnerJob errored: %v", err)
 		}
@@ -596,7 +629,7 @@ func Test_NewRunnerJob_LocalFilePreservesLogOutputArgument(t *testing.T) {
 		k6.Spec.Script = v1alpha1.K6Script{LocalFile: "/test/test.js"}
 		k6.Spec.Args = []string{"--out", "cloud", argsLogOutput}
 
-		job, err := NewRunnerJob(k6, 1, cloud.NewTokenInfo("", ""))
+		job, err := NewRunnerJob(k6, 1, cloud.NewSecretTokenInfo("", "").InjectValue("token"))
 		if err != nil {
 			t.Fatalf("NewRunnerJob errored: %v", err)
 		}
