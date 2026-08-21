@@ -95,18 +95,39 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 	// setup
 
 	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
-		if err, retry := runSetup(ctx, hostnames, log); err != nil {
-			if retry {
+		if _, exists := v1alpha1.LastUpdate(k6, v1alpha1.SetupExecuted); exists &&
+			v1alpha1.IsUnknown(k6, v1alpha1.SetupExecuted) {
+			return res, nil
+		}
+
+		if !v1alpha1.IsTrue(k6, v1alpha1.SetupExecuted) {
+			v1alpha1.UpdateCondition(k6, v1alpha1.SetupExecuted, metav1.ConditionUnknown)
+			if err = r.Status().Update(ctx, k6); err != nil {
 				return ctrl.Result{}, err
 			}
 
-			log.Error(err, "Setup function failed, requesting abort.")
-			events := cloud.ErrorEvent(cloud.SetupError).
-				WithDetail(fmt.Sprintf("setup function failed: %v", err)).
-				WithAbort()
-			cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+			if err, retry := runSetup(ctx, hostnames, log); err != nil {
+				if retry {
+					v1alpha1.UpdateCondition(k6, v1alpha1.SetupExecuted, metav1.ConditionFalse)
+					if _, statusErr := r.UpdateStatus(ctx, k6, log); statusErr != nil {
+						return ctrl.Result{}, errors.Join(err, statusErr)
+					}
+					return ctrl.Result{}, err
+				}
 
-			return ctrl.Result{Requeue: false}, nil
+				log.Error(err, "Setup function failed, requesting abort.")
+				events := cloud.ErrorEvent(cloud.SetupError).
+					WithDetail(fmt.Sprintf("setup function failed: %v", err)).
+					WithAbort()
+				cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+
+				return ctrl.Result{Requeue: false}, nil
+			}
+
+			v1alpha1.UpdateCondition(k6, v1alpha1.SetupExecuted, metav1.ConditionTrue)
+			if _, err = r.UpdateStatus(ctx, k6, log); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
