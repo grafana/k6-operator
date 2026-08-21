@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -12,36 +11,19 @@ import (
 )
 
 const (
-	serviceStatusPort           = "6565"
+	defaultServicePort          = "6565"
 	serviceStatusRequestTimeout = 2 * time.Second
 )
 
-type httpDoer interface {
-	Do(*http.Request) (*http.Response, error)
-}
-
-func serviceStatusEndpoint(clusterIP string) (string, error) {
-	if net.ParseIP(clusterIP) == nil {
-		return "", fmt.Errorf("invalid service ClusterIP %q", clusterIP)
-	}
-
-	return fmt.Sprintf("http://%s/v1/status", net.JoinHostPort(clusterIP, serviceStatusPort)), nil
-}
-
 func isServiceReady(ctx context.Context, log logr.Logger, service *v1.Service) bool {
-	endpoint, err := serviceStatusEndpoint(service.Spec.ClusterIP)
-	if err != nil {
-		log.Error(err, "Failed to build service status endpoint", "service", service.Name)
-		return false
-	}
+	endpoint := "http://" + net.JoinHostPort(service.Spec.ClusterIP, defaultServicePort) + "/v1/status"
 
-	return probeServiceStatus(ctx, log, http.DefaultClient, endpoint, serviceStatusRequestTimeout)
+	return probeServiceStatus(ctx, log, endpoint, serviceStatusRequestTimeout)
 }
 
 func probeServiceStatus(
 	ctx context.Context,
 	log logr.Logger,
-	client httpDoer,
 	endpoint string,
 	timeout time.Duration,
 ) bool {
@@ -54,7 +36,7 @@ func probeServiceStatus(
 		return false
 	}
 
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Error(err, "Failed to get service status", "endpoint", endpoint)
 		return false
