@@ -85,11 +85,16 @@ func NewRunnerJob(k6 *v1alpha1.TestRun, index int, tokenInfo *cloud.TokenInfo) (
 		image                              = "grafana/k6:latest"
 		runnerAnnotations                  = make(map[string]string)
 		runnerLabels                       = newLabels(k6.NamespacedName().Name)
-		serviceAccountName                 = "default"
+		serviceAccountName                 string
 		automountServiceAccountToken       = true
 		ports                              = append([]corev1.ContainerPort{{ContainerPort: 6565}}, k6.GetSpec().Ports...)
 		schedulerName                      = corev1.DefaultSchedulerName
 	)
+
+	if k6.GetSpec().Runner.ServiceAccountName == "" {
+		return nil, fmt.Errorf("spec.runner.serviceAccountName is required")
+	}
+	serviceAccountName = k6.GetSpec().Runner.ServiceAccountName
 
 	if k6.GetSpec().Runner.Image != "" {
 		image = k6.GetSpec().Runner.Image
