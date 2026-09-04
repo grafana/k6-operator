@@ -15,8 +15,10 @@ import (
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/testrun"
+	"go.k6.io/k6/v2/cloudapi"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -25,6 +27,7 @@ import (
 
 const (
 	errMessageTooLong = "Creation of %s takes too long: your configuration might be off. Check if %v were created successfully."
+	oomKilledReason   = "OOMKilled"
 )
 
 // It may take some time to retrieve inspect output so indicate with boolean if it's ready
@@ -191,4 +194,62 @@ func runTeardown(ctx context.Context, hostnames []string, log logr.Logger) {
 	if err := testrun.RunTeardown(ctx, hostnames); err != nil {
 		log.Error(err, "Failed to invoke teardown()")
 	}
+}
+
+func isOOMKilled(status corev1.ContainerStatus) bool {
+	return status.State.Terminated != nil && status.State.Terminated.Reason == oomKilledReason ||
+		status.LastTerminationState.Terminated != nil && status.LastTerminationState.Terminated.Reason == oomKilledReason
+}
+
+func findOOMKilledContainer(pods []corev1.Pod) (string, string, bool) {
+	for _, pod := range pods {
+		for _, statuses := range [][]corev1.ContainerStatus{pod.Status.InitContainerStatuses, pod.Status.ContainerStatuses} {
+			for _, status := range statuses {
+				if isOOMKilled(status) {
+					return pod.Name, status.Name, true
+				}
+			}
+		}
+	}
+
+	return "", "", false
+}
+
+func handleRunnerOOMKilled(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, pods []corev1.Pod, cloudClient *cloudapi.Client) (bool, error) {
+	podName, containerName, found := findOOMKilledContainer(pods)
+	if !found {
+		return false, nil
+	}
+
+	msg := fmt.Sprintf("runner pod %s container %s was terminated with reason %s", podName, containerName, oomKilledReason)
+	log.Info(msg)
+
+	if isCloudTestRun(k6) {
+		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunAborted) {
+			return true, nil
+		}
+		if cloudClient == nil {
+			return true, errors.New("cloud client is not configured")
+		}
+		events := cloud.ErrorEvent(cloud.OOMError).WithDetail(msg).WithAbort()
+		if err := cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events); err != nil {
+			return true, err
+		}
+		_, err := StopJobs(ctx, log, k6, r)
+		return true, err
+	}
+
+	v1alpha1.UpdateCondition(k6, v1alpha1.TestRunRunning, metav1.ConditionFalse)
+	k6.GetStatus().Stage = "error"
+	_, err := r.UpdateStatus(ctx, k6, log)
+	return true, err
+}
+
+func checkRunnerOOMKilled(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, cloudClient *cloudapi.Client) (bool, error) {
+	pods := &corev1.PodList{}
+	if err := r.List(ctx, pods, k6.ListOptions()); err != nil {
+		return false, err
+	}
+
+	return handleRunnerOOMKilled(ctx, log, k6, r, pods.Items, cloudClient)
 }
