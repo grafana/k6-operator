@@ -20,6 +20,10 @@ const (
 	// This condition can be used only in PLZ test runs.
 	TeardownExecuted = "TeardownExecuted"
 
+	// SetupExecuted indicates whether the `setup()` has been executed on one of the runners.
+	// This condition can be used only in PLZ test runs.
+	SetupExecuted = "SetupExecuted"
+
 	// CloudTestRun indicates if this test run is supposed to be a cloud test run
 	// (i.e. with `--out cloud` option).
 	// - if empty / Unknown, the type of test is unknown yet
@@ -80,6 +84,13 @@ func Initialize(k6 *TestRun) {
 			Status:             metav1.ConditionFalse,
 			LastTransitionTime: t,
 			Reason:             "TeardownExecutedFalse",
+			Message:            "",
+		},
+		metav1.Condition{
+			Type:               SetupExecuted,
+			Status:             metav1.ConditionFalse,
+			LastTransitionTime: t,
+			Reason:             "SetupExecutedFalse",
 			Message:            "",
 		},
 	}
