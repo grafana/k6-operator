@@ -141,7 +141,7 @@ func (r *TestRunReconciler) hostnames(ctx context.Context, log logr.Logger, abor
 
 	for _, service := range sl.Items {
 		log.Info(fmt.Sprintf("Checking service %s", service.Name))
-		if isServiceReady(log, &service) {
+		if isServiceReady(ctx, log, &service) {
 			log.Info(fmt.Sprintf("%v service is ready", service.Name))
 			hostnames = append(hostnames, service.Spec.ClusterIP)
 		} else {

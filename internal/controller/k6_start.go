@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -16,18 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-func isServiceReady(log logr.Logger, service *v1.Service) bool {
-	resp, err := http.Get(fmt.Sprintf("http://%v:6565/v1/status", service.Spec.ClusterIP))
-
-	if err != nil {
-		log.Error(err, fmt.Sprintf("failed to get status from %v", service.Name))
-		return false
-	}
-	defer resp.Body.Close() //nolint:errcheck
-
-	return resp.StatusCode < 400
-}
 
 // StartJobs in the Ready phase using a curl container
 func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler, cloudClient *cloudapi.Client) (res ctrl.Result, err error) {
