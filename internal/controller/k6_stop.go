@@ -51,12 +51,10 @@ func StopJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Tes
 	created, err := createJobIfNotExists(ctx, r.Client, stopJob)
 	if err != nil {
 		log.Error(err, "Failed to launch k6 test stop job.")
-		return res, nil
+		return res, err
 	}
 
-	if created {
-		log.Info("Created stop job")
-	} else {
+	if !created {
 		log.Info("Stop job already exists")
 	}
 
