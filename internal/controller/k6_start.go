@@ -37,6 +37,12 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 
 	var count int
 	for _, pod := range pl.Items {
+		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
+			if failure := runnerExitError(pod, true); failure != nil {
+				notifyPLZ(ctx, log, k6, cloudClient, failure)
+				return res, nil
+			}
+		}
 		if pod.Status.Phase != "Running" {
 			continue
 		}
@@ -56,10 +62,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 				log.Info(msg)
 
 				if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
-					events := cloud.ErrorEvent(cloud.K6OperatorStartError).
-						WithDetail(msg).
-						WithAbort()
-					cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+					sendCloudError(ctx, log, k6, cloudClient, cloud.K6OperatorStartError, msg)
 				}
 			}
 		}
@@ -103,10 +106,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 				}
 
 				log.Error(err, "Setup function failed, requesting abort.")
-				events := cloud.ErrorEvent(cloud.SetupError).
-					WithDetail(fmt.Sprintf("setup function failed: %v", err)).
-					WithAbort()
-				cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+				sendCloudError(ctx, log, k6, cloudClient, cloud.SetupError, fmt.Sprintf("setup function failed: %v", err))
 
 				return ctrl.Result{Requeue: false}, nil
 			}

@@ -254,10 +254,12 @@ func (w *PLZWorker) handle(ctx context.Context, testRunId string) {
 		err := fmt.Errorf("TestRun was stored without .spec.args: the TestRun CRD on this cluster is outdated and must be upgraded (see v1.6.0 release notes)")
 		w.logger.Error(err, "Aborting the PLZ test run", "testRunId", testRunId)
 
-		events := cloud.ErrorEvent(cloud.K6OperatorStartError).
-			WithDetail("k6-operator: PLZ is misconfigured (outdated TestRun CRD); upgrade the k6-operator CRDs").
-			WithAbort()
-		cloud.SendTestRunEvents(w.poller.Client, testRunId, w.logger, events)
+		if err := cloud.NotifyTestRun(ctx, w.poller.Client, trData.SecretsToken, testRunId, &cloud.TestRunNotification{
+			Code:   cloud.K6OperatorStartError,
+			Reason: "k6-operator: PLZ is misconfigured (outdated TestRun CRD); upgrade the k6-operator CRDs",
+		}); err != nil {
+			w.logger.Error(err, "Failed to notify k6 Cloud", "testRunId", testRunId)
+		}
 
 		if err := w.k8sClient.Delete(ctx, tr); err != nil {
 			w.logger.Error(err, "Failed to delete the incomplete PLZ test run", "testRunId", testRunId)
