@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
@@ -17,17 +18,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func runnerStatus(log logr.Logger, service *v1.Service) (bool, json.RawMessage) {
-	resp, err := http.Get(fmt.Sprintf("http://%v:6565/v1/status", service.Spec.ClusterIP))
+func runnerStatus(ctx context.Context, log logr.Logger, service *v1.Service) (bool, json.RawMessage) {
+	// A runner under active load can be slower to answer its own status endpoint
+	// than an idle one waiting to start
+	resp, err := requestServiceStatus(ctx, serviceStatusURL(service), 5*time.Second)
 	if err != nil {
-		return false, nil
+		// No answer (including a timeout) is ambiguous: assume the runner is
+		// still running rather than risk tearing down a live test.
+		log.Error(err, "Failed to get runner status", "service", service.Name)
+		return true, nil
 	}
 	defer resp.Body.Close() //nolint:errcheck
 
 	// Response has been received so assume the job is running.
 
-	if resp.StatusCode >= 400 {
-		log.Error(err, fmt.Sprintf("status from from runner job %v is %d", service.Name, resp.StatusCode))
+	if resp.StatusCode >= http.StatusBadRequest {
+		log.Info("Failed to get runner status", "service", service.Name, "statusCode", resp.StatusCode)
 		return true, nil
 	}
 
@@ -37,7 +43,11 @@ func runnerStatus(log logr.Logger, service *v1.Service) (bool, json.RawMessage) 
 		return true, nil
 	}
 
-	// Decode locally until k6 exposes execution_result in a released API type.
+	// execution_result was released in k6 v2.3.0
+	// We don't use Go type here because the ExitCode is a plain int, so it can't
+	// tell an absent exit_code apart from an explicit 0. Decoding locally keeps
+	// that distinction.
+	// Consider switching to k6 Go type, once k6 v1 is no longer supported officially.
 	var response struct {
 		Data struct {
 			Attributes struct {
@@ -80,7 +90,7 @@ func StoppedJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *
 	var runningJobs int32
 	for _, service := range sl.Items {
 
-		running, rawResult := runnerStatus(log, &service)
+		running, rawResult := runnerStatus(ctx, log, &service)
 		// Abort cleanup only checks running. Older k6 versions
 		// omit execution_result and retain the existing running-only behavior.
 		if k6.GetStatus().Stage == "started" && !v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunAborted) && len(rawResult) > 0 {

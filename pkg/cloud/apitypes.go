@@ -365,7 +365,7 @@ var (
 	SetupError      = ErrorCode(8030)
 	TeardownError   = ErrorCode(8031)
 	OOMError        = ErrorCode(8032)
-	PanicError      = ErrorCode(8034)
+	PanicError      = ErrorCode(8034) // TODO: clarify the code. Not emitted now.
 	UnknownError    = ErrorCode(8034)
 	ScriptException = ErrorCode(8035)
 	ScriptAborted   = ErrorCode(8036)

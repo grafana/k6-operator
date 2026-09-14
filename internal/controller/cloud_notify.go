@@ -60,7 +60,9 @@ func plzToken(k6 *v1alpha1.TestRun) string {
 }
 
 // runnerExitError only observes containers that have exited; --linger can hide
-// runtime results until cleanup. OOM and timeout detection are separate work.
+// runtime results until cleanup.
+// beforeExecution distinguishes whether runnerExitError was called before `main` execution or after.
+// OOM and timeout detection are TODOs.
 func runnerExitError(pod corev1.Pod, beforeExecution bool) *cloud.TestRunNotification {
 	for _, status := range pod.Status.ContainerStatuses {
 		terminated := status.State.Terminated

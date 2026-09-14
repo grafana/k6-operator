@@ -16,27 +16,25 @@ const (
 )
 
 func isServiceReady(ctx context.Context, log logr.Logger, service *v1.Service) bool {
-	endpoint := "http://" + net.JoinHostPort(service.Spec.ClusterIP, defaultServicePort) + "/v1/status"
-
-	return probeServiceStatus(ctx, log, endpoint, serviceStatusRequestTimeout)
+	return probeServiceStatus(ctx, log, serviceStatusURL(service), serviceStatusRequestTimeout)
 }
 
-func probeServiceStatus(
-	ctx context.Context,
-	log logr.Logger,
-	endpoint string,
-	timeout time.Duration,
-) bool {
-	requestCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
+func serviceStatusURL(service *v1.Service) string {
+	return "http://" + net.JoinHostPort(service.Spec.ClusterIP, defaultServicePort) + "/v1/status"
+}
 
-	req, err := http.NewRequestWithContext(requestCtx, http.MethodGet, endpoint, nil)
+// The caller owns the response body. Client.Timeout bounds body reads too,
+// without canceling the request context when this helper returns.
+func requestServiceStatus(ctx context.Context, endpoint string, timeout time.Duration) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		log.Error(err, "Failed to build service status request", "endpoint", endpoint)
-		return false
+		return nil, err
 	}
+	return (&http.Client{Timeout: timeout}).Do(req)
+}
 
-	resp, err := http.DefaultClient.Do(req)
+func probeServiceStatus(ctx context.Context, log logr.Logger, endpoint string, timeout time.Duration) bool {
+	resp, err := requestServiceStatus(ctx, endpoint, timeout)
 	if err != nil {
 		log.Error(err, "Failed to get service status", "endpoint", endpoint)
 		return false
