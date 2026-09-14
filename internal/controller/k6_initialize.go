@@ -61,10 +61,7 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 		// events is possible only for PLZ test run.
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
 			// This error won't allow to start a test so let k6 Cloud know of it
-			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
-				WithDetail(fmt.Sprintf("Failed to inspect the test script: %v", err)).
-				WithAbort()
-			cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+			sendCloudError(ctx, log, k6, cloudClient, cloud.K6OperatorStartError, fmt.Sprintf("Failed to inspect the test script: %v", err))
 		} else {
 			// if there is any error, we have to reflect it on the TestRun manifest
 			k6.GetStatus().Stage = "error"

@@ -126,6 +126,22 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		}
 	}
 
+	// TODO: also check stopped runners when OOM detection is implemented;
+	// see issue #251.
+	if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) &&
+		!v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunAborted) && k6.GetStatus().Stage == "started" {
+		pods := &corev1.PodList{}
+		if err := r.List(ctx, pods, k6.ListOptions()); err != nil {
+			return ctrl.Result{}, err
+		}
+		for _, pod := range pods.Items {
+			if failure := runnerExitError(pod, false); failure != nil {
+				notifyPLZ(ctx, log, k6, cloudClient, failure)
+				return ctrl.Result{RequeueAfter: time.Second}, nil
+			}
+		}
+	}
+
 	switch k6.GetStatus().Stage {
 	case "":
 		log.Info("Initialize test")
@@ -189,10 +205,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 					log.Info(msg)
 
 					if isCloudTestRun(k6) {
-						events := cloud.ErrorEvent(cloud.K6OperatorStartError).
-							WithDetail(msg).
-							WithAbort()
-						cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+						sendCloudError(ctx, log, k6, cloudClient, cloud.K6OperatorStartError, msg)
 					}
 				}
 			}
@@ -257,16 +270,25 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 				var allJobsStopped bool
 				// TODO: figure out baseline time
 				if time.Since(runningTime) > time.Second*30 {
-					allJobsStopped = StoppedJobs(ctx, log, k6, r)
+					var failure *cloud.TestRunNotification
+					allJobsStopped, failure = StoppedJobs(ctx, log, k6, r)
+					if failure != nil {
+						notifyPLZ(ctx, log, k6, cloudClient, failure)
+						return ctrl.Result{RequeueAfter: time.Second}, nil
+					}
 				}
 
 				// The test run reached a regular stop in execution so execute teardown
 				if v1alpha1.IsFalse(k6, v1alpha1.CloudTestRunAborted) && allJobsStopped {
 					hostnames, err := r.hostnames(ctx, log, false, k6.ListOptions())
-					if err != nil {
-						return ctrl.Result{}, nil
+					code := cloud.K6OperatorStopError
+					if err == nil {
+						code, err = runTeardown(ctx, hostnames, log)
 					}
-					runTeardown(ctx, hostnames, log)
+					if err != nil {
+						log.Error(err, "Failed to invoke teardown()")
+						sendCloudError(ctx, log, k6, cloudClient, code, fmt.Sprintf("Teardown failed: %v", err))
+					}
 					v1alpha1.UpdateCondition(k6, v1alpha1.TeardownExecuted, metav1.ConditionTrue)
 
 					_, err = r.UpdateStatus(ctx, k6, log)
@@ -320,7 +342,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) && v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunAborted) {
 			// This is a "forced" abort of the PLZ test run.
 			// Wait until all the test runs are stopped, kill jobs and proceed.
-			if StoppedJobs(ctx, log, k6, r) {
+			if allStopped, _ := StoppedJobs(ctx, log, k6, r); allStopped {
 				if allDeleted, err := KillJobs(ctx, log, k6, r); err != nil {
 					return ctrl.Result{RequeueAfter: time.Second}, err
 				} else {
@@ -347,7 +369,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 				return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 			}
 
-			if err = cloud.FinishTestRun(cloudClient, k6.GetStatus().TestRunID); err != nil {
+			if err = finishCloudTestRun(ctx, k6, cloudClient); err != nil {
 				log.Error(err, "Failed to finalize the test run with cloud output")
 				return ctrl.Result{}, nil
 			} else {
