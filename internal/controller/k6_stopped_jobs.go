@@ -17,17 +17,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func runnerStatus(log logr.Logger, service *v1.Service) (bool, json.RawMessage) {
-	resp, err := http.Get(fmt.Sprintf("http://%v:6565/v1/status", service.Spec.ClusterIP))
+func runnerStatus(ctx context.Context, log logr.Logger, service *v1.Service) (bool, json.RawMessage) {
+	resp, err := requestServiceStatus(ctx, serviceStatusURL(service), serviceStatusRequestTimeout)
 	if err != nil {
+		log.Error(err, "Failed to get runner status", "service", service.Name)
 		return false, nil
 	}
 	defer resp.Body.Close() //nolint:errcheck
 
 	// Response has been received so assume the job is running.
 
-	if resp.StatusCode >= 400 {
-		log.Error(err, fmt.Sprintf("status from from runner job %v is %d", service.Name, resp.StatusCode))
+	if resp.StatusCode >= http.StatusBadRequest {
+		log.Info("Failed to get runner status", "service", service.Name, "statusCode", resp.StatusCode)
 		return true, nil
 	}
 
@@ -80,7 +81,7 @@ func StoppedJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *
 	var runningJobs int32
 	for _, service := range sl.Items {
 
-		running, rawResult := runnerStatus(log, &service)
+		running, rawResult := runnerStatus(ctx, log, &service)
 		// Abort cleanup only checks running. Older k6 versions
 		// omit execution_result and retain the existing running-only behavior.
 		if k6.GetStatus().Stage == "started" && !v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunAborted) && len(rawResult) > 0 {
