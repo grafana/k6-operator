@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,6 +51,58 @@ func TestProbeServiceStatus(t *testing.T) {
 	}
 }
 
+// if the goal is to read the body of status response, it must not close prematurely
+func TestRequestServiceStatusBodyRemainsReadable(t *testing.T) {
+	t.Parallel()
+	releaseBody := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.(http.Flusher).Flush()
+		select {
+		case <-releaseBody:
+			_, _ = io.WriteString(w, "status body")
+		case <-req.Context().Done():
+		}
+	}))
+	defer server.Close()
+
+	resp, err := requestServiceStatus(context.Background(), server.URL, time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	close(releaseBody)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil || string(body) != "status body" {
+		t.Fatalf("body=%q error=%v", body, err)
+	}
+}
+
+// headers arrive, but the body stalls, so timeout
+func TestRequestServiceStatusBodyTimeout(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.(http.Flusher).Flush()
+		<-req.Context().Done()
+	}))
+	defer server.Close()
+
+	start := time.Now()
+	resp, err := requestServiceStatus(context.Background(), server.URL, 100*time.Millisecond)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if _, err := io.ReadAll(resp.Body); err == nil {
+		t.Fatal("expected response body timeout")
+	}
+	if time.Since(start) > time.Second {
+		t.Fatal("response body read exceeded its timeout")
+	}
+}
+
+// server unresponsive, so timeout
 func TestProbeServiceStatusHonorsTimeout(t *testing.T) {
 	t.Parallel()
 
@@ -75,6 +128,7 @@ func TestProbeServiceStatusHonorsTimeout(t *testing.T) {
 	}
 }
 
+// The caller cancels context: don't wait for timeout
 func TestProbeServiceStatusHonorsParentCancellation(t *testing.T) {
 	t.Parallel()
 
