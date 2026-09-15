@@ -112,6 +112,26 @@ func Test_plzk6Args(t *testing.T) {
 				"--include-system-env-vars=true",
 			},
 		},
+		{
+			name:      "log output defined by GCk6",
+			plzName:   "private-zone",
+			testRunID: "1234",
+			trData: &cloud.TestRunData{
+				LZConfig: cloud.LZConfig{
+					CLIArgs: cloud.CLIArgs{IncludeSystemEnvVars: true},
+					GCk6EnvVars: map[string]string{
+						"K6_LOG_OUTPUT": "loki=https://cloudlogs-staging.k6.io/api/v1/push,label.foo=bar",
+					},
+				},
+			},
+			expected: []string{
+				"--out",
+				"cloud",
+				"--no-thresholds",
+				"--log-output=loki=https://cloudlogs-staging.k6.io/api/v1/push,label.foo=bar,label.lz=private-zone,label.test_run_id=1234,header.Authorization=Token $(K6_CLOUD_TOKEN)",
+				"--include-system-env-vars=true",
+			},
+		},
 	}
 
 	for _, test := range tests {

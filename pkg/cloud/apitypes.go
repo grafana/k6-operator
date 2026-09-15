@@ -11,10 +11,16 @@ import (
 
 // GCk6 can set only a limited number of env vars to k6 process:
 // these are known and whitelisted with this "const" map.
+//
+// Note: K6_LOG_OUTPUT is deliberately not here. It is consumed by LogOutput()
+// and passed to the runners as a part of the `--log-output` argument instead,
+// because k6-operator has to amend its value with the labels and the auth
+// header. Setting it as an env var as well would be redundant, as the CLI
+// option takes precedence, and it would only invite drift between the two.
 var reservedGCk6EnvVars = map[string]struct{}{
 	// Future candidates:
 	// "K6_CLOUD_TOKEN": struct{}{},
-	// K6_LOG_OUTPUT, K6_TRACES_OUTPUT, K6_BROWSER_ENABLED_MSG, K6_CLOUD_TRACES_ENABLED, K6_BROWSER_SCREENSHOTS_OUTPUT
+	// K6_TRACES_OUTPUT, K6_BROWSER_ENABLED_MSG, K6_CLOUD_TRACES_ENABLED, K6_BROWSER_SCREENSHOTS_OUTPUT
 }
 
 const (
@@ -33,6 +39,13 @@ const (
 	secretSourceURLTemplate = "K6_SECRET_SOURCE_URL_URL_TEMPLATE"
 	secretSourceURLRespPath = "K6_SECRET_SOURCE_URL_RESPONSE_PATH"
 	secretSourceURLAuthKey  = "K6_SECRET_SOURCE_URL_HEADER_AUTHORIZATION"
+
+	// logOutputGCk6EnvVar is the key GCk6 uses to define the log output of a
+	// PLZ test run. See LogOutput() for details.
+	logOutputGCk6EnvVar = "K6_LOG_OUTPUT"
+	// DefaultLogOutput is the log output of PLZ test runs that is assumed
+	// whenever GCk6 doesn't specify one.
+	DefaultLogOutput = "loki=https://cloudlogs.k6.io/api/v1/push"
 )
 
 // testRunList holds the output from /v4/plz-test-runs call
@@ -204,6 +217,18 @@ func (lz *LZConfig) reservedEnvVars() []corev1.EnvVar {
 		return ev[i].Name < ev[j].Name
 	})
 	return ev
+}
+
+// LogOutput returns the base value of the k6 `--log-output` option for this
+// test run: it is either the one defined by GCk6 or DefaultLogOutput.
+func (lz *LZConfig) LogOutput() string {
+	// Trailing commas would produce an empty parameter for k6 to choke on,
+	// once the labels and the header are appended to this value.
+	logOutput := strings.Trim(strings.TrimSpace(lz.GCk6EnvVars[logOutputGCk6EnvVar]), ",")
+	if len(logOutput) == 0 {
+		return DefaultLogOutput
+	}
+	return logOutput
 }
 
 // secretsEnvVars returns the env vars required by the k6 URL secret source.
