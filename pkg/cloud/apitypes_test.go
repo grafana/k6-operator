@@ -122,6 +122,64 @@ func TestLZConfig_reservedEnvVars(t *testing.T) {
 	}
 }
 
+func TestLZConfig_LogOutput(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		lz       LZConfig
+		expected string
+	}{
+		{
+			name:     "no GCk6 env vars",
+			lz:       LZConfig{},
+			expected: DefaultLogOutput,
+		},
+		{
+			name: "no log output among GCk6 env vars",
+			lz: LZConfig{
+				GCk6EnvVars: map[string]string{"K6_TRACES_OUTPUT": "otel"},
+			},
+			expected: DefaultLogOutput,
+		},
+		{
+			name: "empty log output",
+			lz: LZConfig{
+				GCk6EnvVars: map[string]string{"K6_LOG_OUTPUT": "   "},
+			},
+			expected: DefaultLogOutput,
+		},
+		{
+			name: "log output defined by GCk6",
+			lz: LZConfig{
+				GCk6EnvVars: map[string]string{
+					"K6_LOG_OUTPUT": "loki=https://cloudlogs-staging.k6.io/api/v1/push",
+				},
+			},
+			expected: "loki=https://cloudlogs-staging.k6.io/api/v1/push",
+		},
+		{
+			name: "log output with additional parameters and stray commas",
+			lz: LZConfig{
+				GCk6EnvVars: map[string]string{
+					"K6_LOG_OUTPUT": " loki=http://loki.default:3100/loki/api/v1/push,label.foo=bar,limit=100, ",
+				},
+			},
+			expected: "loki=http://loki.default:3100/loki/api/v1/push,label.foo=bar,limit=100",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := tt.lz.LogOutput(); got != tt.expected {
+				t.Errorf("LogOutput() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestTestRunData_preprocessTags(t *testing.T) {
 	t.Parallel()
 

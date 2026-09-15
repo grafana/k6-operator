@@ -162,14 +162,14 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 }
 
 // the --log-output argument of PLZ runners
-const plzLogOutputFormat = `--log-output=loki=https://cloudlogs.k6.io/api/v1/push,label.lz=%s,label.test_run_id=%s,header.Authorization=Token $(K6_CLOUD_TOKEN)`
+const plzLogOutputFormat = `--log-output=%s,label.lz=%s,label.test_run_id=%s,header.Authorization=Token $(K6_CLOUD_TOKEN)`
 
 // plzk6Args builds the exact argv the worker is expected to produce.
 func plzk6Args(plzName string, testRunID string, trData *cloud.TestRunData) []string {
 	args := []string{"--out", "cloud"}
 	args = append(args, trData.TagArgs...)
 	args = append(args, "--no-thresholds")
-	args = append(args, fmt.Sprintf(plzLogOutputFormat, plzName, testRunID))
+	args = append(args, fmt.Sprintf(plzLogOutputFormat, trData.LogOutput(), plzName, testRunID))
 	args = append(args, trData.EnvArgs...)
 	args = append(args, fmt.Sprintf("--include-system-env-vars=%t", trData.IncludeSystemEnvVars))
 	if !trData.IncludeSystemEnvVars {
