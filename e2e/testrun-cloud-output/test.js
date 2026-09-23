@@ -32,7 +32,10 @@ export default function () {
     status_key: "stage",
     status_value: "started",
   }, {
-    timeout: "1m",
+    // cloud output involves blocking network calls to the Grafana Cloud API
+    // (creating and polling the test run), so allow more headroom than a
+    // purely in-cluster wait would need.
+    timeout: "2m",
     interval: "10s",
   });
 
