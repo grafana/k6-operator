@@ -41,10 +41,7 @@ func CreateJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *T
 
 	if res, recheck, err := createJobSpecs(ctx, log, k6, r, sti); err != nil {
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudTestRun) {
-			events := cloud.ErrorEvent(cloud.K6OperatorStartError).
-				WithDetail(fmt.Sprintf("Failed to create runner jobs: %v", err)).
-				WithAbort()
-			cloud.SendTestRunEvents(cloudClient, k6.TestRunID(), log, events)
+			sendCloudError(ctx, log, k6, cloudClient, cloud.K6OperatorStartError, fmt.Sprintf("Failed to create runner jobs: %v", err))
 		}
 
 		return res, err

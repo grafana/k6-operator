@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
-	k6api "go.k6.io/k6/v2/api/v1"
+	"github.com/grafana/k6-operator/pkg/cloud"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,37 +18,54 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func isJobRunning(log logr.Logger, service *v1.Service) bool {
-	resp, err := http.Get(fmt.Sprintf("http://%v:6565/v1/status", service.Spec.ClusterIP))
+func runnerStatus(ctx context.Context, log logr.Logger, service *v1.Service) (bool, json.RawMessage) {
+	// A runner under active load can be slower to answer its own status endpoint
+	// than an idle one waiting to start
+	resp, err := requestServiceStatus(ctx, serviceStatusURL(service), 5*time.Second)
 	if err != nil {
-		return false
+		// No answer (including a timeout) is ambiguous: assume the runner is
+		// still running rather than risk tearing down a live test.
+		log.Error(err, "Failed to get runner status", "service", service.Name)
+		return true, nil
 	}
 	defer resp.Body.Close() //nolint:errcheck
 
 	// Response has been received so assume the job is running.
 
-	if resp.StatusCode >= 400 {
-		log.Error(err, fmt.Sprintf("status from from runner job %v is %d", service.Name, resp.StatusCode))
-		return true
+	if resp.StatusCode >= http.StatusBadRequest {
+		log.Info("Failed to get runner status", "service", service.Name, "statusCode", resp.StatusCode)
+		return true, nil
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error(err, fmt.Sprintf("Error on reading status of the runner job %v", service.Name))
-		return true
+		return true, nil
 	}
 
-	var status k6api.StatusJSONAPI
-	if err := json.Unmarshal(data, &status); err != nil {
+	// execution_result was released in k6 v2.3.0
+	// We don't use Go type here because the ExitCode is a plain int, so it can't
+	// tell an absent exit_code apart from an explicit 0. Decoding locally keeps
+	// that distinction.
+	// Consider switching to k6 Go type, once k6 v1 is no longer supported officially.
+	var response struct {
+		Data struct {
+			Attributes struct {
+				Running         bool            `json:"running"`
+				ExecutionResult json.RawMessage `json:"execution_result"`
+			} `json:"attributes"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(data, &response); err != nil {
 		log.Error(err, fmt.Sprintf("Error on parsing status of the runner job %v", service.Name))
-		return true
+		return true, nil
 	}
 
-	return status.Status().Running
+	return response.Data.Attributes.Running, response.Data.Attributes.ExecutionResult
 }
 
 // StoppedJobs checks if the runners pods have stopped execution.
-func StoppedJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (allStopped bool) {
+func StoppedJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *TestRunReconciler) (allStopped bool, failure *cloud.TestRunNotification) {
 	if len(k6.GetStatus().TestRunID) > 0 {
 		log = log.WithValues("testRunId", k6.GetStatus().TestRunID)
 	}
@@ -72,7 +90,29 @@ func StoppedJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *
 	var runningJobs int32
 	for _, service := range sl.Items {
 
-		if isJobRunning(log, &service) {
+		running, rawResult := runnerStatus(ctx, log, &service)
+		// Abort cleanup only checks running. Older k6 versions
+		// omit execution_result and retain the existing running-only behavior.
+		if k6.GetStatus().Stage == "started" && !v1alpha1.IsTrue(k6, v1alpha1.CloudTestRunAborted) && len(rawResult) > 0 {
+			var result struct {
+				ExitCode *int `json:"exit_code"`
+			}
+			if err := json.Unmarshal(rawResult, &result); err != nil {
+				log.Error(err, "Invalid runner execution result", "service", service.Name)
+				running = true
+			} else if result.ExitCode == nil {
+				// Includes explicit null: running can become false before the result is published.
+				running = true
+			} else if *result.ExitCode != 0 {
+				detail := fmt.Sprintf("runner service %s reported execution exit code %d", service.Name, *result.ExitCode)
+				if failure := runnerExecutionError(*result.ExitCode, detail); failure != nil {
+					return false, failure
+				}
+				log.Info("Unmapped runner execution result", "service", service.Name, "exitCode", *result.ExitCode)
+				running = true
+			}
+		}
+		if running {
 			runningJobs++
 		}
 	}

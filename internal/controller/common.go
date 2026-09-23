@@ -185,10 +185,12 @@ func runSetup(ctx context.Context, hostnames []string, log logr.Logger) (error, 
 	return nil, false
 }
 
-func runTeardown(ctx context.Context, hostnames []string, log logr.Logger) {
+func runTeardown(ctx context.Context, hostnames []string, log logr.Logger) (cloud.ErrorCode, error) {
 	log.Info("Invoking teardown() on the first responsive runner")
 
-	if err := testrun.RunTeardown(ctx, hostnames); err != nil {
-		log.Error(err, "Failed to invoke teardown()")
+	err := testrun.RunTeardown(ctx, hostnames)
+	if err != nil && strings.Contains(err.Error(), "Error executing") {
+		return cloud.TeardownError, err
 	}
+	return cloud.K6OperatorStopError, err
 }

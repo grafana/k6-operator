@@ -365,12 +365,13 @@ var (
 	SetupError      = ErrorCode(8030)
 	TeardownError   = ErrorCode(8031)
 	OOMError        = ErrorCode(8032)
-	PanicError      = ErrorCode(8033)
+	PanicError      = ErrorCode(8034) // TODO: clarify the code. Not emitted now.
 	UnknownError    = ErrorCode(8034)
 	ScriptException = ErrorCode(8035)
+	ScriptAborted   = ErrorCode(8036)
 
 	K6OperatorStartError  = ErrorCode(8050)
-	K6OperatorAbortError  = ErrorCode(8051)
+	K6OperatorStopError   = ErrorCode(8051)
 	K6OperatorRunnerError = ErrorCode(8052)
 )
 
