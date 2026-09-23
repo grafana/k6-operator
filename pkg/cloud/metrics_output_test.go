@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"encoding/base64"
 	"reflect"
 	"strings"
 	"testing"
@@ -35,15 +36,15 @@ func TestMetricsOutput_envVars(t *testing.T) {
 				Endpoint: "otlp.example.com:4318",
 				URLPath:  "/custom/v1/metrics",
 				Insecure: true,
-				Username: "123456",
-				Password: "glc_example-token",
+				Username: "user",
+				Password: "password",
 			},
 			expected: []corev1.EnvVar{
 				{Name: "K6_OTEL_EXPORTER_PROTOCOL", Value: "http/protobuf"},
 				{Name: "K6_OTEL_HTTP_EXPORTER_ENDPOINT", Value: "otlp.example.com:4318"},
 				{Name: "K6_OTEL_HTTP_EXPORTER_URL_PATH", Value: "/custom/v1/metrics"},
 				{Name: "K6_OTEL_HTTP_EXPORTER_INSECURE", Value: "true"},
-				{Name: "K6_OTEL_HEADERS", Value: "Authorization=Basic MTIzNDU2OmdsY19leGFtcGxlLXRva2Vu"},
+				{Name: "K6_OTEL_HEADERS", Value: "Authorization=Basic " + base64.StdEncoding.EncodeToString([]byte("user:password"))},
 				{Name: "K6_OTEL_METRIC_PREFIX", Value: "k6_"},
 				{Name: "OTEL_EXPORTER_OTLP_METRICS_DEFAULT_HISTOGRAM_AGGREGATION", Value: "base2_exponential_bucket_histogram"},
 			},
@@ -96,8 +97,8 @@ func TestTestRunData_Preprocess_metricsOutput(t *testing.T) {
 		for _, mo := range []*MetricsOutput{
 			{},
 			{Endpoint: "http://otlp.example.com:4318"},
-			{Endpoint: "otlp.example.com:4318", Username: "123456"},
-			{Endpoint: "otlp.example.com:4318", Password: "glc_example-token"},
+			{Endpoint: "otlp.example.com:4318", Username: "user"},
+			{Endpoint: "otlp.example.com:4318", Password: "password"},
 		} {
 			trd := TestRunData{LZDistribution: oneLZ, MetricsOutput: mo}
 			if err := trd.Preprocess(); err == nil {

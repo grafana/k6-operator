@@ -1,6 +1,7 @@
 package plz
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -57,8 +58,8 @@ func Test_complete_metricsOutput(t *testing.T) {
 		MetricsOutput: &cloud.MetricsOutput{
 			Endpoint: "otlp.example.com:4318",
 			URLPath:  "/custom/v1/metrics",
-			Username: "123456",
-			Password: "glc_example-token",
+			Username: "user",
+			Password: "password",
 		},
 	}
 	if err := trData.Preprocess(); err != nil {
@@ -81,7 +82,7 @@ func Test_complete_metricsOutput(t *testing.T) {
 		"K6_OTEL_EXPORTER_PROTOCOL":                                "http/protobuf",
 		"K6_OTEL_HTTP_EXPORTER_ENDPOINT":                           "otlp.example.com:4318",
 		"K6_OTEL_HTTP_EXPORTER_URL_PATH":                           "/custom/v1/metrics",
-		"K6_OTEL_HEADERS":                                          "Authorization=Basic MTIzNDU2OmdsY19leGFtcGxlLXRva2Vu",
+		"K6_OTEL_HEADERS":                                          "Authorization=Basic " + base64.StdEncoding.EncodeToString([]byte("user:password")),
 		"K6_OTEL_METRIC_PREFIX":                                    "k6_",
 		"OTEL_EXPORTER_OTLP_METRICS_DEFAULT_HISTOGRAM_AGGREGATION": "base2_exponential_bucket_histogram",
 	} {

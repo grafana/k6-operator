@@ -33,8 +33,7 @@ type MetricsOutput struct {
 	// Insecure makes the runners connect to the receiver without TLS.
 	Insecure bool `json:"insecure,omitempty"`
 	// Username and Password, if set, authenticate the runners to the receiver with
-	// basic auth, e.g. a Grafana Cloud instance ID and a token with `metrics:write`.
-	// Like the test run token, they reach the runners as a plain env var.
+	// basic auth. Like the test run token, they reach the runners as a plain env var.
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 }
