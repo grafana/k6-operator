@@ -104,6 +104,16 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 		Name:      "archive-volume",
 		MountPath: "/test",
 	}
+	jobPod := v1alpha1.Pod{
+		ServiceAccountName: plz.Spec.ServiceAccountName,
+		NodeSelector:       plz.Spec.NodeSelector,
+		ImagePullSecrets:   plz.Spec.ImagePullSecrets,
+		Tolerations:        plz.Spec.PodTemplate.Spec.Tolerations,
+		Metadata: v1alpha1.PodMetadata{
+			Annotations: plz.Spec.PodTemplate.Annotations,
+			Labels:      plz.Spec.PodTemplate.Labels,
+		},
+	}
 
 	w.template = &testrun.Template{
 		ObjectMeta: metav1.ObjectMeta{
@@ -128,16 +138,8 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 					Labels:      plz.Spec.PodTemplate.Labels,
 				},
 			},
-			Starter: v1alpha1.Pod{
-				ServiceAccountName: plz.Spec.ServiceAccountName,
-				NodeSelector:       plz.Spec.NodeSelector,
-				ImagePullSecrets:   plz.Spec.ImagePullSecrets,
-				Tolerations:        plz.Spec.PodTemplate.Spec.Tolerations,
-				Metadata: v1alpha1.PodMetadata{
-					Annotations: plz.Spec.PodTemplate.Annotations,
-					Labels:      plz.Spec.PodTemplate.Labels,
-				},
-			},
+			Initializer: jobPod.DeepCopy(),
+			Starter:     *jobPod.DeepCopy(),
 			Script: v1alpha1.K6Script{
 				LocalFile: "/test/archive.tar",
 			},
@@ -152,11 +154,13 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 	// This should be simplified, once TestRun supports PodTemplate too.
 	if len(plz.Spec.PodTemplate.Spec.Containers) > 0 && plz.Spec.PodTemplate.Spec.Containers[0].SecurityContext != nil {
 		w.template.Spec.Runner.ContainerSecurityContext = *plz.Spec.PodTemplate.Spec.Containers[0].SecurityContext
+		w.template.Spec.Initializer.ContainerSecurityContext = *plz.Spec.PodTemplate.Spec.Containers[0].SecurityContext
 		w.template.Spec.Starter.ContainerSecurityContext = *plz.Spec.PodTemplate.Spec.Containers[0].SecurityContext
 	}
 
 	if plz.Spec.PodTemplate.Spec.SecurityContext != nil {
 		w.template.Spec.Runner.SecurityContext = *plz.Spec.PodTemplate.Spec.SecurityContext
+		w.template.Spec.Initializer.SecurityContext = *plz.Spec.PodTemplate.Spec.SecurityContext
 		w.template.Spec.Starter.SecurityContext = *plz.Spec.PodTemplate.Spec.SecurityContext
 	}
 }

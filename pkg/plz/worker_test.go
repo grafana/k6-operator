@@ -143,6 +143,69 @@ func Test_plzk6Args(t *testing.T) {
 	}
 }
 
+func Test_createTemplate_propagatesPodConfigurationToInitializer(t *testing.T) {
+	allowPrivilegeEscalation := false
+	runAsUser := int64(1000)
+	plz := &v1alpha1.PrivateLoadZone{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "some-ns"},
+		Spec: v1alpha1.PrivateLoadZoneSpec{
+			ServiceAccountName: "some-service-account",
+			NodeSelector:       map[string]string{"node-pool": "k6"},
+			ImagePullSecrets: []corev1.LocalObjectReference{
+				{Name: "registry-credentials"},
+			},
+			PodTemplate: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{"example.com/annotation": "value"},
+					Labels:      map[string]string{"example.com/label": "value"},
+				},
+				Spec: corev1.PodSpec{
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "dedicated",
+							Operator: corev1.TolerationOpEqual,
+							Value:    "k6",
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
+					},
+					SecurityContext: &corev1.PodSecurityContext{RunAsUser: &runAsUser},
+					Containers: []corev1.Container{
+						{
+							Name: "k6",
+							SecurityContext: &corev1.SecurityContext{
+								AllowPrivilegeEscalation: &allowPrivilegeEscalation,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	worker := &PLZWorker{}
+	worker.createTemplate(plz)
+
+	expected := &v1alpha1.Pod{
+		ServiceAccountName: "some-service-account",
+		NodeSelector:       map[string]string{"node-pool": "k6"},
+		ImagePullSecrets: []corev1.LocalObjectReference{
+			{Name: "registry-credentials"},
+		},
+		Tolerations: plz.Spec.PodTemplate.Spec.Tolerations,
+		Metadata: v1alpha1.PodMetadata{
+			Annotations: map[string]string{"example.com/annotation": "value"},
+			Labels:      map[string]string{"example.com/label": "value"},
+		},
+		SecurityContext: corev1.PodSecurityContext{RunAsUser: &runAsUser},
+		ContainerSecurityContext: corev1.SecurityContext{
+			AllowPrivilegeEscalation: &allowPrivilegeEscalation,
+		},
+	}
+	if diff := deep.Equal(worker.template.Spec.Initializer, expected); diff != nil {
+		t.Errorf("initializer pod configuration mismatch: %s", diff)
+	}
+}
+
 func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	// The following are the definitions that
 	// are expected from PLZ worker now.
@@ -160,6 +223,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 				Name: testrun.PLZTestName("0"),
 			},
 			Spec: v1alpha1.TestRunSpec{
+				Initializer: &v1alpha1.Pod{},
 				Runner: v1alpha1.Pod{
 					Volumes: []corev1.Volume{{
 						Name: "archive-volume",
@@ -266,17 +330,22 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 
 	// populate TestRuns for different test cases
 
+	requiredFieldsTestRun.Spec.Initializer = &v1alpha1.Pod{}
 	requiredFieldsTestRun.Spec.Token = someToken
 	requiredFieldsTestRun.Spec.Runner.Resources.Limits = resourceLimits
 
 	optionalFieldsTestRun = requiredFieldsTestRun // build up on top of required field case
+	optionalFieldsTestRun.Spec.Initializer = requiredFieldsTestRun.Spec.Initializer.DeepCopy()
 	optionalFieldsTestRun.Namespace = someNS
 	optionalFieldsTestRun.Spec.Runner.ServiceAccountName = someSA
 	optionalFieldsTestRun.Spec.Runner.NodeSelector = someNodeSelector
+	optionalFieldsTestRun.Spec.Initializer.ServiceAccountName = someSA
+	optionalFieldsTestRun.Spec.Initializer.NodeSelector = someNodeSelector
 	optionalFieldsTestRun.Spec.Starter.ServiceAccountName = someSA
 	optionalFieldsTestRun.Spec.Starter.NodeSelector = someNodeSelector
 
 	cloudFieldsTestRun = requiredFieldsTestRun // build up on top of required field case
+	cloudFieldsTestRun.Spec.Initializer = requiredFieldsTestRun.Spec.Initializer.DeepCopy()
 	cloudFieldsTestRun.Name = testrun.PLZTestName(fmt.Sprintf("%d", someTestRunID))
 	cloudFieldsTestRun.Spec.TestRunID = fmt.Sprintf("%d", someTestRunID)
 	cloudFieldsTestRun.Spec.Args = plzk6Args(
@@ -302,6 +371,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	)
 
 	cloudEnvVarsTestRun = cloudFieldsTestRun // build up on top of cloud fields case
+	cloudEnvVarsTestRun.Spec.Initializer = cloudFieldsTestRun.Spec.Initializer.DeepCopy()
 	cloudEnvVarsTestRun.Spec.Args = plzk6Args(
 		somePLZName,
 		fmt.Sprintf("%d", someTestRunID),
@@ -314,26 +384,37 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	}, cloudEnvVarsTestRun.Spec.Runner.Env...)
 
 	podTemplateTolerationsTestRun = requiredFieldsTestRun
+	podTemplateTolerationsTestRun.Spec.Initializer = requiredFieldsTestRun.Spec.Initializer.DeepCopy()
 	podTemplateTolerationsTestRun.Spec.Runner.Tolerations = someTolerations
+	podTemplateTolerationsTestRun.Spec.Initializer.Tolerations = someTolerations
 	podTemplateTolerationsTestRun.Spec.Starter.Tolerations = someTolerations
 
 	podTemplateContainerSecCtxTestRun = requiredFieldsTestRun
+	podTemplateContainerSecCtxTestRun.Spec.Initializer = requiredFieldsTestRun.Spec.Initializer.DeepCopy()
 	podTemplateContainerSecCtxTestRun.Spec.Runner.ContainerSecurityContext = someContainerSecCtx
+	podTemplateContainerSecCtxTestRun.Spec.Initializer.ContainerSecurityContext = someContainerSecCtx
 	podTemplateContainerSecCtxTestRun.Spec.Starter.ContainerSecurityContext = someContainerSecCtx
 
 	podTemplatePodSecCtxTestRun = requiredFieldsTestRun
+	podTemplatePodSecCtxTestRun.Spec.Initializer = requiredFieldsTestRun.Spec.Initializer.DeepCopy()
 	podTemplatePodSecCtxTestRun.Spec.Runner.SecurityContext = somePodSecCtx
+	podTemplatePodSecCtxTestRun.Spec.Initializer.SecurityContext = somePodSecCtx
 	podTemplatePodSecCtxTestRun.Spec.Starter.SecurityContext = somePodSecCtx
 
 	podTemplateAllTestRun = requiredFieldsTestRun
+	podTemplateAllTestRun.Spec.Initializer = requiredFieldsTestRun.Spec.Initializer.DeepCopy()
 	podTemplateAllTestRun.Spec.Runner.Tolerations = someTolerations
+	podTemplateAllTestRun.Spec.Initializer.Tolerations = someTolerations
 	podTemplateAllTestRun.Spec.Starter.Tolerations = someTolerations
 	podTemplateAllTestRun.Spec.Runner.ContainerSecurityContext = someContainerSecCtx
+	podTemplateAllTestRun.Spec.Initializer.ContainerSecurityContext = someContainerSecCtx
 	podTemplateAllTestRun.Spec.Starter.ContainerSecurityContext = someContainerSecCtx
 	podTemplateAllTestRun.Spec.Runner.SecurityContext = somePodSecCtx
+	podTemplateAllTestRun.Spec.Initializer.SecurityContext = somePodSecCtx
 	podTemplateAllTestRun.Spec.Starter.SecurityContext = somePodSecCtx
 
 	includeSysEnvVarsTestRun = cloudFieldsTestRun
+	includeSysEnvVarsTestRun.Spec.Initializer = cloudFieldsTestRun.Spec.Initializer.DeepCopy()
 	includeSysEnvVarsTestRun.Spec.Args = plzk6Args(
 		"",
 		fmt.Sprintf("%d", someTestRunID),
@@ -350,6 +431,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	someTestRunToken := "abc123token"
 
 	secretsWithTokenTestRun = cloudFieldsTestRun
+	secretsWithTokenTestRun.Spec.Initializer = cloudFieldsTestRun.Spec.Initializer.DeepCopy()
 	secretsWithTokenTestRun.Spec.Runner.Env = append([]corev1.EnvVar{}, cloud.AggregationEnvVars(&cloudapi.Config{})...)
 	secretsWithTokenTestRun.Spec.Runner.Env = append(
 		secretsWithTokenTestRun.Spec.Runner.Env,
