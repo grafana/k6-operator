@@ -12,7 +12,7 @@ import (
 
 // NewStartContainer is used to get a template for a new k6 starting curl container.
 func NewStartContainer(hostnames []string, image string, imagePullPolicy corev1.PullPolicy, command []string, env []corev1.EnvVar, securityContext corev1.SecurityContext, resources corev1.ResourceRequirements) corev1.Container {
-	req, _ := json.Marshal(
+	req, err := json.Marshal(
 		types.StatusAPIRequest{
 			Data: types.StatusAPIRequestData{
 				Attributes: types.StatusAPIRequestDataAttributes{
@@ -22,6 +22,9 @@ func NewStartContainer(hostnames []string, image string, imagePullPolicy corev1.
 				Type: "status",
 			},
 		})
+	if err != nil {
+		req = []byte("{}")
+	}
 
 	var parts []string
 	for _, hostname := range hostnames {
