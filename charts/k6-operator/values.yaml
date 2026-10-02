@@ -69,6 +69,12 @@ customLabels: {}
 podLabels: {}
 
 # @schema
+# required: false
+# type: string
+# @schema
+priorityClassName: ""
+
+# @schema
 # additionalProperties: true
 # required: false
 # type: object
