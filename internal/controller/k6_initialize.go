@@ -100,7 +100,7 @@ func RunValidations(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 		return ctrl.Result{}, ready, nil
 	}
 
-	if cli.HasCloudOut {
+	if hasCloudLifecycle(k6, cli) {
 		v1alpha1.UpdateCondition(k6, v1alpha1.CloudTestRun, metav1.ConditionTrue)
 
 		if v1alpha1.IsUnknown(k6, v1alpha1.CloudTestRunCreated) {
