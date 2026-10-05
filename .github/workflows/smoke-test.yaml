@@ -42,6 +42,7 @@ jobs:
   docker:
     runs-on: ubuntu-x64
     permissions:
+      contents: read
       packages: write
     steps:
       - name: "Build:checkout"
@@ -72,6 +73,8 @@ jobs:
     needs: ["changes", "docker"]
     if: needs.changes.outputs.go-or-manifests == 'true'
     runs-on: ubuntu-x64
+    permissions:
+      contents: read
     steps:
       - name: "Checkout"
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -109,6 +112,8 @@ jobs:
     needs: ["changes", "docker"]
     if: needs.changes.outputs.charts == 'true'
     runs-on: ubuntu-x64
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
