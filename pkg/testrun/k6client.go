@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 
@@ -15,7 +15,7 @@ import (
 // This will probably be removed once distributed mode in k6 is implemented.
 
 func RunSetup(ctx context.Context, hostname string) (_ json.RawMessage, err error) {
-	c, err := k6Client.New(fmt.Sprintf("%v:6565", hostname), k6Client.WithHTTPClient(&http.Client{
+	c, err := k6Client.New(net.JoinHostPort(hostname, "6565"), k6Client.WithHTTPClient(&http.Client{
 		Timeout: 0,
 	}))
 	if err != nil {
@@ -39,7 +39,7 @@ func RunSetup(ctx context.Context, hostname string) (_ json.RawMessage, err erro
 
 func SetSetupData(ctx context.Context, hostnames []string, data json.RawMessage) (err error) {
 	for _, hostname := range hostnames {
-		c, err := k6Client.New(fmt.Sprintf("%v:6565", hostname), k6Client.WithHTTPClient(&http.Client{
+		c, err := k6Client.New(net.JoinHostPort(hostname, "6565"), k6Client.WithHTTPClient(&http.Client{
 			Timeout: 0,
 		}))
 		if err != nil {
@@ -59,7 +59,7 @@ func RunTeardown(ctx context.Context, hostnames []string) (err error) {
 		return errors.New("no k6 Service is available to run teardown")
 	}
 
-	c, err := k6Client.New(fmt.Sprintf("%v:6565", hostnames[0]), k6Client.WithHTTPClient(&http.Client{
+	c, err := k6Client.New(net.JoinHostPort(hostnames[0], "6565"), k6Client.WithHTTPClient(&http.Client{
 		Timeout: 0,
 	}))
 	if err != nil {
