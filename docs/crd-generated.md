@@ -293,7 +293,8 @@ They are re-packed into `EnvFromSource` struct during TestRun creation.<br/>
 variables with.
 
 The contents of the target ConfigMap's Data field will represent the
-key-value pairs as environment variables.<br/>
+key-value pairs as environment variables.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -321,6 +322,7 @@ variables with.
 
 The contents of the target ConfigMap's Data field will represent the
 key-value pairs as environment variables.
+Keys in the BinaryData field are not currently propagated to container env vars.
 
 <table>
     <thead>
@@ -562,6 +564,27 @@ ephemeral container to an existing pod, use the pod's ephemeralcontainers subres
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#privateloadzonespecpodtemplatespecevictionrespondersindex">evictionResponders</a></b></td>
+        <td>[]object</td>
+        <td>
+          evictionResponders reference responders that react to Evictions based on EvictionRequests.
+Responders should observe and communicate through the Eviction Resource API to help with
+the graceful termination of a pod. The responders are selected sequentially, according to
+their specified priority.
+
+Responders should periodically report on an eviction progress by updating the
+.status.responders[].heartbeatTime field of the Eviction object. If this field is not updated
+within the heartbeat deadline defined by the Eviction API (currently 20 minutes), the eviction
+is passed over to the next responder with a lower priority. If there is no other responder,
+the last default imperative-eviction.k8s.io/evictor responder with a priority of 100 will
+evict the pod using the imperative Eviction API (pods/<name>/eviction subresource).
+
+The maximum length of the responders list is 10.
+Responders are not supported when the pod is part of a PodGroup (.spec.schedulingGroup is set).
+This field can only be set on creation and is immutable afterwards.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#privateloadzonespecpodtemplatespechostaliasesindex">hostAliases</a></b></td>
         <td>[]object</td>
         <td>
@@ -630,8 +653,7 @@ When this field is set to a non-empty string:
 - `setHostnameAsFQDN` must be nil or set to false.
 - `hostNetwork` must be set to false.
 
-This field must be a valid DNS subdomain as defined in RFC 1123 and contain at most 64 characters.
-Requires the HostnameOverride feature gate to be enabled.<br/>
+This field must be a valid DNS subdomain as defined in RFC 1123 and contain at most 64 characters.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -739,6 +761,8 @@ More info: https://git.k8s.io/enhancements/keps/sig-node/688-pod-overhead/README
         <td>
           PreemptionPolicy is the Policy for preempting pods with lower priority.
 One of Never, PreemptLowerPriority.
+When Priority Admission Controller is enabled, it prevents users from setting
+this field. The admission controller populates this field from PriorityClassName.
 Defaults to PreemptLowerPriority if unset.<br/>
         </td>
         <td>false</td>
@@ -1388,7 +1412,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -1908,6 +1933,14 @@ Name must be an IANA_SVC_NAME.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>scheme</b></td>
         <td>string</td>
         <td>
@@ -2155,6 +2188,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2448,6 +2489,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -2508,6 +2559,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2838,6 +2897,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -2898,6 +2967,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3752,6 +3829,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -3812,6 +3899,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3951,8 +4046,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>mountPath</b></td>
         <td>string</td>
         <td>
-          Path within the container at which the volume should be mounted.  Must
-not contain ':'.<br/>
+          Path within the container at which the volume should be mounted.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -3962,6 +4056,18 @@ not contain ':'.<br/>
           This must match the Name of a Volume.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>bindMountOptions</b></td>
+        <td>[]string</td>
+        <td>
+          bindMountOptions is the list of additional bind mount options to apply when
+mounting this volume into the container. Allowed values are noexec,
+nodev, and nosuid. These are Linux mount options and have no effect on
+Windows nodes.
+This field is not supported with image volumes.
+This is an alpha field and requires enabling the VolumeBindMountOptions feature gate.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>mountPropagation</b></td>
         <td>string</td>
@@ -6131,7 +6237,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -6650,6 +6757,14 @@ Name must be an IANA_SVC_NAME.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>scheme</b></td>
         <td>string</td>
         <td>
@@ -6897,6 +7012,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7187,6 +7310,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -7247,6 +7380,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7574,6 +7715,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -7634,6 +7785,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8480,6 +8639,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -8540,6 +8709,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8679,8 +8856,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>mountPath</b></td>
         <td>string</td>
         <td>
-          Path within the container at which the volume should be mounted.  Must
-not contain ':'.<br/>
+          Path within the container at which the volume should be mounted.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -8690,6 +8866,18 @@ not contain ':'.<br/>
           This must match the Name of a Volume.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>bindMountOptions</b></td>
+        <td>[]string</td>
+        <td>
+          bindMountOptions is the list of additional bind mount options to apply when
+mounting this volume into the container. Allowed values are noexec,
+nodev, and nosuid. These are Linux mount options and have no effect on
+Windows nodes.
+This field is not supported with image volumes.
+This is an alpha field and requires enabling the VolumeBindMountOptions feature gate.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>mountPropagation</b></td>
         <td>string</td>
@@ -8750,6 +8938,60 @@ Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### PrivateLoadZone.spec.podTemplate.spec.evictionResponders[index]
+<sup><sup>[↩ Parent](#privateloadzonespecpodtemplatespec)</sup></sup>
+
+
+
+EvictionResponder allows you to specify the responder reacting to an Eviction.
+Responders should observe and communicate through the Eviction Resource API to help with
+the graceful eviction of a target (e.g. termination of a pod).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name allows you to identify the responder responding to the Eviction.
+
+It must be a valid domain-prefixed key (such as "acme.io/foo").
+Domain names *.k8s.io and *.kubernetes.io are reserved.
+This field must be unique for each responder.
+This field is required.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>priority</b></td>
+        <td>integer</td>
+        <td>
+          priority for this responder. Higher priorities are selected first by the evictionrequest-controller.
+If there are responders with the same priority, the responder whose domain name comes first in the
+alphabetical higher domain order, will be picked. This means that the top domain labels are compared
+alphabetically first, followed by the lower domain labels. The key is compared last.
+
+The responder that is the managing controller of the pod should set the value of
+this field to 10000 to allow both for preemption or fallback registration by other
+responders.
+
+The minimum value is 0 and the maximum value is 100000.
+The interval 0-999 is reserved for responders with *.k8s.io suffix.
+This field is required.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
@@ -9248,7 +9490,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -9768,6 +10011,14 @@ Name must be an IANA_SVC_NAME.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>scheme</b></td>
         <td>string</td>
         <td>
@@ -10015,6 +10266,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10308,6 +10567,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -10368,6 +10637,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10698,6 +10975,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -10758,6 +11045,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11612,6 +11907,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -11672,6 +11977,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11811,8 +12124,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>mountPath</b></td>
         <td>string</td>
         <td>
-          Path within the container at which the volume should be mounted.  Must
-not contain ':'.<br/>
+          Path within the container at which the volume should be mounted.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -11822,6 +12134,18 @@ not contain ':'.<br/>
           This must match the Name of a Volume.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>bindMountOptions</b></td>
+        <td>[]string</td>
+        <td>
+          bindMountOptions is the list of additional bind mount options to apply when
+mounting this volume into the container. Allowed values are noexec,
+nodev, and nosuid. These are Linux mount options and have no effect on
+Windows nodes.
+This field is not supported with image volumes.
+This is an alpha field and requires enabling the VolumeBindMountOptions feature gate.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>mountPropagation</b></td>
         <td>string</td>
@@ -12335,11 +12659,8 @@ It is not possible to share the same volume among privileged and unprivileged Po
 Eligible volumes are in-tree FibreChannel and iSCSI volumes, and all CSI volumes
 whose CSI driver announces SELinux support by setting spec.seLinuxMount: true in their
 CSIDriver instance. Other volumes are always re-labelled recursively.
-"MountOption" value is allowed only when SELinuxMount feature gate is enabled.
 
-If not specified and SELinuxMount feature gate is enabled, "MountOption" is used.
-If not specified and SELinuxMount feature gate is disabled, "MountOption" is used for ReadWriteOncePod volumes
-and "Recursive" for all other volumes.
+If not specified, "MountOption" is used.
 
 This field affects only Pods that have SELinux label set, either in PodSecurityContext or in SecurityContext of all containers.
 
@@ -13683,6 +14004,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#privateloadzonespecpodtemplatespecvolumesindexconfigmapitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -13764,6 +14096,17 @@ This might be in conflict with other options that affect the file
 mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13904,6 +14247,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#privateloadzonespecpodtemplatespecvolumesindexdownwardapiitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -13964,6 +14318,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         <td>
           Selects a resource of the container: only resources limits and requests
 (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14071,6 +14436,22 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
 The default is "" which means to use the node's default medium.
 Must be an empty string (default) or Memory.
 More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>integer</td>
+        <td>
+          mode specifies the permission bits for the emptyDir directory, in numeric
+notation (e.g., 0755, 01777). Must be a value between 0000 and 01777.
+If not specified, defaults to 0777.
+This might be in conflict with other options that affect the file
+mode, like fsGroup. If fsGroup is specified, the fsGroup permissions
+will override the mode specified here.
+This field has no effect on Windows.
+This field is alpha and requires EmptyDirVolumeMode featuregate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14254,8 +14635,8 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
 * An existing PVC (PersistentVolumeClaim)
 If the provisioner or an external controller can support the specified data source,
 it will create a new volume based on the contents of the specified data source.
-When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
-and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be
+copied to dataSource when dataSourceRef.namespace is not specified.
 If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
         </td>
         <td>false</td>
@@ -14284,7 +14665,6 @@ There are three important differences between dataSource and dataSourceRef:
   specified.
 * While dataSource only allows local objects, dataSourceRef allows objects
   in any namespaces.
-(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
 (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
@@ -14359,8 +14739,8 @@ dataSource field can be used to specify either:
 * An existing PVC (PersistentVolumeClaim)
 If the provisioner or an external controller can support the specified data source,
 it will create a new volume based on the contents of the specified data source.
-When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
-and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be
+copied to dataSource when dataSourceRef.namespace is not specified.
 If the namespace is specified, then dataSourceRef will not be copied to dataSource.
 
 <table>
@@ -14425,7 +14805,6 @@ There are three important differences between dataSource and dataSourceRef:
   specified.
 * While dataSource only allows local objects, dataSourceRef allows objects
   in any namespaces.
-(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
 (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
 
 <table>
@@ -15392,6 +15771,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#privateloadzonespecpodtemplatespecvolumesindexprojectedsourcesindex">sources</a></b></td>
         <td>[]object</td>
         <td>
@@ -15584,6 +15974,17 @@ Mutually-exclusive with name.  The contents of all selected
 ClusterTrustBundles will be unified and deduplicated.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -15773,6 +16174,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -15854,6 +16266,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         <td>
           Selects a resource of the container: only resources limits and requests
 (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -16069,6 +16492,17 @@ longer than 24 hours.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>userAnnotations</b></td>
         <td>map[string]string</td>
         <td>
@@ -16191,6 +16625,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -16239,6 +16684,17 @@ plugin will proactively rotate the service account token. The kubelet will
 start trying to rotate the token if the token is older than 80 percent of
 its time to live or if the token is older than 24 hours.Defaults to 1 hour
 and must be at least 10 minutes.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -16620,6 +17076,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#privateloadzonespecpodtemplatespecvolumesindexsecretitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -16696,6 +17163,17 @@ This might be in conflict with other options that affect the file
 mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19597,7 +20075,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -20183,7 +20662,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -20625,8 +21105,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>mountPath</b></td>
         <td>string</td>
         <td>
-          Path within the container at which the volume should be mounted.  Must
-not contain ':'.<br/>
+          Path within the container at which the volume should be mounted.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -20636,6 +21115,18 @@ not contain ':'.<br/>
           This must match the Name of a Volume.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>bindMountOptions</b></td>
+        <td>[]string</td>
+        <td>
+          bindMountOptions is the list of additional bind mount options to apply when
+mounting this volume into the container. Allowed values are noexec,
+nodev, and nosuid. These are Linux mount options and have no effect on
+Windows nodes.
+This field is not supported with image volumes.
+This is an alpha field and requires enabling the VolumeBindMountOptions feature gate.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>mountPropagation</b></td>
         <td>string</td>
@@ -20875,6 +21366,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -20935,6 +21436,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21229,6 +21738,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -21289,6 +21808,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21577,11 +22104,8 @@ It is not possible to share the same volume among privileged and unprivileged Po
 Eligible volumes are in-tree FibreChannel and iSCSI volumes, and all CSI volumes
 whose CSI driver announces SELinux support by setting spec.seLinuxMount: true in their
 CSIDriver instance. Other volumes are always re-labelled recursively.
-"MountOption" value is allowed only when SELinuxMount feature gate is enabled.
 
-If not specified and SELinuxMount feature gate is enabled, "MountOption" is used.
-If not specified and SELinuxMount feature gate is disabled, "MountOption" is used for ReadWriteOncePod volumes
-and "Recursive" for all other volumes.
+If not specified, "MountOption" is used.
 
 This field affects only Pods that have SELinux label set, either in PodSecurityContext or in SecurityContext of all containers.
 
@@ -22223,8 +22747,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>mountPath</b></td>
         <td>string</td>
         <td>
-          Path within the container at which the volume should be mounted.  Must
-not contain ':'.<br/>
+          Path within the container at which the volume should be mounted.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -22234,6 +22757,18 @@ not contain ':'.<br/>
           This must match the Name of a Volume.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>bindMountOptions</b></td>
+        <td>[]string</td>
+        <td>
+          bindMountOptions is the list of additional bind mount options to apply when
+mounting this volume into the container. Allowed values are noexec,
+nodev, and nosuid. These are Linux mount options and have no effect on
+Windows nodes.
+This field is not supported with image volumes.
+This is an alpha field and requires enabling the VolumeBindMountOptions feature gate.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>mountPropagation</b></td>
         <td>string</td>
@@ -23020,6 +23555,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecinitializervolumesindexconfigmapitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -23101,6 +23647,17 @@ This might be in conflict with other options that affect the file
 mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23241,6 +23798,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecinitializervolumesindexdownwardapiitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -23301,6 +23869,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         <td>
           Selects a resource of the container: only resources limits and requests
 (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23408,6 +23987,22 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
 The default is "" which means to use the node's default medium.
 Must be an empty string (default) or Memory.
 More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>integer</td>
+        <td>
+          mode specifies the permission bits for the emptyDir directory, in numeric
+notation (e.g., 0755, 01777). Must be a value between 0000 and 01777.
+If not specified, defaults to 0777.
+This might be in conflict with other options that affect the file
+mode, like fsGroup. If fsGroup is specified, the fsGroup permissions
+will override the mode specified here.
+This field has no effect on Windows.
+This field is alpha and requires EmptyDirVolumeMode featuregate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23591,8 +24186,8 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
 * An existing PVC (PersistentVolumeClaim)
 If the provisioner or an external controller can support the specified data source,
 it will create a new volume based on the contents of the specified data source.
-When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
-and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be
+copied to dataSource when dataSourceRef.namespace is not specified.
 If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
         </td>
         <td>false</td>
@@ -23621,7 +24216,6 @@ There are three important differences between dataSource and dataSourceRef:
   specified.
 * While dataSource only allows local objects, dataSourceRef allows objects
   in any namespaces.
-(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
 (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
@@ -23696,8 +24290,8 @@ dataSource field can be used to specify either:
 * An existing PVC (PersistentVolumeClaim)
 If the provisioner or an external controller can support the specified data source,
 it will create a new volume based on the contents of the specified data source.
-When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
-and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be
+copied to dataSource when dataSourceRef.namespace is not specified.
 If the namespace is specified, then dataSourceRef will not be copied to dataSource.
 
 <table>
@@ -23762,7 +24356,6 @@ There are three important differences between dataSource and dataSourceRef:
   specified.
 * While dataSource only allows local objects, dataSourceRef allows objects
   in any namespaces.
-(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
 (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
 
 <table>
@@ -24729,6 +25322,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecinitializervolumesindexprojectedsourcesindex">sources</a></b></td>
         <td>[]object</td>
         <td>
@@ -24921,6 +25525,17 @@ Mutually-exclusive with name.  The contents of all selected
 ClusterTrustBundles will be unified and deduplicated.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -25110,6 +25725,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -25191,6 +25817,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         <td>
           Selects a resource of the container: only resources limits and requests
 (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -25406,6 +26043,17 @@ longer than 24 hours.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>userAnnotations</b></td>
         <td>map[string]string</td>
         <td>
@@ -25528,6 +26176,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -25576,6 +26235,17 @@ plugin will proactively rotate the service account token. The kubelet will
 start trying to rotate the token if the token is older than 80 percent of
 its time to live or if the token is older than 24 hours.Defaults to 1 hour
 and must be at least 10 minutes.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -25957,6 +26627,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecinitializervolumesindexsecretitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -26033,6 +26714,17 @@ This might be in conflict with other options that affect the file
 mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -28585,7 +29277,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -29171,7 +29864,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -29613,8 +30307,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>mountPath</b></td>
         <td>string</td>
         <td>
-          Path within the container at which the volume should be mounted.  Must
-not contain ':'.<br/>
+          Path within the container at which the volume should be mounted.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -29624,6 +30317,18 @@ not contain ':'.<br/>
           This must match the Name of a Volume.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>bindMountOptions</b></td>
+        <td>[]string</td>
+        <td>
+          bindMountOptions is the list of additional bind mount options to apply when
+mounting this volume into the container. Allowed values are noexec,
+nodev, and nosuid. These are Linux mount options and have no effect on
+Windows nodes.
+This field is not supported with image volumes.
+This is an alpha field and requires enabling the VolumeBindMountOptions feature gate.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>mountPropagation</b></td>
         <td>string</td>
@@ -29863,6 +30568,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -29923,6 +30638,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30217,6 +30940,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -30277,6 +31010,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30565,11 +31306,8 @@ It is not possible to share the same volume among privileged and unprivileged Po
 Eligible volumes are in-tree FibreChannel and iSCSI volumes, and all CSI volumes
 whose CSI driver announces SELinux support by setting spec.seLinuxMount: true in their
 CSIDriver instance. Other volumes are always re-labelled recursively.
-"MountOption" value is allowed only when SELinuxMount feature gate is enabled.
 
-If not specified and SELinuxMount feature gate is enabled, "MountOption" is used.
-If not specified and SELinuxMount feature gate is disabled, "MountOption" is used for ReadWriteOncePod volumes
-and "Recursive" for all other volumes.
+If not specified, "MountOption" is used.
 
 This field affects only Pods that have SELinux label set, either in PodSecurityContext or in SecurityContext of all containers.
 
@@ -31211,8 +31949,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>mountPath</b></td>
         <td>string</td>
         <td>
-          Path within the container at which the volume should be mounted.  Must
-not contain ':'.<br/>
+          Path within the container at which the volume should be mounted.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -31222,6 +31959,18 @@ not contain ':'.<br/>
           This must match the Name of a Volume.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>bindMountOptions</b></td>
+        <td>[]string</td>
+        <td>
+          bindMountOptions is the list of additional bind mount options to apply when
+mounting this volume into the container. Allowed values are noexec,
+nodev, and nosuid. These are Linux mount options and have no effect on
+Windows nodes.
+This field is not supported with image volumes.
+This is an alpha field and requires enabling the VolumeBindMountOptions feature gate.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>mountPropagation</b></td>
         <td>string</td>
@@ -32008,6 +32757,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecrunnervolumesindexconfigmapitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -32089,6 +32849,17 @@ This might be in conflict with other options that affect the file
 mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -32229,6 +33000,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecrunnervolumesindexdownwardapiitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -32289,6 +33071,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         <td>
           Selects a resource of the container: only resources limits and requests
 (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -32396,6 +33189,22 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
 The default is "" which means to use the node's default medium.
 Must be an empty string (default) or Memory.
 More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>integer</td>
+        <td>
+          mode specifies the permission bits for the emptyDir directory, in numeric
+notation (e.g., 0755, 01777). Must be a value between 0000 and 01777.
+If not specified, defaults to 0777.
+This might be in conflict with other options that affect the file
+mode, like fsGroup. If fsGroup is specified, the fsGroup permissions
+will override the mode specified here.
+This field has no effect on Windows.
+This field is alpha and requires EmptyDirVolumeMode featuregate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -32579,8 +33388,8 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
 * An existing PVC (PersistentVolumeClaim)
 If the provisioner or an external controller can support the specified data source,
 it will create a new volume based on the contents of the specified data source.
-When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
-and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be
+copied to dataSource when dataSourceRef.namespace is not specified.
 If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
         </td>
         <td>false</td>
@@ -32609,7 +33418,6 @@ There are three important differences between dataSource and dataSourceRef:
   specified.
 * While dataSource only allows local objects, dataSourceRef allows objects
   in any namespaces.
-(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
 (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
@@ -32684,8 +33492,8 @@ dataSource field can be used to specify either:
 * An existing PVC (PersistentVolumeClaim)
 If the provisioner or an external controller can support the specified data source,
 it will create a new volume based on the contents of the specified data source.
-When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
-and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be
+copied to dataSource when dataSourceRef.namespace is not specified.
 If the namespace is specified, then dataSourceRef will not be copied to dataSource.
 
 <table>
@@ -32750,7 +33558,6 @@ There are three important differences between dataSource and dataSourceRef:
   specified.
 * While dataSource only allows local objects, dataSourceRef allows objects
   in any namespaces.
-(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
 (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
 
 <table>
@@ -33717,6 +34524,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecrunnervolumesindexprojectedsourcesindex">sources</a></b></td>
         <td>[]object</td>
         <td>
@@ -33909,6 +34727,17 @@ Mutually-exclusive with name.  The contents of all selected
 ClusterTrustBundles will be unified and deduplicated.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -34098,6 +34927,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -34179,6 +35019,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         <td>
           Selects a resource of the container: only resources limits and requests
 (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -34394,6 +35245,17 @@ longer than 24 hours.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>userAnnotations</b></td>
         <td>map[string]string</td>
         <td>
@@ -34516,6 +35378,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -34564,6 +35437,17 @@ plugin will proactively rotate the service account token. The kubelet will
 start trying to rotate the token if the token is older than 80 percent of
 its time to live or if the token is older than 24 hours.Defaults to 1 hour
 and must be at least 10 minutes.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -34945,6 +35829,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecrunnervolumesindexsecretitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -35021,6 +35916,17 @@ This might be in conflict with other options that affect the file
 mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -37597,7 +38503,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -38183,7 +39090,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -38625,8 +39533,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>mountPath</b></td>
         <td>string</td>
         <td>
-          Path within the container at which the volume should be mounted.  Must
-not contain ':'.<br/>
+          Path within the container at which the volume should be mounted.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -38636,6 +39543,18 @@ not contain ':'.<br/>
           This must match the Name of a Volume.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>bindMountOptions</b></td>
+        <td>[]string</td>
+        <td>
+          bindMountOptions is the list of additional bind mount options to apply when
+mounting this volume into the container. Allowed values are noexec,
+nodev, and nosuid. These are Linux mount options and have no effect on
+Windows nodes.
+This field is not supported with image volumes.
+This is an alpha field and requires enabling the VolumeBindMountOptions feature gate.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>mountPropagation</b></td>
         <td>string</td>
@@ -38875,6 +39794,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -38935,6 +39864,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -39229,6 +40166,16 @@ GRPC specifies a GRPC HealthCheckRequest.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          mode specifies the connection mode for the gRPC health probe.
+Set to "TLS" to use TLS without certificate verification.
+Set to "Plaintext" to use a plaintext (insecure) connection explicitly.
+If not specified, the probe uses a plaintext (insecure) connection.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>service</b></td>
         <td>string</td>
         <td>
@@ -39289,6 +40236,14 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol selects the wire protocol for the probe connection.
+Nil defaults to HTTP/1.1.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -39577,11 +40532,8 @@ It is not possible to share the same volume among privileged and unprivileged Po
 Eligible volumes are in-tree FibreChannel and iSCSI volumes, and all CSI volumes
 whose CSI driver announces SELinux support by setting spec.seLinuxMount: true in their
 CSIDriver instance. Other volumes are always re-labelled recursively.
-"MountOption" value is allowed only when SELinuxMount feature gate is enabled.
 
-If not specified and SELinuxMount feature gate is enabled, "MountOption" is used.
-If not specified and SELinuxMount feature gate is disabled, "MountOption" is used for ReadWriteOncePod volumes
-and "Recursive" for all other volumes.
+If not specified, "MountOption" is used.
 
 This field affects only Pods that have SELinux label set, either in PodSecurityContext or in SecurityContext of all containers.
 
@@ -40223,8 +41175,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>mountPath</b></td>
         <td>string</td>
         <td>
-          Path within the container at which the volume should be mounted.  Must
-not contain ':'.<br/>
+          Path within the container at which the volume should be mounted.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -40234,6 +41185,18 @@ not contain ':'.<br/>
           This must match the Name of a Volume.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>bindMountOptions</b></td>
+        <td>[]string</td>
+        <td>
+          bindMountOptions is the list of additional bind mount options to apply when
+mounting this volume into the container. Allowed values are noexec,
+nodev, and nosuid. These are Linux mount options and have no effect on
+Windows nodes.
+This field is not supported with image volumes.
+This is an alpha field and requires enabling the VolumeBindMountOptions feature gate.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>mountPropagation</b></td>
         <td>string</td>
@@ -41020,6 +41983,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecstartervolumesindexconfigmapitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -41101,6 +42075,17 @@ This might be in conflict with other options that affect the file
 mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -41241,6 +42226,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecstartervolumesindexdownwardapiitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -41301,6 +42297,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         <td>
           Selects a resource of the container: only resources limits and requests
 (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -41408,6 +42415,22 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
 The default is "" which means to use the node's default medium.
 Must be an empty string (default) or Memory.
 More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>integer</td>
+        <td>
+          mode specifies the permission bits for the emptyDir directory, in numeric
+notation (e.g., 0755, 01777). Must be a value between 0000 and 01777.
+If not specified, defaults to 0777.
+This might be in conflict with other options that affect the file
+mode, like fsGroup. If fsGroup is specified, the fsGroup permissions
+will override the mode specified here.
+This field has no effect on Windows.
+This field is alpha and requires EmptyDirVolumeMode featuregate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -41591,8 +42614,8 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
 * An existing PVC (PersistentVolumeClaim)
 If the provisioner or an external controller can support the specified data source,
 it will create a new volume based on the contents of the specified data source.
-When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
-and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be
+copied to dataSource when dataSourceRef.namespace is not specified.
 If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
         </td>
         <td>false</td>
@@ -41621,7 +42644,6 @@ There are three important differences between dataSource and dataSourceRef:
   specified.
 * While dataSource only allows local objects, dataSourceRef allows objects
   in any namespaces.
-(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
 (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
@@ -41696,8 +42718,8 @@ dataSource field can be used to specify either:
 * An existing PVC (PersistentVolumeClaim)
 If the provisioner or an external controller can support the specified data source,
 it will create a new volume based on the contents of the specified data source.
-When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
-and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be
+copied to dataSource when dataSourceRef.namespace is not specified.
 If the namespace is specified, then dataSourceRef will not be copied to dataSource.
 
 <table>
@@ -41762,7 +42784,6 @@ There are three important differences between dataSource and dataSourceRef:
   specified.
 * While dataSource only allows local objects, dataSourceRef allows objects
   in any namespaces.
-(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
 (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
 
 <table>
@@ -42729,6 +43750,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecstartervolumesindexprojectedsourcesindex">sources</a></b></td>
         <td>[]object</td>
         <td>
@@ -42921,6 +43953,17 @@ Mutually-exclusive with name.  The contents of all selected
 ClusterTrustBundles will be unified and deduplicated.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -43110,6 +44153,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -43191,6 +44245,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         <td>
           Selects a resource of the container: only resources limits and requests
 (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -43406,6 +44471,17 @@ longer than 24 hours.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>userAnnotations</b></td>
         <td>map[string]string</td>
         <td>
@@ -43528,6 +44604,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -43576,6 +44663,17 @@ plugin will proactively rotate the service account token. The kubelet will
 start trying to rotate the token if the token is older than 80 percent of
 its time to live or if the token is older than 24 hours.Defaults to 1 hour
 and must be at least 10 minutes.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -43957,6 +45055,17 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>defaultUser</b></td>
+        <td>integer</td>
+        <td>
+          defaultUser is Optional: The owner UID of the created files by default.
+The defaultUser field is only used as a fallback when the item-level user field is unset.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#testrunspecstartervolumesindexsecretitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
@@ -44033,6 +45142,17 @@ This might be in conflict with other options that affect the file
 mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>integer</td>
+        <td>
+          user is Optional: The owner UID of the created file.
+If specified, the item-level user field takes precedence over defaultUser.
+(Alpha) This field requires the AtomicWriteVolumeUserFields feature gate to be enabled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
