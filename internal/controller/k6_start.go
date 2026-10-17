@@ -10,6 +10,7 @@ import (
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
+	"github.com/grafana/k6-operator/pkg/testrun"
 	"go.k6.io/k6/v2/cloudapi"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -120,22 +121,33 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 
 	// starter
 
-	starter := jobs.NewStarterJob(k6, hostnames)
+	if r.BuiltinStarter {
+		// Resuming an already resumed runner is a no-op, so on failure
+		// it is safe to retry the whole operation with all runners.
+		if err = testrun.ResumeRunners(ctx, hostnames); err != nil {
+			log.Error(err, "Failed to resume runners")
+			return ctrl.Result{}, err
+		}
 
-	if err = ctrl.SetControllerReference(k6, starter, r.Scheme); err != nil {
-		log.Error(err, "Failed to set controller reference for the start job")
-	}
-
-	created, err := createJobIfNotExists(ctx, r.Client, starter)
-	if err != nil {
-		log.Error(err, "Failed to launch k6 test starter")
-		return res, nil
-	}
-
-	if created {
-		log.Info("Created starter job")
+		log.Info("Resumed all runners")
 	} else {
-		log.Info("Starter job already exists")
+		starter := jobs.NewStarterJob(k6, hostnames)
+
+		if err = ctrl.SetControllerReference(k6, starter, r.Scheme); err != nil {
+			log.Error(err, "Failed to set controller reference for the start job")
+		}
+
+		created, err := createJobIfNotExists(ctx, r.Client, starter)
+		if err != nil {
+			log.Error(err, "Failed to launch k6 test starter")
+			return res, nil
+		}
+
+		if created {
+			log.Info("Created starter job")
+		} else {
+			log.Info("Starter job already exists")
+		}
 	}
 
 	log.Info("Changing stage of TestRun status to started")
