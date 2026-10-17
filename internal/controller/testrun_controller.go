@@ -52,6 +52,10 @@ type TestRunReconciler struct {
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder events.EventRecorder
+
+	// BuiltinStarter makes the operator resume the runners itself
+	// instead of creating a starter job.
+	BuiltinStarter bool
 }
 
 // Reconcile takes a K6 object and takes the appropriate action in the cluster

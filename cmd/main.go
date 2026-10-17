@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	"strconv"
 	"strings"
 
 	controllers "github.com/grafana/k6-operator/internal/controller"
@@ -110,11 +111,21 @@ func main() {
 	_ = mgr.AddHealthzCheck("health", healthz.Ping)
 	_ = mgr.AddReadyzCheck("ready", healthz.Ping)
 
+	builtinStarter, err := getBuiltinStarter()
+	if err != nil {
+		setupLog.Error(err, "unable to parse K6_OPERATOR_BUILTIN_STARTER")
+		os.Exit(1)
+	}
+	if builtinStarter {
+		setupLog.Info("K6_OPERATOR_BUILTIN_STARTER is enabled, runners will be started without a starter job")
+	}
+
 	if err = (&controllers.TestRunReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("TestRun"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorder("testrun-controller"),
+		Client:         mgr.GetClient(),
+		Log:            ctrl.Log.WithName("controllers").WithName("TestRun"),
+		Scheme:         mgr.GetScheme(),
+		Recorder:       mgr.GetEventRecorder("testrun-controller"),
+		BuiltinStarter: builtinStarter,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "TestRun")
 		os.Exit(1)
@@ -157,4 +168,14 @@ func getWatchNamespaces() ([]string, bool) {
 	}
 
 	return nil, false
+}
+
+func getBuiltinStarter() (bool, error) {
+	const builtinStarterEnvVar = "K6_OPERATOR_BUILTIN_STARTER"
+
+	if value, isSet := os.LookupEnv(builtinStarterEnvVar); isSet && value != "" {
+		return strconv.ParseBool(value)
+	}
+
+	return false, nil
 }
