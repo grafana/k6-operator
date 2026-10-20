@@ -15,6 +15,7 @@
                 "gomod"
             ],
             "enabled": true,
+            "constraintsFiltering": "strict",
             "postUpdateOptions": [
                 "gomodTidy",
                 "gomodUpdateImportPaths"
@@ -100,7 +101,8 @@
             ],
             "enabled": false,
             "matchPackageNames": [
-                "github.com/sirupsen/logrus"
+                "github.com/sirupsen/logrus",
+                "gopkg.in/guregu/null.v3"
             ]
         },
         {
