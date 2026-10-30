@@ -10,6 +10,7 @@ import (
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
 	"github.com/grafana/k6-operator/pkg/resources/jobs"
+	"github.com/grafana/k6-operator/pkg/testrun"
 	"go.k6.io/k6/v2/cloudapi"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -120,22 +121,42 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 
 	// starter
 
-	starter := jobs.NewStarterJob(k6, hostnames)
+	if r.BuiltinStarter {
+		// ResumeRunners already retries each runner. If it still fails, some
+		// runners may have started: a retry from here would wait for all
+		// runner pods to be running again, which never happens once the
+		// resumed ones finish. Fail the test run instead.
+		if err = testrun.ResumeRunners(ctx, hostnames); err != nil {
+			log.Error(err, "Failed to resume runners")
+			sendCloudError(ctx, log, k6, cloudClient, cloud.K6OperatorStartError, fmt.Sprintf("Failed to resume runners: %v", err))
 
-	if err = ctrl.SetControllerReference(k6, starter, r.Scheme); err != nil {
-		log.Error(err, "Failed to set controller reference for the start job")
-	}
+			log.Info("Changing stage of TestRun status to error")
+			k6.GetStatus().Stage = "error"
+			if _, err = r.UpdateStatus(ctx, k6, log); err != nil {
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{}, nil
+		}
 
-	created, err := createJobIfNotExists(ctx, r.Client, starter)
-	if err != nil {
-		log.Error(err, "Failed to launch k6 test starter")
-		return res, nil
-	}
-
-	if created {
-		log.Info("Created starter job")
+		log.Info("Resumed all runners")
 	} else {
-		log.Info("Starter job already exists")
+		starter := jobs.NewStarterJob(k6, hostnames)
+
+		if err = ctrl.SetControllerReference(k6, starter, r.Scheme); err != nil {
+			log.Error(err, "Failed to set controller reference for the start job")
+		}
+
+		created, err := createJobIfNotExists(ctx, r.Client, starter)
+		if err != nil {
+			log.Error(err, "Failed to launch k6 test starter")
+			return res, nil
+		}
+
+		if created {
+			log.Info("Created starter job")
+		} else {
+			log.Info("Starter job already exists")
+		}
 	}
 
 	log.Info("Changing stage of TestRun status to started")
