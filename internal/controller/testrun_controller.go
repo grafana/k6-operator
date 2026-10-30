@@ -200,7 +200,7 @@ func (r *TestRunReconciler) reconcile(ctx context.Context, req ctrl.Request, log
 				return res, errors.New("cannot find condition TestRunRunning")
 			} else {
 				// let's try this approach
-				if time.Since(t).Minutes() > 5 {
+				if time.Since(t) > startupDeadline {
 					msg := fmt.Sprintf(errMessageTooLong, "initializer pod", "initializer job and pod")
 					log.Info(msg)
 
