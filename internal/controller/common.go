@@ -25,7 +25,16 @@ import (
 
 const (
 	errMessageTooLong = "Creation of %s takes too long: your configuration might be off. Check if %v were created successfully."
+
+	// startupDeadline is how long a test run may wait for its pods and
+	// services during startup before it's reported as stuck.
+	startupDeadline = 5 * time.Minute
 )
+
+// errServiceNotReady is an expected state while kube-proxy picks up
+// endpoints of ready runner pods: it's not distinguishable from
+// an unreachable service until startupDeadline passes.
+var errServiceNotReady = errors.New("service is not ready")
 
 // It may take some time to retrieve inspect output so indicate with boolean if it's ready
 // and use returnErr only for errors that require a change of behaviour. All other errors
@@ -126,6 +135,17 @@ func getEnvVar(vars []corev1.EnvVar, name string) string {
 	return ""
 }
 
+// podReadySince is a stricter check than Running phase: runner services
+// route traffic only to ready pods, so that's what StartJobs must wait for.
+func podReadySince(pod *corev1.Pod) (time.Time, bool) {
+	for _, c := range pod.Status.Conditions {
+		if c.Type == corev1.PodReady {
+			return c.LastTransitionTime.Time, c.Status == corev1.ConditionTrue
+		}
+	}
+	return time.Time{}, false
+}
+
 func (r *TestRunReconciler) hostnames(ctx context.Context, log logr.Logger, abortOnUnready bool, opts *client.ListOptions) ([]string, error) {
 	var (
 		hostnames []string
@@ -145,7 +165,7 @@ func (r *TestRunReconciler) hostnames(ctx context.Context, log logr.Logger, abor
 			log.Info(fmt.Sprintf("%v service is ready", service.Name))
 			hostnames = append(hostnames, service.Spec.ClusterIP)
 		} else {
-			err = fmt.Errorf("%v service is not ready", service.Name)
+			err = fmt.Errorf("%v %w", service.Name, errServiceNotReady)
 			log.Info(err.Error())
 			if abortOnUnready {
 				return nil, err
