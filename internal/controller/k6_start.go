@@ -122,11 +122,20 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 	// starter
 
 	if r.BuiltinStarter {
-		// Resuming an already resumed runner is a no-op, so on failure
-		// it is safe to retry the whole operation with all runners.
+		// ResumeRunners already retries each runner. If it still fails, some
+		// runners may have started: a retry from here would wait for all
+		// runner pods to be running again, which never happens once the
+		// resumed ones finish. Fail the test run instead.
 		if err = testrun.ResumeRunners(ctx, hostnames); err != nil {
 			log.Error(err, "Failed to resume runners")
-			return ctrl.Result{}, err
+			sendCloudError(ctx, log, k6, cloudClient, cloud.K6OperatorStartError, fmt.Sprintf("Failed to resume runners: %v", err))
+
+			log.Info("Changing stage of TestRun status to error")
+			k6.GetStatus().Stage = "error"
+			if _, err = r.UpdateStatus(ctx, k6, log); err != nil {
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{}, nil
 		}
 
 		log.Info("Resumed all runners")
