@@ -118,7 +118,7 @@ jobs:
     needs:
       - decide
       - generate-chart-schema
-    uses: grafana/helm-charts/.github/workflows/update-helm-repo.yaml@434266a8ba2e1e859b58d82084d976cc411580cc # main
+    uses: grafana/helm-charts/.github/workflows/update-helm-repo.yaml@80d6bc92a4669c4dd3e834df8f0abbafee74ffa4 # main
     with:
       charts_dir: charts
       cr_configfile: charts/cr.yaml
