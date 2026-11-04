@@ -131,16 +131,14 @@ func addRunnerPods(t *testing.T, c client.Client, tr *v1alpha1.TestRun, ready co
 }
 
 // Runs serially because stubRunnerHTTP replaces the default transport.
+// Takes several seconds because ResumeRunners retries with a backoff.
 func TestStartJobsBuiltinStarterFailsTestRunWhenResumeFails(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 
 	var patches atomic.Int32
 	stubRunnerHTTP(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPatch {
 			patches.Add(1)
-			// skip ResumeRunners' retry backoff
-			cancel()
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -171,5 +169,48 @@ func TestStartJobsBuiltinStarterFailsTestRunWhenResumeFails(t *testing.T) {
 	}
 	if got.Status.Stage != "error" {
 		t.Errorf("stage = %q, want error", got.Status.Stage)
+	}
+}
+
+// Runs serially because stubRunnerHTTP replaces the default transport.
+func TestStartJobsBuiltinStarterRetriesWhenResumeIsCancelled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var patches atomic.Int32
+	stubRunnerHTTP(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPatch {
+			patches.Add(1)
+			// as if the operator were shutting down mid-reconcile
+			cancel()
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	r, tr := runnerTestReconciler(t, 2)
+	r.BuiltinStarter = true
+	tr.Status.Stage = "created"
+	v1alpha1.UpdateCondition(tr, v1alpha1.CloudPLZTestRun, metav1.ConditionFalse)
+	v1alpha1.UpdateCondition(tr, v1alpha1.TestRunRunning, metav1.ConditionUnknown)
+	addRunnerPods(t, r.Client, tr, corev1.ConditionTrue, []time.Duration{time.Minute, time.Minute})
+
+	if _, err := StartJobs(ctx, logr.Discard(), tr, r, nil); err == nil {
+		t.Fatal("err = nil, want an error so that the reconcile is retried")
+	}
+	if patches.Load() == 0 {
+		t.Error("runners were not resumed")
+	}
+
+	if tr.Status.Stage != "created" {
+		t.Errorf("stage = %q, want created", tr.Status.Stage)
+	}
+	got := &v1alpha1.TestRun{}
+	if err := r.Get(context.Background(), tr.NamespacedName(), got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Status.Stage == "error" {
+		t.Error("stored stage = error, want it unchanged")
 	}
 }
