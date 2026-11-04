@@ -73,6 +73,9 @@ type TestRunData struct {
 	// LZDistribution holds label -> distribution mapping relevant
 	// for the given script and PLZ
 	LZDistribution `json:"load_zone_distribution,omitempty"`
+	// MetricsOutput, if present, makes the runners send metrics with
+	// the OpenTelemetry output instead of the cloud output.
+	MetricsOutput *MetricsOutput `json:"metrics_output,omitempty"`
 
 	// Pre-processed k6 arguments and env vars, populated by Preprocess().
 	// TagArgs and EnvArgs hold exact argv pairs, e.g. {`--tag`, `key=value`} or {`-e`, `key=value`}.
@@ -92,6 +95,10 @@ func (trd *TestRunData) TestRunID() string {
 func (trd *TestRunData) Preprocess() error {
 	if len(trd.LZDistribution) != 1 {
 		return fmt.Errorf("only tests with one load zone are supported, provided: %+v", trd.LZDistribution)
+	}
+
+	if err := trd.preprocessMetricsOutput(); err != nil {
+		return err
 	}
 
 	trd.preprocessTags()
