@@ -127,6 +127,12 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 		// runner pods to be running again, which never happens once the
 		// resumed ones finish. Fail the test run instead.
 		if err = testrun.ResumeRunners(ctx, hostnames); err != nil {
+			// A cancelled reconcile (e.g. operator shutdown) says nothing
+			// about the runners: retry instead of aborting the test.
+			if ctx.Err() != nil {
+				return ctrl.Result{}, err
+			}
+
 			log.Error(err, "Failed to resume runners")
 			sendCloudError(ctx, log, k6, cloudClient, cloud.K6OperatorStartError, fmt.Sprintf("Failed to resume runners: %v", err))
 
