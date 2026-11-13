@@ -166,7 +166,7 @@ const plzLogOutputFormat = `--log-output=%s,label.lz=%s,label.test_run_id=%s,hea
 
 // plzk6Args builds the exact argv the worker is expected to produce.
 func plzk6Args(plzName string, testRunID string, trData *cloud.TestRunData) []string {
-	args := []string{"--out", "cloud"}
+	args := []string{"--out", trData.Output()}
 	args = append(args, trData.TagArgs...)
 	args = append(args, "--no-thresholds")
 	args = append(args, fmt.Sprintf(plzLogOutputFormat, trData.LogOutput(), plzName, testRunID))
