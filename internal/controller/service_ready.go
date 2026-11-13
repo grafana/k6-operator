@@ -36,7 +36,8 @@ func requestServiceStatus(ctx context.Context, endpoint string, timeout time.Dur
 func probeServiceStatus(ctx context.Context, log logr.Logger, endpoint string, timeout time.Duration) bool {
 	resp, err := requestServiceStatus(ctx, endpoint, timeout)
 	if err != nil {
-		log.Error(err, "Failed to get service status", "endpoint", endpoint)
+		// callers decide whether an unready service is an error
+		log.Info("Failed to get service status", "endpoint", endpoint, "error", err.Error())
 		return false
 	}
 	defer resp.Body.Close() //nolint:errcheck
