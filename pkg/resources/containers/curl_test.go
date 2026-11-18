@@ -27,7 +27,7 @@ func Test_NewStartContainer(t *testing.T) {
 				Env:             []corev1.EnvVar{{Name: "K6_VAR", Value: "val"}},
 				Resources:       corev1.ResourceRequirements{},
 				Command: []string{"sh", "-c",
-					"curl --retry 3 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-1:6565/v1/status -d '" + startPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\"}'",
+					"curl --retry 30 --retry-delay 2 --max-time 10 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-1:6565/v1/status -d '" + startPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\", \"retries\":%{num_retries}}'",
 				},
 				SecurityContext: &corev1.SecurityContext{},
 			},
@@ -43,8 +43,8 @@ func Test_NewStartContainer(t *testing.T) {
 				Env:             []corev1.EnvVar{{Name: "K6_VAR", Value: "val"}},
 				Resources:       corev1.ResourceRequirements{},
 				Command: []string{"sh", "-c",
-					"curl --retry 3 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-1:6565/v1/status -d '" + startPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\"}';" +
-						"curl --retry 3 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-2:6565/v1/status -d '" + startPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\"}'",
+					"curl --retry 30 --retry-delay 2 --max-time 10 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-1:6565/v1/status -d '" + startPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\", \"retries\":%{num_retries}}';" +
+						"curl --retry 30 --retry-delay 2 --max-time 10 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-2:6565/v1/status -d '" + startPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\", \"retries\":%{num_retries}}'",
 				},
 				SecurityContext: &corev1.SecurityContext{},
 			},
@@ -83,7 +83,7 @@ func Test_NewStopContainer(t *testing.T) {
 				ImagePullPolicy: corev1.PullNever,
 				Resources:       corev1.ResourceRequirements{},
 				Command: []string{"sh", "-c",
-					"curl --retry 3 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-1:6565/v1/status -d '" + stopPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\"}'",
+					"curl --retry 30 --retry-delay 2 --max-time 10 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-1:6565/v1/status -d '" + stopPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\", \"retries\":%{num_retries}}'",
 				},
 				SecurityContext: &corev1.SecurityContext{},
 			},
@@ -98,8 +98,8 @@ func Test_NewStopContainer(t *testing.T) {
 				ImagePullPolicy: corev1.PullNever,
 				Resources:       corev1.ResourceRequirements{},
 				Command: []string{"sh", "-c",
-					"curl --retry 3 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-1:6565/v1/status -d '" + stopPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\"}';" +
-						"curl --retry 3 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-2:6565/v1/status -d '" + stopPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\"}'",
+					"curl --retry 30 --retry-delay 2 --max-time 10 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-1:6565/v1/status -d '" + stopPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\", \"retries\":%{num_retries}}';" +
+						"curl --retry 30 --retry-delay 2 --max-time 10 --retry-connrefused -X PATCH -H 'Content-Type: application/json' http://test-2:6565/v1/status -d '" + stopPayload + "' -s -w '\n{\"http_code\":%{http_code},\"time_total\":%{time_total},\"time_starttransfer\":%{time_starttransfer},\"url\":\"%{url_effective}\",\"remote_ip\":\"%{remote_ip}\",\"errormsg\":\"%{errormsg}\", \"retries\":%{num_retries}}'",
 				},
 				SecurityContext: &corev1.SecurityContext{},
 			},
