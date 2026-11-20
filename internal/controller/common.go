@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"time"
 
@@ -108,13 +109,34 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 		return
 	}
 
-	if returnErr = json.Unmarshal(buf.Bytes(), &inspectOutput); returnErr != nil {
+	if returnErr = parseInspectOutput(buf.Bytes(), &inspectOutput); returnErr != nil {
 		// this shouldn't normally happen but if it does, let's log output by default
 		log.Error(returnErr, fmt.Sprintf("unable to marshal: `%s`", buf.String()))
 	}
 
 	ready = true
 	return
+}
+
+// logTimestampPrefix matches a timestamp that some platforms (e.g. Azure Container Instances)
+// prepend to every line of container logs.
+var logTimestampPrefix = regexp.MustCompile(`(?m)^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z `)
+
+// parseInspectOutput unmarshals the output of the initializer. If the output is not valid
+// JSON as is, it retries after stripping per-line timestamps added by the platform.
+func parseInspectOutput(data []byte, out *cloud.InspectOutput) error {
+	err := json.Unmarshal(data, out)
+	if err == nil {
+		return nil
+	}
+	stripped := logTimestampPrefix.ReplaceAll(data, nil)
+	if bytes.Equal(stripped, data) {
+		return err
+	}
+	if err2 := json.Unmarshal(stripped, out); err2 != nil {
+		return err
+	}
+	return nil
 }
 
 func getEnvVar(vars []corev1.EnvVar, name string) string {
