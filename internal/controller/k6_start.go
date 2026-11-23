@@ -35,7 +35,10 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 		return res, nil
 	}
 
-	var count int
+	var (
+		count     int
+		lastReady time.Time
+	)
 	for _, pod := range pl.Items {
 		if v1alpha1.IsTrue(k6, v1alpha1.CloudPLZTestRun) {
 			if failure := runnerExitError(pod, true); failure != nil {
@@ -43,8 +46,12 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 				return res, nil
 			}
 		}
-		if pod.Status.Phase != "Running" {
+		readySince, ready := podReadySince(&pod)
+		if !ready {
 			continue
+		}
+		if readySince.After(lastReady) {
+			lastReady = readySince
 		}
 		count++
 	}
@@ -57,7 +64,7 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 			return res, errors.New("cannot find condition TestRunRunning")
 		} else {
 			// let's try this approach
-			if time.Since(t).Minutes() > 5 {
+			if time.Since(t) > startupDeadline {
 				msg := fmt.Sprintf(errMessageTooLong, "runner pods", "runner jobs and pods")
 				log.Info(msg)
 
@@ -76,6 +83,10 @@ func StartJobs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, r *Te
 
 	hostnames, err := r.hostnames(ctx, log, true, opts)
 	log.Info(fmt.Sprintf("err: %v, hostnames: %v", err, hostnames))
+	if errors.Is(err, errServiceNotReady) && time.Since(lastReady) < startupDeadline {
+		log.Info("Waiting for runner services to become reachable", "reason", err.Error())
+		return res, nil
+	}
 	if err != nil {
 		return ctrl.Result{}, err
 	}
