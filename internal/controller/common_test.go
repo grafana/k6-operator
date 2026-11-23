@@ -14,6 +14,9 @@ func TestParseInspectOutput(t *testing.T) {
 	}{
 		{"plain", "{\n  \"maxVUs\": 5\n}", false},
 		{"timestamped lines", "2023-08-28T17:30:52.4951751Z {\n2023-08-28T17:30:52.4951751Z   \"maxVUs\": 5\n2023-08-28T17:30:52.4951751Z }\n", false},
+		{"fraction-less Z", "2023-08-28T17:30:52Z {\n2023-08-28T17:30:52Z   \"maxVUs\": 5\n2023-08-28T17:30:52Z }\n", false},
+		{"numeric offset", "2023-08-28T17:30:52.495+00:00 {\n2023-08-28T17:30:52.495+00:00   \"maxVUs\": 5\n2023-08-28T17:30:52.495+00:00 }\n", false},
+		{"negative offset", "2023-08-28T17:30:52-05:00 {\n2023-08-28T17:30:52-05:00   \"maxVUs\": 5\n2023-08-28T17:30:52-05:00 }\n", false},
 		{"garbage", "not json", true},
 	}
 	for _, tt := range tests {

@@ -120,7 +120,7 @@ func inspectTestRun(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 
 // logTimestampPrefix matches a timestamp that some platforms (e.g. Azure Container Instances)
 // prepend to every line of container logs.
-var logTimestampPrefix = regexp.MustCompile(`(?m)^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z `)
+var logTimestampPrefix = regexp.MustCompile(`(?m)^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2}) `)
 
 // parseInspectOutput unmarshals the output of the initializer. If the output is not valid
 // JSON as is, it retries after stripping per-line timestamps added by the platform.
