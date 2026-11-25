@@ -3,16 +3,22 @@ package testrun
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
 	"github.com/grafana/k6-operator/pkg/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "go.k6.io/k6/v2/api/v1"
+	k6Client "go.k6.io/k6/v2/api/v1/client"
 )
 
 func Test_RunTeardownNoHost(t *testing.T) {
@@ -32,6 +38,8 @@ type fakeRunner struct {
 	server *httptest.Server
 	// failures is the number of requests to fail before succeeding; -1 fails forever.
 	failures int32
+	// fail writes the response of a failed request; k6APIError by default.
+	fail     func(w http.ResponseWriter)
 	calls    atomic.Int32
 	inFlight *atomic.Int32
 	maxSeen  *atomic.Int32
@@ -40,7 +48,7 @@ type fakeRunner struct {
 
 func newFakeRunner(t *testing.T, failures int32) *fakeRunner {
 	t.Helper()
-	r := &fakeRunner{failures: failures, inFlight: &atomic.Int32{}, maxSeen: &atomic.Int32{}}
+	r := &fakeRunner{failures: failures, fail: k6APIError, inFlight: &atomic.Int32{}, maxSeen: &atomic.Int32{}}
 	r.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		n := r.inFlight.Add(1)
 		defer r.inFlight.Add(-1)
@@ -59,8 +67,7 @@ func newFakeRunner(t *testing.T, failures int32) *fakeRunner {
 
 		call := r.calls.Add(1)
 		if r.failures < 0 || call <= r.failures {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(`{"errors":[{"detail":"injected failure"}]}`))
+			r.fail(w)
 			return
 		}
 
@@ -75,6 +82,33 @@ func newFakeRunner(t *testing.T, failures int32) *fakeRunner {
 	}))
 	t.Cleanup(r.server.Close)
 	return r
+}
+
+// k6APIError responds like the k6 REST API does when it refuses a request.
+func k6APIError(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusInternalServerError)
+	_, _ = w.Write([]byte(`{"errors":[{"detail":"injected failure"}]}`))
+}
+
+// proxyError responds like a proxy in front of the runner, e.g. a service mesh sidecar.
+func proxyError(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusServiceUnavailable)
+	_, _ = w.Write([]byte("no healthy upstream"))
+}
+
+// dropConnection closes the connection without a response.
+func dropConnection(w http.ResponseWriter) {
+	conn, _, err := w.(http.Hijacker).Hijack()
+	if err != nil {
+		panic(err)
+	}
+	_ = conn.Close()
+}
+
+// slowResponse responds after the request timeout used in the tests.
+func slowResponse(w http.ResponseWriter) {
+	time.Sleep(200 * time.Millisecond)
+	k6APIError(w)
 }
 
 func (r *fakeRunner) addr() string {
@@ -121,17 +155,46 @@ func Test_patchStatus_AllRunners(t *testing.T) {
 	assert.LessOrEqual(t, maxSeen.Load(), int32(testStatusOptions.concurrency))
 }
 
-func Test_patchStatus_RetriesTransientFailure(t *testing.T) {
-	r := newFakeRunner(t, 2)
+func Test_patchStatus_RetriesNetworkFailure(t *testing.T) {
+	tests := []struct {
+		name    string
+		fail    func(http.ResponseWriter)
+		timeout time.Duration
+	}{
+		{name: "dropped connection", fail: dropConnection},
+		{name: "proxy error", fail: proxyError},
+		{name: "timeout", fail: slowResponse, timeout: 50 * time.Millisecond},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := newFakeRunner(t, 2)
+			r.fail = tt.fail
+			opts := testStatusOptions
+			if tt.timeout != 0 {
+				opts.timeout = tt.timeout
+			}
+
+			err := patchStatus(context.Background(), []string{r.addr()}, resumeRequest, opts)
+			require.NoError(t, err)
+			assert.Equal(t, int32(3), r.calls.Load())
+		})
+	}
+}
+
+func Test_patchStatus_DoesNotRetryAPIError(t *testing.T) {
+	r := newFakeRunner(t, -1)
 
 	err := patchStatus(context.Background(), []string{r.addr()}, resumeRequest, testStatusOptions)
-	require.NoError(t, err)
-	assert.Equal(t, int32(3), r.calls.Load())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "injected failure")
+	assert.Equal(t, int32(1), r.calls.Load())
 }
 
 func Test_patchStatus_ReportsPermanentFailure(t *testing.T) {
 	ok := newFakeRunner(t, 0)
 	broken := newFakeRunner(t, -1)
+	broken.fail = dropConnection
 
 	err := patchStatus(context.Background(), []string{ok.addr(), broken.addr()}, resumeRequest, testStatusOptions)
 	require.Error(t, err)
@@ -139,6 +202,36 @@ func Test_patchStatus_ReportsPermanentFailure(t *testing.T) {
 	assert.NotContains(t, err.Error(), ok.addr())
 	assert.Equal(t, int32(1), ok.calls.Load())
 	assert.Equal(t, int32(1+testStatusOptions.retries), broken.calls.Load())
+}
+
+func Test_isRetryable(t *testing.T) {
+	apiErr := v1.Error{Status: "500", Title: "Pause error"}
+
+	// a runner that is not listening (yet)
+	closed := httptest.NewServer(http.NotFoundHandler())
+	closed.Close()
+	c, err := k6Client.New(strings.TrimPrefix(closed.URL, "http://"))
+	require.NoError(t, err)
+	connRefused := c.CallAPI(context.Background(), "PATCH", &url.URL{Path: "/v1/status"}, resumeRequest, nil)
+	require.ErrorIs(t, connRefused, syscall.ECONNREFUSED)
+
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{name: "k6 API error", err: apiErr, want: false},
+		{name: "wrapped k6 API error", err: fmt.Errorf("runner: %w", apiErr), want: false},
+		{name: "joined k6 API error", err: errors.Join(errors.New("other runner"), apiErr), want: false},
+		{name: "connection refused", err: connRefused, want: true},
+		{name: "deadline exceeded", err: context.DeadlineExceeded, want: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, isRetryable(tt.err))
+		})
+	}
 }
 
 func Test_patchStatus_NoHost(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/grafana/k6-operator/pkg/types"
+	v1 "go.k6.io/k6/v2/api/v1"
 	k6Client "go.k6.io/k6/v2/api/v1/client"
 )
 
@@ -149,7 +150,7 @@ func patchStatusWithRetry(ctx context.Context, httpClient *http.Client, addr str
 	delay := opts.retryDelay
 	for attempt := 0; ; attempt++ {
 		err = c.CallAPI(ctx, "PATCH", &url.URL{Path: "/v1/status"}, req, nil)
-		if err == nil || attempt >= opts.retries {
+		if err == nil || attempt >= opts.retries || !isRetryable(err) {
 			return err
 		}
 
@@ -160,4 +161,14 @@ func patchStatusWithRetry(ctx context.Context, httpClient *http.Client, addr str
 		}
 		delay *= 2
 	}
+}
+
+// isRetryable reports whether a failed request may succeed when it is sent
+// again. An error response from the k6 REST API means that the runner received
+// the request and refused it, so sending it again won't help. Anything else is
+// treated as a network issue: no connection, a timeout, or a response that
+// doesn't come from k6 (e.g. a plain-text 503 from a service mesh proxy).
+func isRetryable(err error) bool {
+	_, isAPIErr := errors.AsType[v1.Error](err)
+	return !isAPIErr
 }

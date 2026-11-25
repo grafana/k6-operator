@@ -131,7 +131,6 @@ func addRunnerPods(t *testing.T, c client.Client, tr *v1alpha1.TestRun, ready co
 }
 
 // Runs serially because stubRunnerHTTP replaces the default transport.
-// Takes several seconds because ResumeRunners retries with a backoff.
 func TestStartJobsBuiltinStarterFailsTestRunWhenResumeFails(t *testing.T) {
 	ctx := context.Background()
 
@@ -139,7 +138,9 @@ func TestStartJobsBuiltinStarterFailsTestRunWhenResumeFails(t *testing.T) {
 	stubRunnerHTTP(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPatch {
 			patches.Add(1)
+			// an error response from k6 itself, which is not retried
 			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"errors":[{"title":"Pause error"}]}`))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
