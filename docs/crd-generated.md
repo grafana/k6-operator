@@ -17609,7 +17609,9 @@ using the podAntiAffinity rule.<br/>
         <td><b><a href="#testrunspecstarter">starter</a></b></td>
         <td>object</td>
         <td>
-          Configuration for the starter Pod.<br/>
+          Configuration for the starter Pod. If omitted, the operator starts the
+test itself, without a starter Pod. The stop Pod uses this configuration
+too, or the defaults if it is omitted.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -36182,7 +36184,9 @@ See https://github.com/grafana/k6-operator/issues/195#issuecomment-3062174234 fo
 
 
 
-Configuration for the starter Pod.
+Configuration for the starter Pod. If omitted, the operator starts the
+test itself, without a starter Pod. The stop Pod uses this configuration
+too, or the defaults if it is omitted.
 
 <table>
     <thead>

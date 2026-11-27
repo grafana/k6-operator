@@ -38,14 +38,14 @@ export default function () {
   expect(err, "wait returns").toBeNull();
 
   // Check total pod count
-  // With initializer disabled: runner + starter = 2 pods (initializer should be skippd)
+  // With initializer disabled: runner = 1 pod (initializer should be skippd, and the operator starts the test without a starter pod)
   let allPods = env.getN("pods", {
     "namespace": "default",
     "app": "k6",
     "k6_cr": TEST_NAME,
   });
 
-  const expectedPods = 2;
+  const expectedPods = 1;
   expect(allPods, "initializer should not exist when disabled").toBe(expectedPods);
 
   console.log("SUCCESS: No initializer pod created, total pods: " + allPods);

@@ -119,8 +119,10 @@ type TestRunSpec struct {
 	// is configured with the same parameters as a runner Pod.
 	Initializer *Pod `json:"initializer,omitempty"`
 
-	// Configuration for the starter Pod.
-	Starter Pod `json:"starter,omitempty"`
+	// Configuration for the starter Pod. If omitted, the operator starts the
+	// test itself, without a starter Pod. The stop Pod uses this configuration
+	// too, or the defaults if it is omitted.
+	Starter *Pod `json:"starter,omitempty"`
 
 	// Configuration for a runner Pod.
 	Runner Pod `json:"runner,omitempty"`
@@ -355,6 +357,12 @@ func (k6 *TestRun) ListOptions() *client.ListOptions {
 	})
 
 	return &client.ListOptions{LabelSelector: selector, Namespace: k6.NamespacedName().Namespace}
+}
+
+// UsesBuiltinStarter reports whether the operator starts the test itself
+// instead of creating a starter Pod.
+func (k6 *TestRun) UsesBuiltinStarter() bool {
+	return k6.GetSpec().Starter == nil
 }
 
 func (k6 *TestRun) IsInitializerDisabled() bool {

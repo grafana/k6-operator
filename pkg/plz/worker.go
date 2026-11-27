@@ -128,7 +128,9 @@ func (w *PLZWorker) createTemplate(plz *v1alpha1.PrivateLoadZone) {
 					Labels:      plz.Spec.PodTemplate.Labels,
 				},
 			},
-			Starter: v1alpha1.Pod{
+			// PLZ test runs keep using the starter Pod for now: the built-in
+			// starter hasn't been verified with PLZ yet.
+			Starter: &v1alpha1.Pod{
 				ServiceAccountName: plz.Spec.ServiceAccountName,
 				NodeSelector:       plz.Spec.NodeSelector,
 				ImagePullSecrets:   plz.Spec.ImagePullSecrets,

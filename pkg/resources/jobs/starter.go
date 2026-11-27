@@ -14,6 +14,7 @@ import (
 
 // NewStarterJob builds a template used for creating a starter job
 func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
+	starter := starterSpec(k6)
 
 	var (
 		starterImage                 = "ghcr.io/grafana/k6-operator:latest-starter"
@@ -35,38 +36,38 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 		}
 	)
 
-	if k6.GetSpec().Starter.Metadata.Annotations != nil {
-		starterAnnotations = k6.GetSpec().Starter.Metadata.Annotations
+	if starter.Metadata.Annotations != nil {
+		starterAnnotations = starter.Metadata.Annotations
 	}
 
-	if k6.GetSpec().Starter.Image != "" {
-		starterImage = k6.GetSpec().Starter.Image
+	if starter.Image != "" {
+		starterImage = starter.Image
 	}
 
-	if k6.GetSpec().Starter.Metadata.Labels != nil {
-		for k, v := range k6.GetSpec().Starter.Metadata.Labels { // Order not specified
+	if starter.Metadata.Labels != nil {
+		for k, v := range starter.Metadata.Labels { // Order not specified
 			if _, ok := starterLabels[k]; !ok {
 				starterLabels[k] = v
 			}
 		}
 	}
-	if k6.GetSpec().Starter.ServiceAccountName != "" {
-		serviceAccountName = k6.GetSpec().Starter.ServiceAccountName
+	if starter.ServiceAccountName != "" {
+		serviceAccountName = starter.ServiceAccountName
 	}
-	if k6.GetSpec().Starter.AutomountServiceAccountToken != "" {
-		automountServiceAccountToken, _ = strconv.ParseBool(k6.GetSpec().Starter.AutomountServiceAccountToken)
+	if starter.AutomountServiceAccountToken != "" {
+		automountServiceAccountToken, _ = strconv.ParseBool(starter.AutomountServiceAccountToken)
 	}
 
 	command, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, []string{"sh", "-c"})
 	env := newIstioEnvVar(k6.GetSpec().Scuttle, istioEnabled)
 
 	// User specified resource requirements
-	if len(k6.GetSpec().Starter.Resources.Requests) > 0 || len(k6.GetSpec().Starter.Resources.Limits) > 0 {
-		resourceRequirements = k6.GetSpec().Starter.Resources
+	if len(starter.Resources.Requests) > 0 || len(starter.Resources.Limits) > 0 {
+		resourceRequirements = starter.Resources
 	}
 
-	if k6.GetSpec().Starter.SchedulerName != "" {
-		schedulerName = k6.GetSpec().Starter.SchedulerName
+	if starter.SchedulerName != "" {
+		schedulerName = starter.SchedulerName
 	}
 
 	var zero32 int32
@@ -88,28 +89,37 @@ func NewStarterJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 				Spec: corev1.PodSpec{
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 					ServiceAccountName:           serviceAccountName,
-					Affinity:                     k6.GetSpec().Starter.Affinity,
-					NodeSelector:                 k6.GetSpec().Starter.NodeSelector,
-					Tolerations:                  k6.GetSpec().Starter.Tolerations,
-					TopologySpreadConstraints:    k6.GetSpec().Starter.TopologySpreadConstraints,
+					Affinity:                     starter.Affinity,
+					NodeSelector:                 starter.NodeSelector,
+					Tolerations:                  starter.Tolerations,
+					TopologySpreadConstraints:    starter.TopologySpreadConstraints,
 					RestartPolicy:                corev1.RestartPolicyNever,
 					SchedulerName:                schedulerName,
-					SecurityContext:              &k6.GetSpec().Starter.SecurityContext,
-					ImagePullSecrets:             k6.GetSpec().Starter.ImagePullSecrets,
+					SecurityContext:              &starter.SecurityContext,
+					ImagePullSecrets:             starter.ImagePullSecrets,
 					Containers: []corev1.Container{
 						containers.NewStartContainer(
 							hostname,
 							starterImage,
-							k6.GetSpec().Starter.ImagePullPolicy,
+							starter.ImagePullPolicy,
 							command,
 							env,
-							k6.GetSpec().Starter.ContainerSecurityContext,
+							starter.ContainerSecurityContext,
 							resourceRequirements,
 						),
 					},
-					PriorityClassName: k6.GetSpec().Starter.PriorityClassName,
+					PriorityClassName: starter.PriorityClassName,
 				},
 			},
 		},
 	}
+}
+
+// starterSpec returns the configuration of the starter Pod, which the stop Pod
+// uses too, or the defaults if it is omitted.
+func starterSpec(k6 *v1alpha1.TestRun) v1alpha1.Pod {
+	if k6.GetSpec().Starter == nil {
+		return v1alpha1.Pod{}
+	}
+	return *k6.GetSpec().Starter
 }

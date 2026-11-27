@@ -5,13 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -126,4 +130,157 @@ func addRunnerPods(t *testing.T, c client.Client, tr *v1alpha1.TestRun, ready co
 			t.Fatal(err)
 		}
 	}
+}
+
+// Runs serially because stubRunnerHTTP replaces the default transport.
+func TestStartJobsBuiltinStarterFailsTestRunWhenResumeFails(t *testing.T) {
+	ctx := context.Background()
+
+	var patches atomic.Int32
+	stubRunnerHTTP(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPatch {
+			patches.Add(1)
+			// an error response from k6 itself, which is not retried
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"errors":[{"title":"Pause error"}]}`))
+			return
+		}
+		writeRunnerStatus(w, true)
+	})
+
+	r, tr := runnerTestReconciler(t, 2)
+	tr.Status.Stage = "created"
+	v1alpha1.UpdateCondition(tr, v1alpha1.CloudPLZTestRun, metav1.ConditionFalse)
+	v1alpha1.UpdateCondition(tr, v1alpha1.TestRunRunning, metav1.ConditionUnknown)
+	addRunnerPods(t, r.Client, tr, corev1.ConditionTrue, []time.Duration{time.Minute, time.Minute})
+
+	res, err := StartJobs(ctx, logr.Discard(), tr, r, nil)
+	if err != nil {
+		t.Fatalf("err = %v, want nil: a retry would wait for runner pods that may have finished", err)
+	}
+	if res != (ctrl.Result{}) {
+		t.Errorf("result = %+v, want no requeue", res)
+	}
+	if patches.Load() == 0 {
+		t.Error("runners were not resumed")
+	}
+
+	got := &v1alpha1.TestRun{}
+	if err := r.Get(context.Background(), tr.NamespacedName(), got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Status.Stage != "error" {
+		t.Errorf("stage = %q, want error", got.Status.Stage)
+	}
+}
+
+// Runs serially because stubRunnerHTTP replaces the default transport.
+func TestStartJobsBuiltinStarterRetriesWhenResumeIsCancelled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var (
+		mu      sync.Mutex
+		resumed = map[string]bool{}
+		patches int
+		refused int
+	)
+	stubRunnerHTTP(t, func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		if r.Method != http.MethodPatch {
+			writeRunnerStatus(w, !resumed[r.URL.Host])
+			return
+		}
+
+		patches++
+		if resumed[r.URL.Host] {
+			// like k6, refuse to resume a runner that is not paused
+			refused++
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"errors":[{"title":"Pause error"}]}`))
+			return
+		}
+		resumed[r.URL.Host] = true
+		if ctx.Err() == nil {
+			// as if the operator were shutting down before the response arrived
+			cancel()
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		_, _ = w.Write([]byte(`{}`))
+	})
+
+	r, tr := runnerTestReconciler(t, 2)
+	tr.Status.Stage = "created"
+	v1alpha1.UpdateCondition(tr, v1alpha1.CloudPLZTestRun, metav1.ConditionFalse)
+	v1alpha1.UpdateCondition(tr, v1alpha1.TestRunRunning, metav1.ConditionUnknown)
+	addRunnerPods(t, r.Client, tr, corev1.ConditionTrue, []time.Duration{time.Minute, time.Minute})
+
+	if _, err := StartJobs(ctx, logr.Discard(), tr, r, nil); err == nil {
+		t.Fatal("err = nil, want an error so that the reconcile is retried")
+	}
+	if patches == 0 {
+		t.Error("runners were not resumed")
+	}
+	if tr.Status.Stage != "created" {
+		t.Errorf("stage = %q, want created", tr.Status.Stage)
+	}
+	got := &v1alpha1.TestRun{}
+	if err := r.Get(context.Background(), tr.NamespacedName(), got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Status.Stage == "error" {
+		t.Error("stored stage = error, want it unchanged")
+	}
+
+	// The retried reconcile must skip the runners that were resumed above.
+	if _, err := StartJobs(context.Background(), logr.Discard(), got, r, nil); err != nil {
+		t.Fatalf("retry: err = %v, want nil", err)
+	}
+	if refused != 0 {
+		t.Errorf("%d resume requests were sent to runners that were not paused", refused)
+	}
+	if len(resumed) != int(tr.Spec.Parallelism) {
+		t.Errorf("resumed runners = %d, want %d", len(resumed), tr.Spec.Parallelism)
+	}
+	if got.Status.Stage != "started" {
+		t.Errorf("retry: stage = %q, want started", got.Status.Stage)
+	}
+}
+
+func TestStartJobsCreatesStarterJobWhenStarterIsSet(t *testing.T) {
+	var patches atomic.Int32
+	stubRunnerHTTP(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPatch {
+			patches.Add(1)
+		}
+		writeRunnerStatus(w, true)
+	})
+
+	r, tr := runnerTestReconciler(t, 2)
+	tr.Spec.Starter = &v1alpha1.Pod{}
+	tr.Status.Stage = "created"
+	v1alpha1.UpdateCondition(tr, v1alpha1.CloudPLZTestRun, metav1.ConditionFalse)
+	v1alpha1.UpdateCondition(tr, v1alpha1.TestRunRunning, metav1.ConditionUnknown)
+	addRunnerPods(t, r.Client, tr, corev1.ConditionTrue, []time.Duration{time.Minute, time.Minute})
+
+	if _, err := StartJobs(context.Background(), logr.Discard(), tr, r, nil); err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+	if n := patches.Load(); n != 0 {
+		t.Errorf("%d resume requests were sent, want them to come from the starter job", n)
+	}
+	job := &batchv1.Job{}
+	if err := r.Get(context.Background(), client.ObjectKey{Namespace: tr.Namespace, Name: "test-starter"}, job); err != nil {
+		t.Errorf("starter job: %v", err)
+	}
+	if tr.Status.Stage != "started" {
+		t.Errorf("stage = %q, want started", tr.Status.Stage)
+	}
+}
+
+// writeRunnerStatus responds like GET /v1/status of a k6 runner.
+func writeRunnerStatus(w http.ResponseWriter, paused bool) {
+	_, _ = fmt.Fprintf(w, `{"data":{"type":"status","id":"default","attributes":{"paused":%t}}}`, paused)
 }

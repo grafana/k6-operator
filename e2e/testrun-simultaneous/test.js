@@ -67,8 +67,8 @@ function wait_for_first(env) {
     "k6_cr": "t-2-runners", //tr.name()
   });
 
-  // there should be N runners pods + initializer + starter
-  expect(allPods, "pod count for t-2-runners").toBe(2 + 2);
+  // there should be N runners pods + initializer (no starter pod: the operator starts the test)
+  expect(allPods, "pod count for t-2-runners").toBe(2 + 1);
 }
 
 function wait_for_second(env) {
@@ -91,6 +91,6 @@ function wait_for_second(env) {
     "k6_cr": "t-3-runners", //tr.name()
   });
 
-  // there should be N runners pods + initializer + starter
-  expect(allPods, "pod count for t-3-runners").toBe(3 + 2);
+  // there should be N runners pods + initializer (no starter pod: the operator starts the test)
+  expect(allPods, "pod count for t-3-runners").toBe(3 + 1);
 }

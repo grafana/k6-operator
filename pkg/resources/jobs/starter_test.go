@@ -25,7 +25,7 @@ func defaultTestRunForStarter() *v1alpha1.TestRun {
 					File: "test.js",
 				},
 			},
-			Starter: v1alpha1.Pod{
+			Starter: &v1alpha1.Pod{
 				Metadata: v1alpha1.PodMetadata{
 					Labels: map[string]string{
 						"label1": "awesome",
@@ -270,7 +270,7 @@ func TestNewStarterJobIstio(t *testing.T) {
 					File: "test.js",
 				},
 			},
-			Starter: v1alpha1.Pod{
+			Starter: &v1alpha1.Pod{
 				Metadata: v1alpha1.PodMetadata{
 					Labels: map[string]string{
 						"label1": "awesome",

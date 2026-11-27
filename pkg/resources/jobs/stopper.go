@@ -13,12 +13,13 @@ import (
 func NewStopJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 	// this job is almost identical to the starter so re-use the definitions
 	job := NewStarterJob(k6, hostname)
+	starter := starterSpec(k6)
 
 	job.Name = fmt.Sprintf("%s-stopper", k6.NamespacedName().Name)
 
 	image := "ghcr.io/grafana/k6-operator:latest-starter"
-	if k6.GetSpec().Starter.Image != "" {
-		image = k6.GetSpec().Starter.Image
+	if starter.Image != "" {
+		image = starter.Image
 	}
 
 	command, istioEnabled := newIstioCommand(k6.GetSpec().Scuttle.Enabled, []string{"sh", "-c"})
@@ -28,11 +29,11 @@ func NewStopJob(k6 *v1alpha1.TestRun, hostname []string) *batchv1.Job {
 		containers.NewStopContainer(
 			hostname,
 			image,
-			k6.GetSpec().Starter.ImagePullPolicy,
+			starter.ImagePullPolicy,
 			command,
 			env,
-			k6.GetSpec().Starter.ContainerSecurityContext,
-			k6.GetSpec().Starter.Resources,
+			starter.ContainerSecurityContext,
+			starter.Resources,
 		),
 	}
 
