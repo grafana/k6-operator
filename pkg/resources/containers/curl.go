@@ -6,7 +6,7 @@ const curlCommand = "curl " +
 	// delay has an exponential backoff, which can take a very long time with
 	// many retries.
 	// Also limit the total time of a request to reject connection timeouts earlier.
-	"--retry 30 --retry-delay 2 --max-time 10 --retry-connrefused " +
+	"--retry 5 --retry-delay 2 --max-time 10 --retry-connrefused --connect-timeout 3 " +
 	"-X PATCH -H 'Content-Type: application/json' " +
 	"http://%s/v1/status " +
 	"-d '%s' -s " +
