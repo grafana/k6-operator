@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -262,8 +263,43 @@ func Test_resumeRunners_ReportsPermanentFailure(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), broken.addr())
 	assert.NotContains(t, err.Error(), ok.addr())
-	assert.Equal(t, int32(1), ok.patches.Load())
 	assert.Equal(t, int32(1+testStatusOptions.retries), broken.patches.Load())
+}
+
+func Test_resumeRunners_StopsAtFirstError(t *testing.T) {
+	broken := newFakeRunner(t, -1)
+	addrs := []string{broken.addr()}
+	var others []*fakeRunner
+	for range 3 {
+		r := newFakeRunner(t, 0)
+		others = append(others, r)
+		addrs = append(addrs, r.addr())
+	}
+	opts := testStatusOptions
+	opts.concurrency = 1
+
+	err := resumeRunners(context.Background(), addrs, opts)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), broken.addr())
+	for _, r := range others {
+		assert.Equal(t, int32(0), r.gets.Load(), "runners after the failed one must not be called")
+	}
+}
+
+func Test_resumeRunners_CancelsRetriesOfOtherRunners(t *testing.T) {
+	broken := newFakeRunner(t, -1)
+	unreachable := newFakeRunner(t, 0)
+	unreachable.getFailures = math.MaxInt32
+	opts := testStatusOptions
+	// waiting for all retries of the unreachable runner would take 7s
+	opts.retries = 3
+	opts.retryDelay = time.Second
+
+	start := time.Now()
+	err := resumeRunners(context.Background(), []string{broken.addr(), unreachable.addr()}, opts)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), broken.addr())
+	assert.Less(t, time.Since(start), opts.retryDelay)
 }
 
 func Test_isRetryable(t *testing.T) {
@@ -299,4 +335,14 @@ func Test_isRetryable(t *testing.T) {
 func Test_resumeRunners_NoHost(t *testing.T) {
 	err := resumeRunners(context.Background(), []string{}, testStatusOptions)
 	assert.NoError(t, err)
+}
+
+func Test_resumeRunners_CancelledContext(t *testing.T) {
+	r := newFakeRunner(t, 0)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := resumeRunners(ctx, []string{r.addr()}, testStatusOptions)
+	require.ErrorIs(t, err, context.Canceled)
+	assert.True(t, r.paused.Load())
 }

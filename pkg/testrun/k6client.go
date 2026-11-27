@@ -8,12 +8,12 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/grafana/k6-operator/pkg/types"
 	v1 "go.k6.io/k6/v2/api/v1"
 	k6Client "go.k6.io/k6/v2/api/v1/client"
+	"golang.org/x/sync/errgroup"
 )
 
 // This will probably be removed once distributed mode in k6 is implemented.
@@ -103,33 +103,26 @@ func ResumeRunners(ctx context.Context, hostnames []string) error {
 	return resumeRunners(ctx, addrs, defaultStatusOptions)
 }
 
-// resumeRunners resumes all addrs concurrently and returns the errors of all
-// runners that could not be resumed.
+// resumeRunners resumes all addrs concurrently. It stops at the first runner
+// that can't be resumed and returns its error: the test run fails anyway, so
+// there is no point in waiting for the other runners.
 func resumeRunners(ctx context.Context, addrs []string, opts statusOptions) error {
 	httpClient := &http.Client{Timeout: opts.timeout}
 
-	var (
-		wg   sync.WaitGroup
-		mu   sync.Mutex
-		errs []error
-		sem  = make(chan struct{}, opts.concurrency)
-	)
-
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(opts.concurrency)
+	// Once gctx is cancelled, the remaining runners fail without sending a
+	// request. Their errors make sure that Wait doesn't report success.
 	for _, addr := range addrs {
-		wg.Go(func() {
-			sem <- struct{}{}
-			defer func() { <-sem }()
-
-			if err := resumeRunnerWithRetry(ctx, httpClient, addr, opts); err != nil {
-				mu.Lock()
-				errs = append(errs, fmt.Errorf("%s: %w", addr, err))
-				mu.Unlock()
+		g.Go(func() error {
+			if err := resumeRunnerWithRetry(gctx, httpClient, addr, opts); err != nil {
+				return fmt.Errorf("%s: %w", addr, err)
 			}
+			return nil
 		})
 	}
-	wg.Wait()
 
-	return errors.Join(errs...)
+	return g.Wait()
 }
 
 func resumeRunnerWithRetry(ctx context.Context, httpClient *http.Client, addr string, opts statusOptions) error {
