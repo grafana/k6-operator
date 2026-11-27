@@ -50,8 +50,8 @@ export default function () {
         "k6_cr": "k6-init-container", //tr.name()
     });
 
-    // there should be N runners pods + initializer + starter
-    expect(allPods, "total pod count").toBe(2 + 2);
+    // there should be N runners pods + initializer (no starter pod: the operator starts the test)
+    expect(allPods, "total pod count").toBe(2 + 1);
 }
 
 export function teardown() {

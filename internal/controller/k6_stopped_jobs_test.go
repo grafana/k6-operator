@@ -14,6 +14,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
 	"github.com/grafana/k6-operator/pkg/cloud"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,6 +44,9 @@ func runnerTestReconciler(t *testing.T, count int) (*TestRunReconciler, *v1alpha
 	if err := corev1.AddToScheme(scheme); err != nil {
 		t.Fatal(err)
 	}
+	if err := batchv1.AddToScheme(scheme); err != nil {
+		t.Fatal(err)
+	}
 	if err := v1alpha1.AddToScheme(scheme); err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +70,7 @@ func runnerTestReconciler(t *testing.T, count int) (*TestRunReconciler, *v1alpha
 			Spec: corev1.ServiceSpec{ClusterIP: fmt.Sprintf("10.0.0.%d", i+1)},
 		})
 	}
-	return &TestRunReconciler{Client: b.Build()}, tr
+	return &TestRunReconciler{Client: b.Build(), Scheme: scheme}, tr
 }
 
 func TestStoppedJobsExecutionResult(t *testing.T) {

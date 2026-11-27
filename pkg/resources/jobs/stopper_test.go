@@ -74,7 +74,7 @@ func defaultTestRunForStopper() *v1alpha1.TestRun {
 					File: "test.js",
 				},
 			},
-			Starter: v1alpha1.Pod{
+			Starter: &v1alpha1.Pod{
 				Metadata: v1alpha1.PodMetadata{
 					Labels: map[string]string{
 						"label1": "awesome",
@@ -112,6 +112,23 @@ func Test_NewStopperJob(t *testing.T) {
 			},
 			setupExpectedJob: func(j *batchv1.Job) {
 				j.Spec.Template.Spec.SchedulerName = "custom-scheduler"
+			},
+		},
+		{
+			// the test run uses the built-in starter
+			name:     "starter omitted",
+			hostname: []string{"testing"},
+			setupTestRun: func(k6 *v1alpha1.TestRun) {
+				k6.Spec.Starter = nil
+			},
+			setupExpectedJob: func(j *batchv1.Job) {
+				labels := map[string]string{"app": "k6", "k6_cr": "test"}
+				j.Labels, j.Spec.Template.Labels = labels, labels
+				j.Annotations, j.Spec.Template.Annotations = map[string]string{}, map[string]string{}
+				j.Spec.Template.Spec.Containers = []corev1.Container{
+					containers.NewStopContainer([]string{"testing"}, "ghcr.io/grafana/k6-operator:latest-starter", "", []string{"sh", "-c"},
+						[]corev1.EnvVar{}, corev1.SecurityContext{}, corev1.ResourceRequirements{}),
+				}
 			},
 		},
 	}
@@ -222,7 +239,7 @@ func TestNewStopJobIstio(t *testing.T) {
 					File: "test.js",
 				},
 			},
-			Starter: v1alpha1.Pod{
+			Starter: &v1alpha1.Pod{
 				Metadata: v1alpha1.PodMetadata{
 					Labels: map[string]string{
 						"label1": "awesome",

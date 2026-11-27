@@ -43,8 +43,8 @@ export default function () {
         "k6_cr": "multifile-test", //tr.name()
     });
 
-    // there should be N runners pods + initializer + starter
-    expect(allPods, "total pod count").toBe(3 + 2);
+    // there should be N runners pods + initializer (no starter pod: the operator starts the test)
+    expect(allPods, "total pod count").toBe(3 + 1);
 }
 
 export function teardown() {

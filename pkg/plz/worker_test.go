@@ -178,6 +178,8 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 					},
 					EnvFrom: []corev1.EnvFromSource{},
 				},
+				// PLZ test runs keep using the starter Pod
+				Starter: &v1alpha1.Pod{},
 				Script: v1alpha1.K6Script{
 					LocalFile: "/test/archive.tar",
 				},
@@ -269,7 +271,7 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 	requiredFieldsTestRun.Spec.Token = someToken
 	requiredFieldsTestRun.Spec.Runner.Resources.Limits = resourceLimits
 
-	optionalFieldsTestRun = requiredFieldsTestRun // build up on top of required field case
+	optionalFieldsTestRun = *requiredFieldsTestRun.DeepCopy() // build up on top of required field case
 	optionalFieldsTestRun.Namespace = someNS
 	optionalFieldsTestRun.Spec.Runner.ServiceAccountName = someSA
 	optionalFieldsTestRun.Spec.Runner.NodeSelector = someNodeSelector
@@ -313,19 +315,19 @@ func Test_complete_correctDefinitionOfTestRun(t *testing.T) {
 		{Name: "K6_USER_AGENT", Value: "Grafana Cloud k6"},
 	}, cloudEnvVarsTestRun.Spec.Runner.Env...)
 
-	podTemplateTolerationsTestRun = requiredFieldsTestRun
+	podTemplateTolerationsTestRun = *requiredFieldsTestRun.DeepCopy()
 	podTemplateTolerationsTestRun.Spec.Runner.Tolerations = someTolerations
 	podTemplateTolerationsTestRun.Spec.Starter.Tolerations = someTolerations
 
-	podTemplateContainerSecCtxTestRun = requiredFieldsTestRun
+	podTemplateContainerSecCtxTestRun = *requiredFieldsTestRun.DeepCopy()
 	podTemplateContainerSecCtxTestRun.Spec.Runner.ContainerSecurityContext = someContainerSecCtx
 	podTemplateContainerSecCtxTestRun.Spec.Starter.ContainerSecurityContext = someContainerSecCtx
 
-	podTemplatePodSecCtxTestRun = requiredFieldsTestRun
+	podTemplatePodSecCtxTestRun = *requiredFieldsTestRun.DeepCopy()
 	podTemplatePodSecCtxTestRun.Spec.Runner.SecurityContext = somePodSecCtx
 	podTemplatePodSecCtxTestRun.Spec.Starter.SecurityContext = somePodSecCtx
 
-	podTemplateAllTestRun = requiredFieldsTestRun
+	podTemplateAllTestRun = *requiredFieldsTestRun.DeepCopy()
 	podTemplateAllTestRun.Spec.Runner.Tolerations = someTolerations
 	podTemplateAllTestRun.Spec.Starter.Tolerations = someTolerations
 	podTemplateAllTestRun.Spec.Runner.ContainerSecurityContext = someContainerSecCtx

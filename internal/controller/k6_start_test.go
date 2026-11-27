@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/grafana/k6-operator/api/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -148,7 +149,6 @@ func TestStartJobsBuiltinStarterFailsTestRunWhenResumeFails(t *testing.T) {
 	})
 
 	r, tr := runnerTestReconciler(t, 2)
-	r.BuiltinStarter = true
 	tr.Status.Stage = "created"
 	v1alpha1.UpdateCondition(tr, v1alpha1.CloudPLZTestRun, metav1.ConditionFalse)
 	v1alpha1.UpdateCondition(tr, v1alpha1.TestRunRunning, metav1.ConditionUnknown)
@@ -212,7 +212,6 @@ func TestStartJobsBuiltinStarterRetriesWhenResumeIsCancelled(t *testing.T) {
 	})
 
 	r, tr := runnerTestReconciler(t, 2)
-	r.BuiltinStarter = true
 	tr.Status.Stage = "created"
 	v1alpha1.UpdateCondition(tr, v1alpha1.CloudPLZTestRun, metav1.ConditionFalse)
 	v1alpha1.UpdateCondition(tr, v1alpha1.TestRunRunning, metav1.ConditionUnknown)
@@ -247,6 +246,37 @@ func TestStartJobsBuiltinStarterRetriesWhenResumeIsCancelled(t *testing.T) {
 	}
 	if got.Status.Stage != "started" {
 		t.Errorf("retry: stage = %q, want started", got.Status.Stage)
+	}
+}
+
+func TestStartJobsCreatesStarterJobWhenStarterIsSet(t *testing.T) {
+	var patches atomic.Int32
+	stubRunnerHTTP(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPatch {
+			patches.Add(1)
+		}
+		writeRunnerStatus(w, true)
+	})
+
+	r, tr := runnerTestReconciler(t, 2)
+	tr.Spec.Starter = &v1alpha1.Pod{}
+	tr.Status.Stage = "created"
+	v1alpha1.UpdateCondition(tr, v1alpha1.CloudPLZTestRun, metav1.ConditionFalse)
+	v1alpha1.UpdateCondition(tr, v1alpha1.TestRunRunning, metav1.ConditionUnknown)
+	addRunnerPods(t, r.Client, tr, corev1.ConditionTrue, []time.Duration{time.Minute, time.Minute})
+
+	if _, err := StartJobs(context.Background(), logr.Discard(), tr, r, nil); err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+	if n := patches.Load(); n != 0 {
+		t.Errorf("%d resume requests were sent, want them to come from the starter job", n)
+	}
+	job := &batchv1.Job{}
+	if err := r.Get(context.Background(), client.ObjectKey{Namespace: tr.Namespace, Name: "test-starter"}, job); err != nil {
+		t.Errorf("starter job: %v", err)
+	}
+	if tr.Status.Stage != "started" {
+		t.Errorf("stage = %q, want started", tr.Status.Stage)
 	}
 }
 

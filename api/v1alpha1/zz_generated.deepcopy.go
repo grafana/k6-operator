@@ -500,7 +500,11 @@ func (in *TestRunSpec) DeepCopyInto(out *TestRunSpec) {
 		*out = new(Pod)
 		(*in).DeepCopyInto(*out)
 	}
-	in.Starter.DeepCopyInto(&out.Starter)
+	if in.Starter != nil {
+		in, out := &in.Starter, &out.Starter
+		*out = new(Pod)
+		(*in).DeepCopyInto(*out)
+	}
 	in.Runner.DeepCopyInto(&out.Runner)
 	out.Scuttle = in.Scuttle
 }

@@ -63,9 +63,9 @@ export default function () {
     "runner": "true",
   });
 
-  // there should be N runners pods + initializer + starter
+  // there should be N runners pods + initializer (no starter pod: the operator starts the test)
   expect(runnerPods, "runner pod count").toBe(4);
-  expect(allPods, "total pod count").toBe(runnerPods + 2);
+  expect(allPods, "total pod count").toBe(runnerPods + 1);
 
   err = env.wait({
     kind: "TestRun",
