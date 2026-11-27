@@ -13,6 +13,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -67,7 +68,12 @@ func createJobSpecs(ctx context.Context, log logr.Logger, k6 *v1alpha1.TestRun, 
 		Namespace: k6.NamespacedName().Namespace,
 	}
 
-	if err := r.Get(ctx, namespacedName, found); err == nil || !errors.IsNotFound(err) {
+	err := r.Get(ctx, namespacedName, found)
+	if err == nil && metav1.IsControlledBy(found, k6) {
+		// This TestRun created the job in an earlier pass that did not finish,
+		// e.g. a later create failed or the operator restarted. Finish the work.
+		log.Info(fmt.Sprintf("job with the name %s belongs to this test run; resuming creation", namespacedName.Name))
+	} else if err == nil || !errors.IsNotFound(err) {
 		if err == nil {
 			err = fmt.Errorf("job with the name %s exists; make sure you've deleted your previous run", namespacedName.Name)
 		}
@@ -115,9 +121,11 @@ func launchTest(ctx context.Context, k6 *v1alpha1.TestRun, index int, log logr.L
 		return err
 	}
 
-	if err = r.Create(ctx, job); err != nil {
+	if created, err := createIfNotExists(ctx, r.Client, job); err != nil {
 		log.Error(err, "Failed to launch k6 test")
 		return err
+	} else if !created {
+		log.Info(fmt.Sprintf("Runner job %s already exists", job.Name))
 	}
 
 	if service, err = jobs.NewRunnerService(k6, index); err != nil {
@@ -130,9 +138,11 @@ func launchTest(ctx context.Context, k6 *v1alpha1.TestRun, index int, log logr.L
 		return err
 	}
 
-	if err = r.Create(ctx, service); err != nil {
+	if created, err := createIfNotExists(ctx, r.Client, service); err != nil {
 		log.Error(err, "Failed to launch k6 test services")
 		return err
+	} else if !created {
+		log.Info(fmt.Sprintf("Runner service %s already exists", service.Name))
 	}
 
 	return nil
