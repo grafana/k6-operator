@@ -33,22 +33,30 @@ func Test_SetSetupDataNoHost(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// fakeRunner is a k6 REST API stub that records PATCH /v1/status requests.
+// fakeRunner is a k6 REST API stub of a runner started with --paused. Like
+// k6, it refuses to resume a runner that is not paused.
 type fakeRunner struct {
 	server *httptest.Server
-	// failures is the number of requests to fail before succeeding; -1 fails forever.
+	paused atomic.Bool
+	// failures is the number of PATCH requests to fail before succeeding; -1 fails forever.
 	failures int32
 	// fail writes the response of a failed request; k6APIError by default.
-	fail     func(w http.ResponseWriter)
-	calls    atomic.Int32
-	inFlight *atomic.Int32
-	maxSeen  *atomic.Int32
-	got      atomic.Pointer[types.StatusAPIRequest]
+	fail func(w http.ResponseWriter)
+	// getFailures is the number of GET requests to fail with proxyError.
+	getFailures int32
+	// loseResponse drops the connection after the first resume, as if its response were lost.
+	loseResponse bool
+	gets         atomic.Int32
+	patches      atomic.Int32
+	inFlight     *atomic.Int32
+	maxSeen      *atomic.Int32
+	got          atomic.Pointer[types.StatusAPIRequest]
 }
 
 func newFakeRunner(t *testing.T, failures int32) *fakeRunner {
 	t.Helper()
 	r := &fakeRunner{failures: failures, fail: k6APIError, inFlight: &atomic.Int32{}, maxSeen: &atomic.Int32{}}
+	r.paused.Store(true)
 	r.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		n := r.inFlight.Add(1)
 		defer r.inFlight.Add(-1)
@@ -60,25 +68,48 @@ func newFakeRunner(t *testing.T, failures int32) *fakeRunner {
 		}
 		time.Sleep(10 * time.Millisecond)
 
-		if req.Method != http.MethodPatch || req.URL.Path != "/v1/status" {
+		if req.URL.Path != "/v1/status" {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		call := r.calls.Add(1)
-		if r.failures < 0 || call <= r.failures {
-			r.fail(w)
-			return
-		}
+		switch req.Method {
+		case http.MethodGet:
+			if r.gets.Add(1) <= r.getFailures {
+				proxyError(w)
+				return
+			}
+			_, _ = fmt.Fprintf(w, `{"data":{"type":"status","id":"default","attributes":{"paused":%t}}}`, r.paused.Load())
 
-		var body types.StatusAPIRequest
-		if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(`{"errors":[{"detail":"bad body"}]}`))
-			return
+		case http.MethodPatch:
+			call := r.patches.Add(1)
+			if r.failures < 0 || call <= r.failures {
+				r.fail(w)
+				return
+			}
+
+			var body types.StatusAPIRequest
+			if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(`{"errors":[{"detail":"bad body"}]}`))
+				return
+			}
+			if !r.paused.Load() {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(`{"errors":[{"title":"Pause error","detail":"test execution wasn't paused"}]}`))
+				return
+			}
+			r.got.Store(&body)
+			r.paused.Store(false)
+			if r.loseResponse && call == 1 {
+				dropConnection(w)
+				return
+			}
+			_, _ = w.Write([]byte(`{}`))
+
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
-		r.got.Store(&body)
-		_, _ = w.Write([]byte(`{}`))
 	}))
 	t.Cleanup(r.server.Close)
 	return r
@@ -130,7 +161,7 @@ var resumeRequest = types.StatusAPIRequest{
 	},
 }
 
-func Test_patchStatus_AllRunners(t *testing.T) {
+func Test_resumeRunners_AllRunners(t *testing.T) {
 	var (
 		runners []*fakeRunner
 		addrs   []string
@@ -144,18 +175,18 @@ func Test_patchStatus_AllRunners(t *testing.T) {
 		addrs = append(addrs, r.addr())
 	}
 
-	err := patchStatus(context.Background(), addrs, resumeRequest, testStatusOptions)
+	err := resumeRunners(context.Background(), addrs, testStatusOptions)
 	require.NoError(t, err)
 
 	for _, r := range runners {
-		assert.Equal(t, int32(1), r.calls.Load())
+		assert.Equal(t, int32(1), r.patches.Load())
 		require.NotNil(t, r.got.Load())
 		assert.Equal(t, resumeRequest, *r.got.Load())
 	}
 	assert.LessOrEqual(t, maxSeen.Load(), int32(testStatusOptions.concurrency))
 }
 
-func Test_patchStatus_RetriesNetworkFailure(t *testing.T) {
+func Test_resumeRunners_RetriesNetworkFailure(t *testing.T) {
 	tests := []struct {
 		name    string
 		fail    func(http.ResponseWriter)
@@ -175,33 +206,64 @@ func Test_patchStatus_RetriesNetworkFailure(t *testing.T) {
 				opts.timeout = tt.timeout
 			}
 
-			err := patchStatus(context.Background(), []string{r.addr()}, resumeRequest, opts)
+			err := resumeRunners(context.Background(), []string{r.addr()}, opts)
 			require.NoError(t, err)
-			assert.Equal(t, int32(3), r.calls.Load())
+			assert.Equal(t, int32(3), r.patches.Load())
 		})
 	}
 }
 
-func Test_patchStatus_DoesNotRetryAPIError(t *testing.T) {
-	r := newFakeRunner(t, -1)
+func Test_resumeRunners_SkipsRunnerThatIsNotPaused(t *testing.T) {
+	// e.g. resumed by an earlier reconcile, or started without --paused
+	r := newFakeRunner(t, 0)
+	r.paused.Store(false)
 
-	err := patchStatus(context.Background(), []string{r.addr()}, resumeRequest, testStatusOptions)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "injected failure")
-	assert.Equal(t, int32(1), r.calls.Load())
+	err := resumeRunners(context.Background(), []string{r.addr()}, testStatusOptions)
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), r.gets.Load())
+	assert.Equal(t, int32(0), r.patches.Load())
 }
 
-func Test_patchStatus_ReportsPermanentFailure(t *testing.T) {
+func Test_resumeRunners_LostResponse(t *testing.T) {
+	r := newFakeRunner(t, 0)
+	r.loseResponse = true
+
+	err := resumeRunners(context.Background(), []string{r.addr()}, testStatusOptions)
+	require.NoError(t, err)
+	assert.False(t, r.paused.Load())
+	assert.Equal(t, int32(1), r.patches.Load(), "the retry must not resume the runner again")
+}
+
+func Test_resumeRunners_RetriesStatusFailure(t *testing.T) {
+	r := newFakeRunner(t, 0)
+	r.getFailures = 2
+
+	err := resumeRunners(context.Background(), []string{r.addr()}, testStatusOptions)
+	require.NoError(t, err)
+	assert.Equal(t, int32(3), r.gets.Load())
+	assert.Equal(t, int32(1), r.patches.Load())
+}
+
+func Test_resumeRunners_DoesNotRetryAPIError(t *testing.T) {
+	r := newFakeRunner(t, -1)
+
+	err := resumeRunners(context.Background(), []string{r.addr()}, testStatusOptions)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "injected failure")
+	assert.Equal(t, int32(1), r.patches.Load())
+}
+
+func Test_resumeRunners_ReportsPermanentFailure(t *testing.T) {
 	ok := newFakeRunner(t, 0)
 	broken := newFakeRunner(t, -1)
 	broken.fail = dropConnection
 
-	err := patchStatus(context.Background(), []string{ok.addr(), broken.addr()}, resumeRequest, testStatusOptions)
+	err := resumeRunners(context.Background(), []string{ok.addr(), broken.addr()}, testStatusOptions)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), broken.addr())
 	assert.NotContains(t, err.Error(), ok.addr())
-	assert.Equal(t, int32(1), ok.calls.Load())
-	assert.Equal(t, int32(1+testStatusOptions.retries), broken.calls.Load())
+	assert.Equal(t, int32(1), ok.patches.Load())
+	assert.Equal(t, int32(1+testStatusOptions.retries), broken.patches.Load())
 }
 
 func Test_isRetryable(t *testing.T) {
@@ -234,7 +296,7 @@ func Test_isRetryable(t *testing.T) {
 	}
 }
 
-func Test_patchStatus_NoHost(t *testing.T) {
-	err := patchStatus(context.Background(), []string{}, resumeRequest, testStatusOptions)
+func Test_resumeRunners_NoHost(t *testing.T) {
+	err := resumeRunners(context.Background(), []string{}, testStatusOptions)
 	assert.NoError(t, err)
 }

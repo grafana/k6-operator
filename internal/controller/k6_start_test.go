@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -143,7 +144,7 @@ func TestStartJobsBuiltinStarterFailsTestRunWhenResumeFails(t *testing.T) {
 			_, _ = w.Write([]byte(`{"errors":[{"title":"Pause error"}]}`))
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+		writeRunnerStatus(w, true)
 	})
 
 	r, tr := runnerTestReconciler(t, 2)
@@ -178,16 +179,36 @@ func TestStartJobsBuiltinStarterRetriesWhenResumeIsCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var patches atomic.Int32
+	var (
+		mu      sync.Mutex
+		resumed = map[string]bool{}
+		patches int
+		refused int
+	)
 	stubRunnerHTTP(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPatch {
-			patches.Add(1)
-			// as if the operator were shutting down mid-reconcile
-			cancel()
-			w.WriteHeader(http.StatusInternalServerError)
+		mu.Lock()
+		defer mu.Unlock()
+		if r.Method != http.MethodPatch {
+			writeRunnerStatus(w, !resumed[r.URL.Host])
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+
+		patches++
+		if resumed[r.URL.Host] {
+			// like k6, refuse to resume a runner that is not paused
+			refused++
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"errors":[{"title":"Pause error"}]}`))
+			return
+		}
+		resumed[r.URL.Host] = true
+		if ctx.Err() == nil {
+			// as if the operator were shutting down before the response arrived
+			cancel()
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		_, _ = w.Write([]byte(`{}`))
 	})
 
 	r, tr := runnerTestReconciler(t, 2)
@@ -200,10 +221,9 @@ func TestStartJobsBuiltinStarterRetriesWhenResumeIsCancelled(t *testing.T) {
 	if _, err := StartJobs(ctx, logr.Discard(), tr, r, nil); err == nil {
 		t.Fatal("err = nil, want an error so that the reconcile is retried")
 	}
-	if patches.Load() == 0 {
+	if patches == 0 {
 		t.Error("runners were not resumed")
 	}
-
 	if tr.Status.Stage != "created" {
 		t.Errorf("stage = %q, want created", tr.Status.Stage)
 	}
@@ -214,4 +234,23 @@ func TestStartJobsBuiltinStarterRetriesWhenResumeIsCancelled(t *testing.T) {
 	if got.Status.Stage == "error" {
 		t.Error("stored stage = error, want it unchanged")
 	}
+
+	// The retried reconcile must skip the runners that were resumed above.
+	if _, err := StartJobs(context.Background(), logr.Discard(), got, r, nil); err != nil {
+		t.Fatalf("retry: err = %v, want nil", err)
+	}
+	if refused != 0 {
+		t.Errorf("%d resume requests were sent to runners that were not paused", refused)
+	}
+	if len(resumed) != int(tr.Spec.Parallelism) {
+		t.Errorf("resumed runners = %d, want %d", len(resumed), tr.Spec.Parallelism)
+	}
+	if got.Status.Stage != "started" {
+		t.Errorf("retry: stage = %q, want started", got.Status.Stage)
+	}
+}
+
+// writeRunnerStatus responds like GET /v1/status of a k6 runner.
+func writeRunnerStatus(w http.ResponseWriter, paused bool) {
+	_, _ = fmt.Fprintf(w, `{"data":{"type":"status","id":"default","attributes":{"paused":%t}}}`, paused)
 }

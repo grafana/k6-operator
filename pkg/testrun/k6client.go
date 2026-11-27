@@ -92,29 +92,20 @@ var defaultStatusOptions = statusOptions{
 	timeout:     10 * time.Second,
 }
 
-// ResumeRunners un-pauses all runners, i.e. it starts the test.
+// ResumeRunners un-pauses all runners, i.e. it starts the test. Runners that
+// are not paused are left as they are, see resumeRunner.
 func ResumeRunners(ctx context.Context, hostnames []string) error {
 	addrs := make([]string, len(hostnames))
 	for i, hostname := range hostnames {
 		addrs[i] = net.JoinHostPort(hostname, "6565")
 	}
 
-	req := types.StatusAPIRequest{
-		Data: types.StatusAPIRequestData{
-			Attributes: types.StatusAPIRequestDataAttributes{
-				Paused: false,
-			},
-			ID:   "default",
-			Type: "status",
-		},
-	}
-
-	return patchStatus(ctx, addrs, req, defaultStatusOptions)
+	return resumeRunners(ctx, addrs, defaultStatusOptions)
 }
 
-// patchStatus sends the status request to all addrs concurrently and
-// returns the errors of all runners that could not be updated.
-func patchStatus(ctx context.Context, addrs []string, req types.StatusAPIRequest, opts statusOptions) error {
+// resumeRunners resumes all addrs concurrently and returns the errors of all
+// runners that could not be resumed.
+func resumeRunners(ctx context.Context, addrs []string, opts statusOptions) error {
 	httpClient := &http.Client{Timeout: opts.timeout}
 
 	var (
@@ -129,7 +120,7 @@ func patchStatus(ctx context.Context, addrs []string, req types.StatusAPIRequest
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			if err := patchStatusWithRetry(ctx, httpClient, addr, req, opts); err != nil {
+			if err := resumeRunnerWithRetry(ctx, httpClient, addr, opts); err != nil {
 				mu.Lock()
 				errs = append(errs, fmt.Errorf("%s: %w", addr, err))
 				mu.Unlock()
@@ -141,7 +132,7 @@ func patchStatus(ctx context.Context, addrs []string, req types.StatusAPIRequest
 	return errors.Join(errs...)
 }
 
-func patchStatusWithRetry(ctx context.Context, httpClient *http.Client, addr string, req types.StatusAPIRequest, opts statusOptions) error {
+func resumeRunnerWithRetry(ctx context.Context, httpClient *http.Client, addr string, opts statusOptions) error {
 	c, err := k6Client.New(addr, k6Client.WithHTTPClient(httpClient))
 	if err != nil {
 		return err
@@ -149,7 +140,7 @@ func patchStatusWithRetry(ctx context.Context, httpClient *http.Client, addr str
 
 	delay := opts.retryDelay
 	for attempt := 0; ; attempt++ {
-		err = c.CallAPI(ctx, "PATCH", &url.URL{Path: "/v1/status"}, req, nil)
+		err = resumeRunner(ctx, c)
 		if err == nil || attempt >= opts.retries || !isRetryable(err) {
 			return err
 		}
@@ -161,6 +152,32 @@ func patchStatusWithRetry(ctx context.Context, httpClient *http.Client, addr str
 		}
 		delay *= 2
 	}
+}
+
+// resumeRunner resumes the runner if it is paused. k6 responds with an error
+// to a resume request once the test has started, so the status is checked
+// first: the runner may have been resumed already, e.g. by an earlier attempt
+// whose response was lost, or it may have been started without --paused.
+func resumeRunner(ctx context.Context, c *k6Client.Client) error {
+	var status v1.StatusJSONAPI
+	if err := c.CallAPI(ctx, "GET", &url.URL{Path: "/v1/status"}, nil, &status); err != nil {
+		return err
+	}
+	// a runner that doesn't report its state is resumed to be sure that it starts
+	if paused := status.Status().Paused; paused.Valid && !paused.Bool {
+		return nil
+	}
+
+	req := types.StatusAPIRequest{
+		Data: types.StatusAPIRequestData{
+			Attributes: types.StatusAPIRequestDataAttributes{
+				Paused: false,
+			},
+			ID:   "default",
+			Type: "status",
+		},
+	}
+	return c.CallAPI(ctx, "PATCH", &url.URL{Path: "/v1/status"}, req, nil)
 }
 
 // isRetryable reports whether a failed request may succeed when it is sent
