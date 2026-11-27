@@ -8,8 +8,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func createJobIfNotExists(ctx context.Context, k8sClient client.Client, job *batchv1.Job) (bool, error) {
-	err := k8sClient.Get(ctx, client.ObjectKeyFromObject(job), &batchv1.Job{})
+// createIfNotExists creates obj unless an object of the same kind, name and
+// namespace already exists. It returns true only when it created the object.
+func createIfNotExists(ctx context.Context, k8sClient client.Client, obj client.Object) (bool, error) {
+	existing := obj.DeepCopyObject().(client.Object)
+	err := k8sClient.Get(ctx, client.ObjectKeyFromObject(obj), existing)
 	if err == nil {
 		return false, nil
 	}
@@ -17,7 +20,7 @@ func createJobIfNotExists(ctx context.Context, k8sClient client.Client, job *bat
 		return false, err
 	}
 
-	err = k8sClient.Create(ctx, job)
+	err = k8sClient.Create(ctx, obj)
 	if apierrors.IsAlreadyExists(err) {
 		return false, nil
 	}
@@ -26,4 +29,8 @@ func createJobIfNotExists(ctx context.Context, k8sClient client.Client, job *bat
 	}
 
 	return true, nil
+}
+
+func createJobIfNotExists(ctx context.Context, k8sClient client.Client, job *batchv1.Job) (bool, error) {
+	return createIfNotExists(ctx, k8sClient, job)
 }
